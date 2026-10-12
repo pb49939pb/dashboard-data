@@ -6,6 +6,8 @@ import { gunzipSync } from "node:zlib";
 import { gameShots, xg } from "./shots.mjs";
 
 const KIND = { goal: "g", "shot-on-goal": "s", "missed-shot": "m", "blocked-shot": "b" };
+const FORMAT = 2; // bump when the compact shot record changes, so cached games are rebuilt
+const STYPE = { wrist: "w", snap: "n", slap: "s", backhand: "b", "tip-in": "t", deflected: "d", "wrap-around": "r", bat: "o", poke: "o", "between-legs": "o", cradle: "o" };
 
 /** Compact, model-scored record of one game (stored in both teams' files). */
 function scoreGame(pbp, model) {
@@ -15,18 +17,62 @@ function scoreGame(pbp, model) {
   return {
     id: pbp.id, date: pbp.gameDate, home: pbp.homeTeam.abbrev, away: pbp.awayTeam.abbrev,
     hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players,
-    // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period]
+    // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type, flags (1 rebound, 2 rush)]
     shots: rows.map((r) => {
       const v = xg(r, model);
       return [Math.round(r.x), Math.round(r.y), KIND[r.type], r.home ? 0 : 1, v === null ? null : Math.round(v * 1000) / 1000,
-        r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period];
+        r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period, STYPE[r.shotType] || "o", (r.rebound ? 1 : 0) | (r.rush ? 2 : 0)];
     }),
   };
 }
 
-function aggregate(games) {
+/**
+ * Shooter-aware xG: each unblocked shot's xG adjusted for the shooter's finishing record before that game
+ * (priors through last season from hockey-models, plus this season's earlier games). Returns a per-shot lookup.
+ */
+function shooterAware(games, sa) {
+  if (!sa) return null;
+  const totals = new Map(Object.entries(sa.priors).map(([id, [g, x]]) => [Number(id), { g, x }]));
+  const out = new Map();
+  const sig = (z) => 1 / (1 + Math.exp(-z));
+  for (const g of [...games].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id))) {
+    const add = new Map();
+    g.shots.forEach((s, i) => {
+      const [, , kind, , v, shooter] = s;
+      if (kind === "b" || v === null || !shooter) return;
+      const t = totals.get(shooter) || { g: 0, x: 0 };
+      if (v !== 0.9) { // empty net stays 0.9
+        const p = Math.min(Math.max(v, 1e-4), 1 - 1e-4);
+        const talent = (t.g + sa.k) / (t.x + sa.k);
+        out.set(`${g.id}:${i}`, sig(sa.a + sa.b * Math.log(p / (1 - p)) + sa.c * Math.log(talent)));
+      }
+      const a = add.get(shooter) || { g: 0, x: 0 };
+      a.g += kind === "g" ? 1 : 0; a.x += v; add.set(shooter, a);
+    });
+    for (const [id, a] of add) { const t = totals.get(id) || { g: 0, x: 0 }; totals.set(id, { g: t.g + a.g, x: t.x + a.x }); }
+  }
+  return out;
+}
+
+/** Shot categories for goalie profiles (a shot can be in several). */
+const NET = 89;
+export function categories(s) {
+  const [x, y, , , , , , strength, , st, flags] = s;
+  const dist = Math.hypot(NET - x, y), angle = NET - x > 0 ? (Math.atan2(Math.abs(y), NET - x) * 180) / Math.PI : 90;
+  const out = [dist < 15 ? "close" : dist < 35 ? "mid" : "long"];
+  if (angle > 45) out.push("sharp");
+  const typ = { w: "wrist", n: "snap", s: "slap", b: "backhand", t: "tip", d: "tip", r: "wrap" }[st];
+  if (typ) out.push(typ);
+  if (flags & 1) out.push("rebound");
+  if (flags & 2) out.push("rush");
+  if (strength === "5v5") out.push("ev5");
+  else if (strength === "PP") out.push("pk"); // shooter on the power play = goalie killing a penalty
+  return out;
+}
+
+function aggregate(games, saLookup) {
   const teams = {}, skaters = {}, goalies = {};
-  const T = (a) => (teams[a] ??= { team: a, gp: 0, w: 0, l: 0, otl: 0, gf: 0, ga: 0, sf: 0, sa: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0 });
+  const T = (a) => (teams[a] ??= { team: a, gp: 0, w: 0, l: 0, otl: 0, gf: 0, ga: 0, sf: 0, sa: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, gf5: 0, ga5: 0, gfPP: 0, xgfPP: 0, gaPK: 0, xgaPK: 0 });
   for (const g of games) {
     const sides = [g.home, g.away], score = [g.hs, g.as];
     sides.forEach((a, i) => {
@@ -34,13 +80,15 @@ function aggregate(games) {
       t.gp++; t.gf += score[i]; t.ga += score[1 - i];
       if (won) t.w++; else if (g.end !== "REG") t.otl++; else t.l++;
     });
-    for (const s of g.shots) {
+    g.shots.forEach((s, i) => {
       const [, , kind, side, v, shooter, goalie, strength] = s;
-      if (kind === "b") continue;
+      if (kind === "b") return;
       const own = T(sides[side]), opp = T(sides[1 - side]);
       const x = v ?? 0, five = strength === "5v5";
       own.sf++; opp.sa++; own.xgf += x; opp.xga += x;
-      if (five) { own.xgf5 += x; opp.xga5 += x; }
+      const goal = kind === "g" ? 1 : 0;
+      if (five) { own.xgf5 += x; opp.xga5 += x; own.gf5 += goal; opp.ga5 += goal; }
+      if (strength === "PP") { own.xgfPP += x; own.gfPP += goal; opp.xgaPK += x; opp.gaPK += goal; }
       if (shooter) {
         const p = g.players[shooter];
         const k = (skaters[shooter] ??= { id: shooter, name: p?.[0] || "Unknown", pos: p?.[1] || "", team: sides[side], shots: 0, goals: 0, xg: 0, xg5: 0, g5: 0, games: new Set() });
@@ -51,18 +99,23 @@ function aggregate(games) {
       // Goalie: unblocked shots faced, excluding empty-net (no goalie) chances
       if (goalie && v !== 0.9) {
         const p = g.players[goalie];
-        const k = (goalies[goalie] ??= { id: goalie, name: p?.[0] || "Unknown", team: sides[1 - side], shots: 0, ga: 0, xga: 0, games: new Set() });
+        const k = (goalies[goalie] ??= { id: goalie, name: p?.[0] || "Unknown", team: sides[1 - side], shots: 0, ga: 0, xga: 0, saxga: 0, games: new Set(), split: {} });
         k.team = sides[1 - side]; k.shots++; k.xga += x; k.games.add(g.id);
+        const sx = saLookup?.get(`${g.id}:${i}`) ?? x;
+        k.saxga += sx;
         if (kind === "g") k.ga++;
+        for (const c of categories(s)) { const b = (k.split[c] ??= [0, 0, 0]); b[0]++; b[1] += kind === "g" ? 1 : 0; b[2] += sx; }
       }
-    }
+    });
   }
   const r2 = (n) => Math.round(n * 100) / 100;
   return {
-    teams: Object.values(teams).map((t) => ({ ...t, pts: t.w * 2 + t.otl, xgf: r2(t.xgf), xga: r2(t.xga), xgf5: r2(t.xgf5), xga5: r2(t.xga5),
+    teams: Object.values(teams).map((t) => ({ ...t, pts: t.w * 2 + t.otl, xgf: r2(t.xgf), xga: r2(t.xga), xgf5: r2(t.xgf5), xga5: r2(t.xga5), xgfPP: r2(t.xgfPP), xgaPK: r2(t.xgaPK),
       xgPct: t.xgf + t.xga ? r2((t.xgf / (t.xgf + t.xga)) * 100) : null })),
     skaters: Object.values(skaters).map(({ games, ...k }) => ({ ...k, gp: games.size, xg: r2(k.xg), xg5: r2(k.xg5), gax: r2(k.goals - k.xg) })),
-    goalies: Object.values(goalies).map(({ games, ...k }) => ({ ...k, gp: games.size, xga: r2(k.xga), gsax: r2(k.xga - k.ga),
+    goalies: Object.values(goalies).map(({ games, split, ...k }) => ({ ...k, gp: games.size,
+      split: Object.fromEntries(Object.entries(split).map(([c, [n, ga, x]]) => [c, [n, ga, r2(x)]])), xga: r2(k.xga), gsax: r2(k.xga - k.ga),
+      saxga: r2(k.saxga), sa_gsax: r2(k.saxga - k.ga),
       svPct: k.shots ? Math.round(((k.shots - k.ga) / k.shots) * 1000) / 1000 : null })),
   };
 }
@@ -71,12 +124,31 @@ function aggregate(games) {
  * season: e.g. "20262027". get(url): fetch JSON. previousBase: URL of the published hockey/ folder (or null).
  * cacheDir: optional folder of cached play-by-play (.json.gz) to avoid refetching locally.
  */
-export async function buildLeague({ season, get, nhl, model, previousBase, cacheDir, teams }) {
+/** Quality starts from game logs: a start with save % at least the league average (or ≥ .885 on 20 shots or fewer).
+ * Really bad starts: save % under .850. */
+async function qualityStarts(season, get) {
+  const url = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&limit=-1&cayenneExp=seasonId=${season}%20and%20gameTypeId=2`;
+  const rows = (await get(url).catch(() => null))?.data || [];
+  const sa = rows.reduce((n, r) => n + (r.shotsAgainst || 0), 0), ga = rows.reduce((n, r) => n + (r.goalsAgainst || 0), 0);
+  const lg = sa ? 1 - ga / sa : 0.9;
+  const by = {};
+  for (const r of rows) {
+    if (!r.gamesStarted) continue;
+    const sv = r.shotsAgainst ? 1 - r.goalsAgainst / r.shotsAgainst : 1;
+    const b = (by[r.playerId] ??= { gs: 0, qs: 0, rbs: 0 });
+    b.gs++;
+    if (sv >= lg || (r.shotsAgainst <= 20 && sv >= 0.885)) b.qs++;
+    if (sv < 0.85) b.rbs++;
+  }
+  return { leagueSv: Math.round(lg * 1000) / 1000, by };
+}
+
+export async function buildLeague({ season, get, nhl, model, previousBase, cacheDir, teams, saModel }) {
   // 1) Reuse games from the previously published team files (only if scored with the same model)
   const known = new Map();
   if (previousBase) {
     const prevLeague = await get(`${previousBase}/league.json`).catch(() => null);
-    if (prevLeague && prevLeague.model?.trained_on === model.trained_on && prevLeague.season === season) {
+    if (prevLeague && prevLeague.model?.trained_on === model.trained_on && prevLeague.season === season && prevLeague.format === FORMAT) {
       for (const t of teams) {
         const f = await get(`${previousBase}/teams/${t}.json`).catch(() => null);
         for (const g of f?.games || []) known.set(g.id, g);
@@ -102,21 +174,29 @@ export async function buildLeague({ season, get, nhl, model, previousBase, cache
   // 3) Score new games
   let fetched = 0;
   for (const id of [...finished.keys()].sort()) {
-    if (known.has(id)) continue;
+    if (known.has(id) && known.get(id).shots.every((s) => s.length >= 11)) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
     if (!pbp) { await new Promise((r) => setTimeout(r, 1000)); pbp = await get(`${nhl}/gamecenter/${id}/play-by-play`); fetched++; }
     known.set(id, scoreGame(pbp, model));
   }
   const games = [...known.values()].sort((a, b) => a.id - b.id);
-  const agg = aggregate(games);
+  const sa = shooterAware(games, saModel);
+  const agg = aggregate(games, sa);
+  const qs = await qualityStarts(season, get);
+  for (const gk of agg.goalies) {
+    const q = qs.by[gk.id];
+    Object.assign(gk, q ? { gs: q.gs, qs: q.qs, qsPct: q.gs ? Math.round((q.qs / q.gs) * 1000) / 1000 : null, rbs: q.rbs } : { gs: 0, qs: 0, qsPct: null, rbs: 0 });
+  }
   const stamp = new Date().toISOString();
   await mkdir("public/hockey/teams", { recursive: true });
   for (const t of teams) {
     const mine = games.filter((g) => g.home === t || g.away === t);
     await writeFile(`public/hockey/teams/${t}.json`, JSON.stringify({ updatedAt: stamp, season, team: t, model: { trained_on: model.trained_on }, games: mine }));
   }
-  const league = { updatedAt: stamp, season, games: games.length, model: { trained_on: model.trained_on, test: model.test }, ...agg };
+  const league = { format: FORMAT, updatedAt: stamp, season, games: games.length, model: { trained_on: model.trained_on, test: model.test },
+    saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs.leagueSv,
+    throughDate: games.map((g) => g.date).sort().pop() || null, ...agg };
   await writeFile("public/hockey/league.json", JSON.stringify(league));
-  return { games: games.length, fetched };
+  return { games: games.length, fetched, list: games, sa };
 }

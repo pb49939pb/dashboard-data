@@ -1,0 +1,970 @@
+{
+ "ANA": [
+  {
+   "team": "ANA",
+   "gm": "Al Coates (interim)",
+   "start": "2004-06-08",
+   "end": "2005-06-20"
+  },
+  {
+   "team": "ANA",
+   "gm": "Brian Burke",
+   "start": "2005-06-20",
+   "end": "2008-11-12"
+  },
+  {
+   "team": "ANA",
+   "gm": "Bob Murray",
+   "start": "2008-11-12",
+   "end": "2021-11-10"
+  },
+  {
+   "team": "ANA",
+   "gm": "Jeff Solomon (interim)",
+   "start": "2021-11-16",
+   "end": "2022-02-03"
+  },
+  {
+   "team": "ANA",
+   "gm": "Pat Verbeek",
+   "start": "2022-02-03",
+   "end": null
+  }
+ ],
+ "BOS": [
+  {
+   "team": "BOS",
+   "gm": "Mike O'Connell",
+   "start": "2000-11-01",
+   "end": "2006-03-25"
+  },
+  {
+   "team": "BOS",
+   "gm": "Jeff Gorton (Interim)",
+   "start": "2006-03-25",
+   "end": "2006-05-26"
+  },
+  {
+   "team": "BOS",
+   "gm": "Peter Chiarelli",
+   "start": "2006-05-26",
+   "end": "2015-04-15"
+  },
+  {
+   "team": "BOS",
+   "gm": "Don Sweeney",
+   "start": "2015-05-20",
+   "end": null
+  }
+ ],
+ "BUF": [
+  {
+   "team": "BUF",
+   "gm": "Darcy Regier",
+   "start": "1997-06-11",
+   "end": "2013-11-13"
+  },
+  {
+   "team": "BUF",
+   "gm": "Tim Murray",
+   "start": "2014-01-09",
+   "end": "2017-04-20"
+  },
+  {
+   "team": "BUF",
+   "gm": "Jason Botterill",
+   "start": "2017-05-11",
+   "end": "2020-06-16"
+  },
+  {
+   "team": "BUF",
+   "gm": "Kevyn Adams",
+   "start": "2020-06-16",
+   "end": "2025-12-15"
+  },
+  {
+   "team": "BUF",
+   "gm": "Jarmo Kek\u00e4l\u00e4inen",
+   "start": "2025-12-15",
+   "end": null
+  }
+ ],
+ "CGY": [
+  {
+   "team": "CGY",
+   "gm": "Darryl Sutter",
+   "start": "2003-04-11",
+   "end": "2010-12-28"
+  },
+  {
+   "team": "CGY",
+   "gm": "Jay Feaster",
+   "start": "2010-12-28",
+   "end": "2013-12-12"
+  },
+  {
+   "team": "CGY",
+   "gm": "Brian Burke",
+   "start": "2013-12-12",
+   "end": "2014-04-28"
+  },
+  {
+   "team": "CGY",
+   "gm": "Brad Treliving",
+   "start": "2014-04-28",
+   "end": "2023-04-17"
+  },
+  {
+   "team": "CGY",
+   "gm": "Don Maloney",
+   "start": "2023-04-17",
+   "end": "2023-05-23"
+  },
+  {
+   "team": "CGY",
+   "gm": "Craig Conroy",
+   "start": "2023-05-23",
+   "end": null
+  }
+ ],
+ "CAR": [
+  {
+   "team": "CAR",
+   "gm": "Jim Rutherford",
+   "start": "1994-06-28",
+   "end": "2014-04-28"
+  },
+  {
+   "team": "CAR",
+   "gm": "Ron Francis",
+   "start": "2014-04-28",
+   "end": "2018-03-07"
+  },
+  {
+   "team": "CAR",
+   "gm": "Don Waddell",
+   "start": "2018-05-08",
+   "end": "2024-05-24"
+  },
+  {
+   "team": "CAR",
+   "gm": "Eric Tulsky",
+   "start": "2024-05-24",
+   "end": null
+  }
+ ],
+ "CHI": [
+  {
+   "team": "CHI",
+   "gm": "Bob Pulford",
+   "start": "2003-10-24",
+   "end": "2005-06-21"
+  },
+  {
+   "team": "CHI",
+   "gm": "Dale Tallon",
+   "start": "2005-06-21",
+   "end": "2009-07-14"
+  },
+  {
+   "team": "CHI",
+   "gm": "Stan Bowman",
+   "start": "2009-07-14",
+   "end": "2021-10-26"
+  },
+  {
+   "team": "CHI",
+   "gm": "Kyle Davidson",
+   "start": "2021-10-26",
+   "end": null
+  }
+ ],
+ "COL": [
+  {
+   "team": "COL",
+   "gm": "Pierre Lacroix",
+   "start": "1994-05-24",
+   "end": "2006-05-24"
+  },
+  {
+   "team": "COL",
+   "gm": "Fran\u00e7ois Gigu\u00e8re",
+   "start": "2006-05-24",
+   "end": "2009-04-13"
+  },
+  {
+   "team": "COL",
+   "gm": "Greg Sherman",
+   "start": "2009-06-03",
+   "end": "2014-09-19"
+  },
+  {
+   "team": "COL",
+   "gm": "Joe Sakic",
+   "start": "2014-09-19",
+   "end": "2022-07-11"
+  },
+  {
+   "team": "COL",
+   "gm": "Chris MacFarland",
+   "start": "2022-07-11",
+   "end": "2026-06-02"
+  },
+  {
+   "team": "COL",
+   "gm": "Joe Sakic",
+   "start": "2026-06-02",
+   "end": null
+  }
+ ],
+ "CBJ": [
+  {
+   "team": "CBJ",
+   "gm": "Doug MacLean",
+   "start": "1998-02-11",
+   "end": "2007-04-19"
+  },
+  {
+   "team": "CBJ",
+   "gm": "Jim Clark (interim)",
+   "start": "2007-04-19",
+   "end": "2007-06-15"
+  },
+  {
+   "team": "CBJ",
+   "gm": "Scott Howson",
+   "start": "2007-06-15",
+   "end": "2013-02-12"
+  },
+  {
+   "team": "CBJ",
+   "gm": "Jarmo Kek\u00e4l\u00e4inen",
+   "start": "2013-02-13",
+   "end": "2024-02-15"
+  },
+  {
+   "team": "CBJ",
+   "gm": "John Davidson (interim)",
+   "start": "2024-02-15",
+   "end": "2024-05-28"
+  },
+  {
+   "team": "CBJ",
+   "gm": "Don Waddell",
+   "start": "2024-05-28",
+   "end": null
+  }
+ ],
+ "DAL": [
+  {
+   "team": "DAL",
+   "gm": "Doug Armstrong",
+   "start": "2002-01-25",
+   "end": "2007-11-13"
+  },
+  {
+   "team": "DAL",
+   "gm": "Brett Hull",
+   "start": "2007-11-13",
+   "end": "2009-05-31"
+  },
+  {
+   "team": "DAL",
+   "gm": "Joe Nieuwendyk",
+   "start": "2009-05-31",
+   "end": "2013-04-28"
+  },
+  {
+   "team": "DAL",
+   "gm": "Jim Nill",
+   "start": "2013-04-29",
+   "end": null
+  }
+ ],
+ "DET": [
+  {
+   "team": "DET",
+   "gm": "Ken Holland",
+   "start": "1997-07-18",
+   "end": "2019-04-19"
+  },
+  {
+   "team": "DET",
+   "gm": "Steve Yzerman",
+   "start": "2019-04-19",
+   "end": "2026-09-15"
+  },
+  {
+   "team": "DET",
+   "gm": "Shawn Horcoff (interim)",
+   "start": "2026-09-15",
+   "end": null
+  }
+ ],
+ "EDM": [
+  {
+   "team": "EDM",
+   "gm": "Kevin Lowe",
+   "start": "2000-06-09",
+   "end": "2008-07-31"
+  },
+  {
+   "team": "EDM",
+   "gm": "Steve Tambellini",
+   "start": "2008-07-31",
+   "end": "2013-04-15"
+  },
+  {
+   "team": "EDM",
+   "gm": "Craig MacTavish",
+   "start": "2013-04-15",
+   "end": "2015-04-24"
+  },
+  {
+   "team": "EDM",
+   "gm": "Peter Chiarelli",
+   "start": "2015-04-24",
+   "end": "2019-01-22"
+  },
+  {
+   "team": "EDM",
+   "gm": "Keith Gretzky (interim)",
+   "start": "2019-01-23",
+   "end": "2019-05-07"
+  },
+  {
+   "team": "EDM",
+   "gm": "Ken Holland",
+   "start": "2019-05-07",
+   "end": "2024-06-27"
+  },
+  {
+   "team": "EDM",
+   "gm": "Jeff Jackson (interim)",
+   "start": "2024-06-27",
+   "end": "2024-07-24"
+  },
+  {
+   "team": "EDM",
+   "gm": "Stan Bowman",
+   "start": "2024-07-24",
+   "end": null
+  }
+ ],
+ "FLA": [
+  {
+   "team": "FLA",
+   "gm": "Mike Keenan",
+   "start": "2004-05-26",
+   "end": "2006-09-03"
+  },
+  {
+   "team": "FLA",
+   "gm": "Jacques Martin",
+   "start": "2006-09-03",
+   "end": "2009-06-01"
+  },
+  {
+   "team": "FLA",
+   "gm": "Randy Sexton",
+   "start": "2009-10-02",
+   "end": "2010-05-17"
+  },
+  {
+   "team": "FLA",
+   "gm": "Dale Tallon",
+   "start": "2010-05-17",
+   "end": "2016-05-16"
+  },
+  {
+   "team": "FLA",
+   "gm": "Tom Rowe",
+   "start": "2016-05-16",
+   "end": "2017-04-10"
+  },
+  {
+   "team": "FLA",
+   "gm": "Bill Zito",
+   "start": "2020-09-02",
+   "end": null
+  }
+ ],
+ "LAK": [
+  {
+   "team": "LAK",
+   "gm": "Dave Taylor",
+   "start": "1997-04-22",
+   "end": "2006-04-18"
+  },
+  {
+   "team": "LAK",
+   "gm": "Dean Lombardi",
+   "start": "2006-04-21",
+   "end": "2017-04-10"
+  },
+  {
+   "team": "LAK",
+   "gm": "Rob Blake",
+   "start": "2017-04-10",
+   "end": "2025-05-05"
+  },
+  {
+   "team": "LAK",
+   "gm": "Ken Holland",
+   "start": "2025-05-14",
+   "end": null
+  }
+ ],
+ "MIN": [
+  {
+   "team": "MIN",
+   "gm": "Doug Risebrough",
+   "start": "1999-09-02",
+   "end": "2009-04-16"
+  },
+  {
+   "team": "MIN",
+   "gm": "Chuck Fletcher",
+   "start": "2009-05-22",
+   "end": "2018-04-23"
+  },
+  {
+   "team": "MIN",
+   "gm": "Paul Fenton",
+   "start": "2018-05-21",
+   "end": "2019-07-30"
+  },
+  {
+   "team": "MIN",
+   "gm": "Bill Guerin",
+   "start": "2019-08-21",
+   "end": null
+  }
+ ],
+ "MTL": [
+  {
+   "team": "MTL",
+   "gm": "Bob Gainey",
+   "start": "2003-06-02",
+   "end": "2010-02-08"
+  },
+  {
+   "team": "MTL",
+   "gm": "Pierre Gauthier",
+   "start": "2010-02-08",
+   "end": "2012-03-29"
+  },
+  {
+   "team": "MTL",
+   "gm": "Marc Bergevin",
+   "start": "2012-05-02",
+   "end": "2021-11-28"
+  },
+  {
+   "team": "MTL",
+   "gm": "Kent Hughes",
+   "start": "2022-01-18",
+   "end": null
+  }
+ ],
+ "NSH": [
+  {
+   "team": "NSH",
+   "gm": "David Poile",
+   "start": "1997-07-09",
+   "end": "2023-06-30"
+  },
+  {
+   "team": "NSH",
+   "gm": "Barry Trotz",
+   "start": "2023-07-01",
+   "end": "2026-06-02"
+  },
+  {
+   "team": "NSH",
+   "gm": "Chris MacFarland",
+   "start": "2026-06-02",
+   "end": null
+  }
+ ],
+ "NJD": [
+  {
+   "team": "NJD",
+   "gm": "Lou Lamoriello",
+   "start": "1987-09-10",
+   "end": "2015-05-04"
+  },
+  {
+   "team": "NJD",
+   "gm": "Ray Shero",
+   "start": "2015-05-04",
+   "end": "2020-01-12"
+  },
+  {
+   "team": "NJD",
+   "gm": "Tom Fitzgerald",
+   "start": "2020-01-12",
+   "end": "2026-04-06"
+  },
+  {
+   "team": "NJD",
+   "gm": "Sunny Mehta",
+   "start": "2026-04-16",
+   "end": null
+  }
+ ],
+ "NYI": [
+  {
+   "team": "NYI",
+   "gm": "Mike Milbury",
+   "start": "1995-12-12",
+   "end": "2006-06-08"
+  },
+  {
+   "team": "NYI",
+   "gm": "Neil Smith",
+   "start": "2006-06-08",
+   "end": "2006-07-18"
+  },
+  {
+   "team": "NYI",
+   "gm": "Garth Snow",
+   "start": "2006-07-18",
+   "end": "2018-06-05"
+  },
+  {
+   "team": "NYI",
+   "gm": "Lou Lamoriello",
+   "start": "2018-06-05",
+   "end": "2025-04-22"
+  },
+  {
+   "team": "NYI",
+   "gm": "Mathieu Darche",
+   "start": "2025-05-23",
+   "end": null
+  }
+ ],
+ "NYR": [
+  {
+   "team": "NYR",
+   "gm": "Glen Sather",
+   "start": "2000-06-01",
+   "end": "2015-07-01"
+  },
+  {
+   "team": "NYR",
+   "gm": "Jeff Gorton",
+   "start": "2015-07-01",
+   "end": "2021-05-05"
+  },
+  {
+   "team": "NYR",
+   "gm": "Chris Drury",
+   "start": "2021-05-05",
+   "end": null
+  }
+ ],
+ "OTT": [
+  {
+   "team": "OTT",
+   "gm": "John Muckler",
+   "start": "2002-07-01",
+   "end": "2007-06-18"
+  },
+  {
+   "team": "OTT",
+   "gm": "Bryan Murray",
+   "start": "2007-06-18",
+   "end": "2016-04-10"
+  },
+  {
+   "team": "OTT",
+   "gm": "Pierre Dorion",
+   "start": "2016-04-10",
+   "end": "2023-11-01"
+  },
+  {
+   "team": "OTT",
+   "gm": "Steve Staios",
+   "start": "2023-11-01",
+   "end": null
+  }
+ ],
+ "PHI": [
+  {
+   "team": "PHI",
+   "gm": "Bob Clarke",
+   "start": "1994-06-15",
+   "end": "2006-10-22"
+  },
+  {
+   "team": "PHI",
+   "gm": "Paul Holmgren",
+   "start": "2006-10-22",
+   "end": "2014-05-07"
+  },
+  {
+   "team": "PHI",
+   "gm": "Ron Hextall",
+   "start": "2014-05-07",
+   "end": "2018-11-26"
+  },
+  {
+   "team": "PHI",
+   "gm": "Chuck Fletcher",
+   "start": "2018-12-03",
+   "end": "2023-03-10"
+  },
+  {
+   "team": "PHI",
+   "gm": "Daniel Briere",
+   "start": "2023-03-10",
+   "end": null
+  }
+ ],
+ "PIT": [
+  {
+   "team": "PIT",
+   "gm": "Craig Patrick",
+   "start": "1989-12-05",
+   "end": "2006-05-20"
+  },
+  {
+   "team": "PIT",
+   "gm": "Ray Shero",
+   "start": "2006-05-20",
+   "end": "2014-05-16"
+  },
+  {
+   "team": "PIT",
+   "gm": "Jason Botterill",
+   "start": "2014-05-16",
+   "end": "2014-06-06"
+  },
+  {
+   "team": "PIT",
+   "gm": "Jim Rutherford",
+   "start": "2014-06-06",
+   "end": "2021-01-27"
+  },
+  {
+   "team": "PIT",
+   "gm": "Patrik Allvin",
+   "start": "2021-01-27",
+   "end": "2021-02-09"
+  },
+  {
+   "team": "PIT",
+   "gm": "Ron Hextall",
+   "start": "2021-02-09",
+   "end": "2023-04-14"
+  },
+  {
+   "team": "PIT",
+   "gm": "Kyle Dubas",
+   "start": "2023-06-01",
+   "end": null
+  }
+ ],
+ "SJS": [
+  {
+   "team": "SJS",
+   "gm": "Doug Wilson",
+   "start": "2003-05-13",
+   "end": "2022-04-07"
+  },
+  {
+   "team": "SJS",
+   "gm": "Joe Will (interim)",
+   "start": "2022-04-07",
+   "end": "2022-07-05"
+  },
+  {
+   "team": "SJS",
+   "gm": "Mike Grier",
+   "start": "2022-07-05",
+   "end": null
+  }
+ ],
+ "SEA": [
+  {
+   "team": "SEA",
+   "gm": "Ron Francis",
+   "start": "2019-07-18",
+   "end": "2025-04-22"
+  },
+  {
+   "team": "SEA",
+   "gm": "Jason Botterill",
+   "start": "2025-04-22",
+   "end": null
+  }
+ ],
+ "STL": [
+  {
+   "team": "STL",
+   "gm": "Larry Pleau",
+   "start": "1997-06-21",
+   "end": "2010-07-01"
+  },
+  {
+   "team": "STL",
+   "gm": "Doug Armstrong",
+   "start": "2010-07-01",
+   "end": "2026-06-30"
+  },
+  {
+   "team": "STL",
+   "gm": "Alexander Steen",
+   "start": "2026-06-30",
+   "end": null
+  }
+ ],
+ "TBL": [
+  {
+   "team": "TBL",
+   "gm": "Jay Feaster",
+   "start": "2002-02-10",
+   "end": "2008-07-11"
+  },
+  {
+   "team": "TBL",
+   "gm": "Brian Lawton",
+   "start": "2008-10-22",
+   "end": "2010-04-12"
+  },
+  {
+   "team": "TBL",
+   "gm": "Tom Kurvers (Interim)",
+   "start": "2010-04-12",
+   "end": "2010-05-25"
+  },
+  {
+   "team": "TBL",
+   "gm": "Steve Yzerman",
+   "start": "2010-05-25",
+   "end": "2018-09-11"
+  },
+  {
+   "team": "TBL",
+   "gm": "Julien BriseBois",
+   "start": "2018-09-11",
+   "end": null
+  }
+ ],
+ "TOR": [
+  {
+   "team": "TOR",
+   "gm": "John Ferguson, Jr.",
+   "start": "2003-08-29",
+   "end": "2008-01-22"
+  },
+  {
+   "team": "TOR",
+   "gm": "Cliff Fletcher (Interim)",
+   "start": "2008-01-22",
+   "end": "2008-11-29"
+  },
+  {
+   "team": "TOR",
+   "gm": "Brian Burke",
+   "start": "2008-11-29",
+   "end": "2013-01-09"
+  },
+  {
+   "team": "TOR",
+   "gm": "Dave Nonis",
+   "start": "2013-01-09",
+   "end": "2015-04-12"
+  },
+  {
+   "team": "TOR",
+   "gm": "Lou Lamoriello",
+   "start": "2015-07-23",
+   "end": "2018-04-30"
+  },
+  {
+   "team": "TOR",
+   "gm": "Kyle Dubas",
+   "start": "2018-05-11",
+   "end": "2023-05-19"
+  },
+  {
+   "team": "TOR",
+   "gm": "Brad Treliving",
+   "start": "2023-05-31",
+   "end": "2026-03-30"
+  },
+  {
+   "team": "TOR",
+   "gm": "Ryan Hardy / Brandon Pridham (Interim)",
+   "start": "2026-03-31",
+   "end": "2026-05-03"
+  },
+  {
+   "team": "TOR",
+   "gm": "John Chayka",
+   "start": "2026-05-03",
+   "end": null
+  }
+ ],
+ "VAN": [
+  {
+   "team": "VAN",
+   "gm": "Dave Nonis",
+   "start": "2004-05-06",
+   "end": "2008-04-14"
+  },
+  {
+   "team": "VAN",
+   "gm": "Mike Gillis",
+   "start": "2008-04-23",
+   "end": "2014-04-08"
+  },
+  {
+   "team": "VAN",
+   "gm": "Jim Benning",
+   "start": "2014-05-21",
+   "end": "2021-12-05"
+  },
+  {
+   "team": "VAN",
+   "gm": "Stan Smyl (acting)",
+   "start": "2021-12-05",
+   "end": "2021-12-09"
+  },
+  {
+   "team": "VAN",
+   "gm": "Jim Rutherford (acting)",
+   "start": "2021-12-09",
+   "end": "2022-01-26"
+  },
+  {
+   "team": "VAN",
+   "gm": "Patrik Allvin",
+   "start": "2022-01-26",
+   "end": "2026-04-17"
+  },
+  {
+   "team": "VAN",
+   "gm": "Ryan Johnson",
+   "start": "2026-05-14",
+   "end": null
+  }
+ ],
+ "VGK": [
+  {
+   "team": "VGK",
+   "gm": "George McPhee",
+   "start": "2016-07-13",
+   "end": "2019-09-01"
+  },
+  {
+   "team": "VGK",
+   "gm": "Kelly McCrimmon",
+   "start": "2019-09-01",
+   "end": null
+  }
+ ],
+ "WSH": [
+  {
+   "team": "WSH",
+   "gm": "George McPhee",
+   "start": "1997-06-09",
+   "end": "2014-04-26"
+  },
+  {
+   "team": "WSH",
+   "gm": "Brian MacLellan",
+   "start": "2014-05-26",
+   "end": "2024-07-08"
+  },
+  {
+   "team": "WSH",
+   "gm": "Chris Patrick",
+   "start": "2024-07-08",
+   "end": null
+  }
+ ],
+ "WPG": [
+  {
+   "team": "WPG",
+   "gm": "Don Waddell",
+   "start": "1998-07-01",
+   "end": "2010-04-14"
+  },
+  {
+   "team": "WPG",
+   "gm": "Rick Dudley",
+   "start": "2010-04-14",
+   "end": "2011-06-04"
+  },
+  {
+   "team": "WPG",
+   "gm": "Kevin Cheveldayoff",
+   "start": "2011-06-08",
+   "end": null
+  }
+ ],
+ "ATL": [
+  {
+   "team": "ATL",
+   "gm": "Don Waddell",
+   "start": "1998-07-01",
+   "end": "2010-04-14"
+  },
+  {
+   "team": "ATL",
+   "gm": "Rick Dudley",
+   "start": "2010-04-14",
+   "end": "2011-06-04"
+  },
+  {
+   "team": "ATL",
+   "gm": "Kevin Cheveldayoff",
+   "start": "2011-06-08",
+   "end": null
+  }
+ ],
+ "ARI": [
+  {
+   "team": "ARI",
+   "gm": "Mike Barnett",
+   "start": "2001-08-28",
+   "end": "2007-04-11"
+  },
+  {
+   "team": "ARI",
+   "gm": "Don Maloney",
+   "start": "2007-05-29",
+   "end": "2016-04-11"
+  },
+  {
+   "team": "ARI",
+   "gm": "John Chayka",
+   "start": "2016-05-05",
+   "end": "2020-07-26"
+  },
+  {
+   "team": "ARI",
+   "gm": "Steve Sullivan",
+   "start": "2020-07-26",
+   "end": "2020-09-16"
+  },
+  {
+   "team": "ARI",
+   "gm": "Bill Armstrong",
+   "start": "2020-09-16",
+   "end": "2024-04-18"
+  }
+ ],
+ "UTA": [
+  {
+   "team": "UTA",
+   "gm": "Bill Armstrong",
+   "start": "2024-04-18",
+   "end": null
+  }
+ ]
+}
