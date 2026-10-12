@@ -150,6 +150,21 @@ await writeFile("public/redwings.json", JSON.stringify(out));
 
 /* ---------- Shots with our xG (incremental) ---------- */
 const MODEL = "model/xg_logit.json";
+/** The published xG model: gradient-boosted trees + shooter handedness (NHL stats API bios, this and last season). */
+async function loadModel() {
+  const fs = await import("node:fs/promises");
+  const m = JSON.parse(await fs.readFile(MODEL, "utf8"));
+  m.gbm = await fs.readFile("model/xg_gbm.json", "utf8").then(JSON.parse, () => null);
+  if (m.gbm) { m.trained_on = m.gbm.trained_on; m.test = m.gbm.test; }
+  m.hands = {};
+  for (const s of [String(Number(season.slice(0, 4)) - 1) + season.slice(0, 4), season]) {
+    const r = await get(`https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&limit=-1&cayenneExp=seasonId=${s}`).catch(() => null);
+    for (const p of r?.data || []) if (p.shootsCatches) m.hands[p.playerId] = p.shootsCatches;
+  }
+  run.check(Object.keys(m.hands).length > 500, "Shooter handedness (for off-wing shots)", `${Object.keys(m.hands).length} players`);
+  return m;
+}
+let xgModel = null;
 // Last night's data, restored from Firestore by scripts/restore.mjs (so only new games are fetched)
 const PREV = process.env.PREV_DIR || "prev";
 const readPrev = (name) => import("node:fs/promises").then((fs) => fs.readFile(`${PREV}/${name}`, "utf8")).then(JSON.parse, () => null);
@@ -158,7 +173,7 @@ if (await access(MODEL).then(() => true, () => false)) {
   const previous = await readPrev("redwings-shots.json"); // null on the first run
   const done = finished.filter((g) => g.gameType === 2).map((g) => ({ id: g.id }));
   const { file, fetched } = await buildShots({
-    team: TEAM, games: done, previous, modelPath: MODEL,
+    team: TEAM, games: done, previous, modelPath: (xgModel ??= await loadModel()),
     getPbp: async (id) => { await new Promise((r) => setTimeout(r, 1000)); return get(`${NHL}/gamecenter/${id}/play-by-play`); },
   });
   await writeFile("public/redwings-shots.json", JSON.stringify(file));
@@ -169,7 +184,7 @@ console.log(`redwings-shots.json: ${shotsNote}`);
 
 /* ---------- Hockey Lab: every game league-wide, scored with our model ---------- */
 if (await access(MODEL).then(() => true, () => false)) {
-  const model = JSON.parse(await (await import("node:fs/promises")).readFile(MODEL, "utf8"));
+  const model = (xgModel ??= await loadModel());
   const allTeams = rows.map((t) => t.teamAbbrev.default).sort();
   const r = await buildLeague({
     season, get, nhl: NHL, model, teams: allTeams,

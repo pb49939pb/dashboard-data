@@ -4,9 +4,9 @@
    "job": "heatPrior",
    "ok": true,
    "error": null,
-   "startedAt": "2026-10-12T14:44:32.014338+00:00",
-   "finishedAt": "2026-10-12T14:44:33.480417+00:00",
-   "seconds": 1.5,
+   "startedAt": "2026-10-12T18:28:28.487835+00:00",
+   "finishedAt": "2026-10-12T18:28:33.328714+00:00",
+   "seconds": 4.8,
    "sources": {},
    "notes": {},
    "github": {
@@ -142,9 +142,22 @@
    "job": "ratings",
    "ok": true,
    "error": null,
-   "startedAt": "2026-10-12T14:45:36.627818+00:00",
-   "finishedAt": "2026-10-12T14:45:38.346851+00:00",
-   "seconds": 1.7,
+   "startedAt": "2026-10-12T18:28:15.733200+00:00",
+   "finishedAt": "2026-10-12T18:28:27.296571+00:00",
+   "seconds": 11.6,
+   "sources": {},
+   "notes": {},
+   "github": {
+    "local": true
+   }
+  },
+  {
+   "job": "xg",
+   "ok": true,
+   "error": null,
+   "startedAt": "2026-10-12T18:27:28.726363+00:00",
+   "finishedAt": "2026-10-12T18:27:35.762689+00:00",
+   "seconds": 7.0,
    "sources": {},
    "notes": {},
    "github": {

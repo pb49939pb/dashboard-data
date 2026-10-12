@@ -1,14 +1,14 @@
 {
- "trained_on": "20252026",
+ "trained_on": "20242025,20252026",
  "tested_on": "20262027",
- "train_shots": 111099,
- "train_goals": 7578,
+ "train_shots": 222403,
+ "train_goals": 14955,
  "results": [
   {
    "model": "Baseline (league avg)",
    "shots": 7023,
    "goals": 493,
-   "xG": 479.0,
+   "xG": 472.2,
    "log_loss": 0.2542,
    "auc": 0.5,
    "brier": 0.0653
@@ -17,250 +17,289 @@
    "model": "Logistic regression",
    "shots": 7023,
    "goals": 493,
-   "xG": 488.0,
-   "log_loss": 0.2278,
-   "auc": 0.7491,
-   "brier": 0.0619
+   "xG": 497.9,
+   "log_loss": 0.2271,
+   "auc": 0.7503,
+   "brier": 0.0617
   },
   {
    "model": "Gradient boosting",
    "shots": 7023,
    "goals": 493,
-   "xG": 487.9,
-   "log_loss": 0.2274,
-   "auc": 0.7468,
-   "brier": 0.0616
+   "xG": 498.1,
+   "log_loss": 0.2201,
+   "auc": 0.7722,
+   "brier": 0.0602
   }
  ],
- "published": "Logistic regression",
+ "published": "Gradient boosting",
  "calibration": {
   "Logistic regression": [
    {
-    "pred": 0.0051,
+    "pred": 0.0045,
     "actual": 0.0034,
     "n": 586
    },
    {
-    "pred": 0.0126,
+    "pred": 0.0118,
     "actual": 0.0103,
     "n": 585
    },
    {
-    "pred": 0.0209,
-    "actual": 0.0188,
-    "n": 585
-   },
-   {
-    "pred": 0.0301,
+    "pred": 0.0199,
     "actual": 0.0154,
     "n": 585
    },
    {
-    "pred": 0.0394,
-    "actual": 0.0291,
+    "pred": 0.0291,
+    "actual": 0.0239,
     "n": 585
    },
    {
-    "pred": 0.0492,
-    "actual": 0.0648,
+    "pred": 0.0383,
+    "actual": 0.0342,
+    "n": 585
+   },
+   {
+    "pred": 0.0483,
+    "actual": 0.058,
     "n": 586
    },
    {
-    "pred": 0.0598,
-    "actual": 0.0667,
+    "pred": 0.0593,
+    "actual": 0.0598,
     "n": 585
    },
    {
-    "pred": 0.0721,
-    "actual": 0.0752,
+    "pred": 0.0724,
+    "actual": 0.0684,
     "n": 585
    },
    {
-    "pred": 0.0876,
-    "actual": 0.0803,
+    "pred": 0.0887,
+    "actual": 0.0923,
     "n": 585
    },
    {
-    "pred": 0.1092,
-    "actual": 0.1368,
+    "pred": 0.1108,
+    "actual": 0.1214,
     "n": 585
    },
    {
-    "pred": 0.1418,
-    "actual": 0.1538,
+    "pred": 0.1449,
+    "actual": 0.1624,
     "n": 585
    },
    {
-    "pred": 0.2061,
-    "actual": 0.1877,
+    "pred": 0.2226,
+    "actual": 0.1928,
     "n": 586
    }
   ],
   "Gradient boosting": [
    {
-    "pred": 0.0046,
+    "pred": 0.0021,
+    "actual": 0.0017,
+    "n": 586
+   },
+   {
+    "pred": 0.0084,
     "actual": 0.0051,
-    "n": 586
+    "n": 585
    },
    {
-    "pred": 0.0107,
-    "actual": 0.0119,
-    "n": 586
-   },
-   {
-    "pred": 0.0166,
+    "pred": 0.0142,
     "actual": 0.012,
     "n": 585
    },
    {
-    "pred": 0.0255,
-    "actual": 0.0223,
-    "n": 584
+    "pred": 0.0221,
+    "actual": 0.0255,
+    "n": 588
    },
    {
-    "pred": 0.0354,
-    "actual": 0.0427,
-    "n": 585
+    "pred": 0.031,
+    "actual": 0.0309,
+    "n": 582
    },
    {
-    "pred": 0.0468,
-    "actual": 0.058,
+    "pred": 0.042,
+    "actual": 0.041,
     "n": 586
    },
    {
-    "pred": 0.0603,
-    "actual": 0.0564,
+    "pred": 0.0557,
+    "actual": 0.0632,
     "n": 585
    },
    {
-    "pred": 0.0776,
+    "pred": 0.0719,
     "actual": 0.0718,
     "n": 585
    },
    {
-    "pred": 0.0965,
-    "actual": 0.1026,
-    "n": 585
-   },
-   {
-    "pred": 0.1186,
-    "actual": 0.1026,
-    "n": 585
-   },
-   {
-    "pred": 0.1455,
-    "actual": 0.1521,
-    "n": 585
-   },
-   {
-    "pred": 0.1953,
-    "actual": 0.2048,
+    "pred": 0.091,
+    "actual": 0.0887,
     "n": 586
+   },
+   {
+    "pred": 0.1161,
+    "actual": 0.1182,
+    "n": 584
+   },
+   {
+    "pred": 0.1521,
+    "actual": 0.1607,
+    "n": 585
+   },
+   {
+    "pred": 0.2444,
+    "actual": 0.2235,
+    "n": 586
+   }
+  ]
+ },
+ "features_added": [
+  "Puck speed before the shot",
+  "Crossed the middle first",
+  "Angle change on a rebound",
+  "Off-wing shooter (one-timer side)"
+ ],
+ "validation": {
+  "trained_on": "20242025",
+  "tested_on": "20252026",
+  "results": [
+   {
+    "model": "Baseline (league avg)",
+    "shots": 111099,
+    "goals": 7578,
+    "xG": 7363.4,
+    "log_loss": 0.249,
+    "auc": 0.5,
+    "brier": 0.0636
+   },
+   {
+    "model": "Logistic regression",
+    "shots": 111099,
+    "goals": 7578,
+    "xG": 7950.2,
+    "log_loss": 0.2237,
+    "auc": 0.749,
+    "brier": 0.0605
+   },
+   {
+    "model": "Gradient boosting",
+    "shots": 111099,
+    "goals": 7578,
+    "xG": 7836.3,
+    "log_loss": 0.2178,
+    "auc": 0.7678,
+    "brier": 0.059
    }
   ]
  },
  "effects": [
   {
    "feature": "Distance",
-   "coef": -1.138
+   "coef": -1.14
   },
   {
    "feature": "Angle (sharp)",
-   "coef": -0.56
+   "coef": -0.524
+  },
+  {
+   "feature": "Puck speed before the shot",
+   "coef": -0.425
   },
   {
    "feature": "Distance \u00d7 angle",
-   "coef": -0.395
+   "coef": -0.387
   },
   {
    "feature": "Angle",
-   "coef": 0.322
-  },
-  {
-   "feature": "Shot type: tip in",
-   "coef": -0.221
+   "coef": 0.247
   },
   {
    "feature": "Shot type: snap",
-   "coef": 0.209
+   "coef": 0.214
+  },
+  {
+   "feature": "Shot type: tip in",
+   "coef": -0.206
   },
   {
    "feature": "Shot type: slap",
-   "coef": 0.2
-  },
-  {
-   "feature": "Shot type: wrist",
-   "coef": 0.093
+   "coef": 0.206
   },
   {
    "feature": "After a faceoff",
-   "coef": -0.087
+   "coef": -0.174
   },
   {
-   "feature": "Power play",
-   "coef": 0.083
+   "feature": "Puck movement before shot",
+   "coef": 0.167
   },
   {
-   "feature": "From behind the net",
-   "coef": 0.076
+   "feature": "Quick follow-up",
+   "coef": 0.107
   },
   {
-   "feature": "Shot type: wrap around",
-   "coef": -0.071
+   "feature": "After a hit",
+   "coef": -0.103
   }
  ],
  "distance_curve": [
   {
    "dist": 5,
-   "p": 0.2111
+   "p": 0.2324
   },
   {
    "dist": 10,
-   "p": 0.1806
+   "p": 0.168
   },
   {
    "dist": 15,
-   "p": 0.1515
+   "p": 0.1627
   },
   {
    "dist": 20,
-   "p": 0.1256
+   "p": 0.1627
   },
   {
    "dist": 25,
-   "p": 0.1033
+   "p": 0.1468
   },
   {
    "dist": 30,
-   "p": 0.0844
+   "p": 0.112
   },
   {
    "dist": 35,
-   "p": 0.0685
+   "p": 0.0832
   },
   {
    "dist": 40,
-   "p": 0.0554
+   "p": 0.0565
   },
   {
    "dist": 45,
-   "p": 0.0447
+   "p": 0.0351
   },
   {
    "dist": 50,
-   "p": 0.0359
+   "p": 0.0239
   },
   {
    "dist": 55,
-   "p": 0.0288
-  },
-  {
-   "dist": 60,
    "p": 0.023
   },
   {
+   "dist": 60,
+   "p": 0.0164
+  },
+  {
    "dist": 65,
-   "p": 0.0184
+   "p": 0.0018
   }
  ]
 }
