@@ -1,0 +1,32 @@
+# Every 10 minutes: start any job you asked for with "Run now" on the admin panel (requests live in Firestore).
+name: Run requested jobs
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write   # to start this repo's own workflows
+  contents: read
+
+concurrency:
+  group: dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Start requested jobs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOBS_TOKEN: ${{ secrets.JOBS_TOKEN }}
+        run: node scripts/dispatch.mjs
