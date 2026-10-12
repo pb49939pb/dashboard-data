@@ -6,6 +6,7 @@ import { buildShots } from "./shots.mjs";
 import { buildLeague } from "./league.mjs";
 import { teamRatings, simulate } from "./sim.mjs";
 import { startRun, hostOf } from "./runlog.mjs";
+import { buildPlayers } from "./players.mjs";
 
 const run = startRun("nightly-build");
 const notes = {};
@@ -51,9 +52,10 @@ const [standings, clubStats, schedule] = await Promise.all([
 // Season id like 20262027 -> MoneyPuck uses the starting year (2026).
 const season = String(schedule.currentSeason || clubStats.season || "");
 const mpYear = season.slice(0, 4);
-let mpSkaters = [], mpGoalies = [], mpError = null;
+let mpSkaters = [], mpGoalies = [], mpError = null, mpSkText = null;
 try {
   const [sk, gk] = await Promise.all([get(`${MP}/${mpYear}/regular/skaters.csv`, "text"), get(`${MP}/${mpYear}/regular/goalies.csv`, "text")]);
+  mpSkText = sk;
   mpSkaters = csvRows(sk).filter((r) => r.team === TEAM);
   mpGoalies = csvRows(gk).filter((r) => r.team === TEAM);
 } catch (e) {
@@ -212,6 +214,17 @@ if (await access(MODEL).then(() => true, () => false)) {
     await writeFile(`public/hockey/${f}.json`, JSON.stringify(out));
   }
 }
+/* ---------- Player ratings (offense, defense, usage) for every skater ---------- */
+if (mpSkText) {
+  const prevText = await get(`${MP}/${Number(mpYear) - 1}/regular/skaters.csv`, "text").catch(() => null);
+  const players = buildPlayers(mpSkText, prevText);
+  await (await import("node:fs/promises")).mkdir("public/hockey", { recursive: true });
+  await writeFile("public/hockey/players.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, blendedWith: prevText ? String(Number(mpYear) - 1) : null,
+    source: "MoneyPuck.com season files (on-ice expected goals, ice time, zone starts, blocks, takeaways, giveaways)", players }));
+  notes.playerRatings = players.length;
+  run.check(!!prevText, "Last season's numbers for player ratings", prevText ? "blended at half weight" : "MoneyPuck's last-season file failed; ratings use this season only (noisier early on)");
+}
+run.check(!!mpSkText, "Player ratings (defense, usage)", mpSkText ? "rebuilt" : "MoneyPuck failed; yesterday's player ratings are kept");
 notes.moneyPuck = mpError ? `failed: ${mpError}` : "ok";
 run.check(!mpError, "MoneyPuck expected goals (widget)", mpError ? `MoneyPuck failed (${mpError}); the widget keeps the last good xG and says how old it is` : "fresh");
-run.finish({ ok: true, notes, outputs: ["public/redwings.json", "public/redwings-shots.json", "public/hockey/league.json", "public/hockey/teams/*.json", "public/hockey/heat.json", "public/hockey/projections.json"] });
+run.finish({ ok: true, notes, outputs: ["public/hockey/players.json", "public/redwings.json", "public/redwings-shots.json", "public/hockey/league.json", "public/hockey/teams/*.json", "public/hockey/heat.json", "public/hockey/projections.json"] });

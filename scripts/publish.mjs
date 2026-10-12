@@ -74,6 +74,8 @@ if (proj) {
   const day = proj.updatedAt.slice(0, 10);
   await store.put(`hockey/history/${proj.season}/${day}`, { date: day, teams: proj.teams.map((t) => ({ team: t.team, pts: t.pts, gp: t.gp, projPts: t.projPts, playoffs: t.playoffs, cup: t.cup })) }, { date: day });
 }
+const players = await load("public/hockey/players.json");
+if (players) await store.put("hockey/players", players, {}, { replace: true }); // rebuilt in full each night (only written when MoneyPuck answered)
 const heat = await load("public/hockey/heat.json");
 if (heat) await store.put("hockey/heat", heat, {}, { replace: true }); // rebuilt from every stored game each night
 for (const name of ["model", "age", "gm", "heatPrior"]) {

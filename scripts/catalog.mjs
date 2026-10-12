@@ -7,13 +7,14 @@ export const CATALOG = {
       sources: [
         { name: "NHL web API", host: "api-web.nhle.com", what: "standings, schedules, rosters, club stats, play-by-play for every game" },
         { name: "NHL stats API", host: "api.nhle.com", what: "goalie game logs (quality starts)" },
-        { name: "MoneyPuck", host: "moneypuck.com", what: "Red Wings player expected goals (widget)" },
+        { name: "MoneyPuck", host: "moneypuck.com", what: "every skater's on-ice expected goals, ice time, zone starts, blocks, takeaways (player ratings); Red Wings xG (widget)" },
         { name: "Firestore (last night)", host: "firestore", what: "games already scored, so only new games are fetched" },
       ],
       outputs: [
         { doc: "public/redwings", pages: ["Dashboard · Red Wings widget"] },
         { doc: "public/redwingsShots", pages: ["Dashboard · Red Wings detail · Shots"] },
         { doc: "hockey/league", pages: ["Hockey Lab · Overview", "Teams", "Skaters", "Goalies"] },
+        { doc: "hockey/players", pages: ["Hockey Lab · Skaters (ratings: offense, defense, usage)", "player cards"] },
         { doc: "hockey/games/{season}/*", pages: ["Hockey Lab · Shot maps (every shot)"] },
         { doc: "hockey/heat", pages: ["Hockey Lab · Shot maps (heat map)"] },
         { doc: "hockey/projections", pages: ["Hockey Lab · Teams (projections, bracket)", "Overview"] },
