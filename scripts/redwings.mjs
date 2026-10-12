@@ -4,7 +4,7 @@
 import { writeFile, mkdir, access } from "node:fs/promises";
 import { buildShots } from "./shots.mjs";
 import { buildLeague } from "./league.mjs";
-import { teamRatings, simulate, schedulesAndDivisions } from "./sim.mjs";
+import { teamRatings, simulate, schedulesAndDivisions, winProbability } from "./sim.mjs";
 import { startRun, hostOf } from "./runlog.mjs";
 import { buildPlayers } from "./players.mjs";
 import { buildStyles } from "./style.mjs";
@@ -236,6 +236,21 @@ if (await access(MODEL).then(() => true, () => false)) {
     const R = teamRatings(r.list, ratings, r.sa);
     const sim = simulate({ R, standings: rows, remaining: [...remaining.values()] });
     Object.assign(sim, schedulesAndDivisions({ R, standings: rows, played: r.list, remaining: [...remaining.values()] }));
+    // Next game: Detroit's chance to win (team ratings, finishing, goaltending, home ice, style matchup at half weight)
+    const nx = out.nextGames?.[0];
+    if (nx && R.teams[TEAM] && R.teams[nx.opponent.abbrev]) {
+      const opp = nx.opponent.abbrev, [home, away] = nx.home ? [TEAM, opp] : [opp, TEAM];
+      const st = out.nextOpponentStyle && out.nextOpponentStyle.gameId === nx.id ? out.nextOpponentStyle : null;
+      const ours = 1 + 0.5 * (st?.ourOffense?.effect || 0), theirs = 1 + 0.5 * (st?.theirOffense?.effect || 0);
+      const base = winProbability(R, home, away), withStyle = winProbability(R, home, away, nx.home ? { home: ours, away: theirs } : { home: theirs, away: ours });
+      const us = (p) => (nx.home ? p.home : 1 - p.home);
+      out.nextGameOdds = { gameId: nx.id, opponent: opp, home: nx.home, win: Math.round(us(withStyle) * 1000) / 10, withoutStyle: Math.round(us(base) * 1000) / 10,
+        xgFor: Math.round((nx.home ? withStyle.xgHome : withStyle.xgAway) * 100) / 100, xgAgainst: Math.round((nx.home ? withStyle.xgAway : withStyle.xgHome) * 100) / 100,
+        overtimeChance: Math.round(withStyle.overtime * 1000) / 10, model: "team ratings (opponent/score/venue-adjusted xG, blended with last season), finishing and goaltending (shrunk), home ice, style matchup at half weight; 10,000-season simulation's game model",
+        updatedAt: new Date().toISOString() };
+      await writeFile("public/redwings.json", JSON.stringify(out));
+      notes.nextGameWin = `${out.nextGameOdds.win}% vs ${opp}`;
+    }
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
       standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim }));
     Object.assign(notes, { gamesLeftSimulated: sim.remaining, simulations: sim.sims });

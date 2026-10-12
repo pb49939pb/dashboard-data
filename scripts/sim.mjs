@@ -81,6 +81,17 @@ function lambdas(R, home, away) {
 }
 
 /**
+ * Chance the home team wins one game (regulation, or overtime/shootout), from the same game model as the simulation.
+ * adj: multipliers on each side's expected goals (e.g. style matchups).
+ */
+export function winProbability(R, home, away, adj = { home: 1, away: 1 }) {
+  if (!R.teams[home] || !R.teams[away]) return null;
+  const [lh, la] = lambdas(R, home, away);
+  const p = gameProbs(lh * adj.home, la * adj.away);
+  return { home: p.h + p.t * p.otH, regulation: p.h, overtime: p.t, xgHome: lh * adj.home, xgAway: la * adj.away };
+}
+
+/**
  * standings: current NHL standings rows; remaining: [{id, home, away}] future games.
  * Returns projected table + playoff odds + most likely bracket.
  */
