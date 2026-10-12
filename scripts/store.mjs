@@ -59,6 +59,11 @@ const store = {
     const snap = await db.doc(path).get();
     return snap.exists ? JSON.parse(snap.data().json) : null;
   },
+  /** Every document in a collection, parsed. */
+  async readAll(path) {
+    const snap = await db.collection(path).get();
+    return snap.docs.map((d) => JSON.parse(d.data().json));
+  },
   /** Merge `data` into the document at `path` (extra plain fields, e.g. for queries, go in `fields`). */
   async put(path, data, fields = {}, { replace = false } = {}) {
     const ref = db.doc(path);
@@ -99,6 +104,7 @@ function memoryDb() {
   const snap = (path) => ({ exists: docs.has(path), data: () => docs.get(path) });
   return {
     doc: ref,
+    collection: (path) => ({ get: async () => ({ docs: [...docs].filter(([p]) => p.startsWith(path + "/") && !p.slice(path.length + 1).includes("/")).map(([, v]) => ({ data: () => v })) }) }),
     getAll: async (...refs) => refs.map((r) => snap(r.path)),
     batch: () => { const ops = []; return { set: (r, v) => ops.push([r.path, v]), commit: async () => ops.forEach(([p, v]) => docs.set(p, v)) }; },
     docs,

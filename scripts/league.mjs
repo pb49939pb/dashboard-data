@@ -1,6 +1,6 @@
 // League-wide data for Hockey Lab: every regular-season game of the current season scored with our xG model.
 // Publishes public/hockey/league.json (leaderboards) and public/hockey/teams/{TEAM}.json (shots for shot maps).
-// Incremental: the previously published team files are the cache; only newly finished games are fetched from the NHL.
+// Incremental: last night's games (restored from Firestore) are the cache; only newly finished games are fetched from the NHL.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { gameShots, xg } from "./shots.mjs";
@@ -121,7 +121,7 @@ function aggregate(games, saLookup) {
 }
 
 /**
- * season: e.g. "20262027". get(url): fetch JSON. previousBase: URL of the published hockey/ folder (or null).
+ * season: e.g. "20262027". get(url): fetch JSON. loadPrevious(name): last night's league.json / teams/{T}.json, or null.
  * cacheDir: optional folder of cached play-by-play (.json.gz) to avoid refetching locally.
  */
 /** Quality starts from game logs: a start with save % at least the league average (or ≥ .885 on 20 shots or fewer).
@@ -144,14 +144,14 @@ async function qualityStarts(season, get) {
   return { leagueSv: Math.round(lg * 1000) / 1000, by };
 }
 
-export async function buildLeague({ season, get, nhl, model, previousBase, cacheDir, teams, saModel }) {
-  // 1) Reuse games from the previously published team files (only if scored with the same model)
+export async function buildLeague({ season, get, nhl, model, loadPrevious, cacheDir, teams, saModel }) {
+  // 1) Reuse last night's games (only if scored with the same model)
   const known = new Map();
-  if (previousBase) {
-    const prevLeague = await get(`${previousBase}/league.json`).catch(() => null);
+  if (loadPrevious) {
+    const prevLeague = await loadPrevious("league.json");
     if (prevLeague && prevLeague.model?.trained_on === model.trained_on && prevLeague.season === season && prevLeague.format === FORMAT) {
       for (const t of teams) {
-        const f = await get(`${previousBase}/teams/${t}.json`).catch(() => null);
+        const f = await loadPrevious(`teams/${t}.json`);
         for (const g of f?.games || []) known.set(g.id, g);
       }
     }

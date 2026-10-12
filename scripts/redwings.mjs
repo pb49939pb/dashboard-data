@@ -141,10 +141,12 @@ await writeFile("public/redwings.json", JSON.stringify(out));
 
 /* ---------- Shots with our xG (incremental) ---------- */
 const MODEL = "model/xg_logit.json";
-const PUBLISHED = "https://pb49939pb.github.io/dashboard-data/redwings-shots.json";
+// Last night's data, restored from Firestore by scripts/restore.mjs (so only new games are fetched)
+const PREV = process.env.PREV_DIR || "prev";
+const readPrev = (name) => import("node:fs/promises").then((fs) => fs.readFile(`${PREV}/${name}`, "utf8")).then(JSON.parse, () => null);
 let shotsNote = "skipped (no model yet)";
 if (await access(MODEL).then(() => true, () => false)) {
-  const previous = await get(PUBLISHED).catch(() => null); // first run, or the site isn't up yet
+  const previous = await readPrev("redwings-shots.json"); // null on the first run
   const done = finished.filter((g) => g.gameType === 2).map((g) => ({ id: g.id }));
   const { file, fetched } = await buildShots({
     team: TEAM, games: done, previous, modelPath: MODEL,
@@ -163,7 +165,7 @@ if (await access(MODEL).then(() => true, () => false)) {
   const r = await buildLeague({
     season, get, nhl: NHL, model, teams: allTeams,
     saModel: await access("model/xg_sa.json").then(async () => JSON.parse(await (await import("node:fs/promises")).readFile("model/xg_sa.json", "utf8")), () => null),
-    previousBase: "https://pb49939pb.github.io/dashboard-data/hockey",
+    loadPrevious: (name) => readPrev(`hockey/${name}`),
     cacheDir: process.env.HOCKEY_CACHE || null, // local runs: reuse hockey-models' downloaded games
   });
   // Static model report card from the last training run

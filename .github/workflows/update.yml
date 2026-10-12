@@ -1,4 +1,5 @@
-# Nightly at 11 PM Eastern: fetch Red Wings data and publish it on GitHub Pages for the dashboard.
+# Nightly at 11 PM Eastern: fetch NHL data, rebuild the Red Wings widget and Hockey Lab data, and merge it into
+# Firestore (pat-dashboard-eb494). Writes only add or update; nothing already stored is dropped.
 # Cron is UTC, so both 03:00 and 04:00 UTC are scheduled (11 PM EDT / EST); the run that isn't
 # 11 PM in New York stops before fetching anything. Manual runs and pushes always fetch.
 name: Update dashboard data
@@ -12,19 +13,14 @@ on:
 
 permissions:
   contents: write   # only for the occasional keep-alive commit below
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: nightly
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  update:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Only at 11 PM Eastern
         id: hour
@@ -43,27 +39,21 @@ jobs:
       - name: Install
         if: steps.hour.outputs.skip != 'true'
         run: npm ci
-      - name: Build redwings.json
+      # Last night's games from Firestore, so the build only fetches new ones from the NHL
+      - name: Restore from Firestore
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/restore.mjs
+      - name: Build
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/redwings.mjs
-      # Merge tonight's data into Firestore (only overwrites what came back new); skipped until the secret exists
+      # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/publish.mjs
-      - name: Add an index page
-        if: steps.hour.outputs.skip != 'true'
-        run: cp index.html public/index.html
-      - uses: actions/configure-pages@v5
-        if: steps.hour.outputs.skip != 'true'
-      - uses: actions/upload-pages-artifact@v3
-        if: steps.hour.outputs.skip != 'true'
-        with:
-          path: public
-      - id: deploy
-        if: steps.hour.outputs.skip != 'true'
-        uses: actions/deploy-pages@v4
       # GitHub pauses scheduled workflows in repos with no commits for 60 days. Nudge it well before that.
       - name: Keep the schedule alive
         if: steps.hour.outputs.skip != 'true'
