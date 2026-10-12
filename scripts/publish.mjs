@@ -4,6 +4,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { openStore } from "./store.mjs";
 import { CATALOG } from "./catalog.mjs";
+const load = (p) => readFile(p, "utf8").then(JSON.parse, () => null);
 
 const only = process.argv.slice(2); // e.g. `node scripts/publish.mjs contracts` publishes just that
 const want = (name) => !only.length || only.includes(name);
@@ -44,7 +45,6 @@ if (only[0] === "season" && only[1]) {
   console.log(`season ${s}: ${games.size} games (${n} written), ${store.writes} documents`);
   process.exit(0);
 }
-const load = (p) => readFile(p, "utf8").then(JSON.parse, () => null);
 const publishLog = () => ({ job: "publish", ok: true, error: null, startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
   seconds: Math.round((Date.now() - t0) / 100) / 10, sources: { firestore: { requests: store.writes, cached: 0, failed: 0 } }, notes: { documentsWritten: store.writes, only: only.join(",") || "all" },
   github: process.env.GITHUB_RUN_ID ? { run: process.env.GITHUB_RUN_ID, url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` } : { local: true } });
