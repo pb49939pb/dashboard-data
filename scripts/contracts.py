@@ -400,7 +400,7 @@ def main() -> None:
     OTHER_LAST.update(norm(p["name"]).split()[-1] for p in rosters.values() if len(norm(p["name"]).split()[-1]) > 3)
     # last run: the stored copy (restored from Firestore), or a newer full build committed as model/contracts.json
     cands = [json.loads(p.read_text()) for p in (PREV, ROOT / "model" / "contracts.json", OUT) if p.exists()]
-    prev = max(cands, key=lambda c: c.get("asOf", "")) if cands else None
+    prev = max(cands, key=lambda c: c.get("builtAt", "")) if cands else None  # the latest full build wins
 
     if recent:  # nightly: just apply the latest signing news to last run's list
         if not prev:
@@ -417,7 +417,8 @@ def main() -> None:
                 old.update(team=p["team"])  # trades: keep the deal, update the team
         for pid in set(by_id) - set(rosters):
             by_id[pid]["onRoster"] = False
-        prev.update(players=sorted(by_id.values(), key=lambda r: (r["team"], r["name"])), asOf=date.today().isoformat())
+        prev.update(players=sorted(by_id.values(), key=lambda r: (r["team"], r["name"])), asOf=date.today().isoformat(),
+                    newsAt=datetime.now(timezone.utc).isoformat())  # builtAt stays the full build's time
         write(prev)
         print(f"recent: {len(items)} news items, {n} contracts updated")
         return
@@ -475,7 +476,7 @@ def main() -> None:
             print(f"  {i + 1}/{len(rosters)} players ({fetched['network']} pages fetched, {fetched['cache']} from cache)")
 
     block = (prev or {}).get("block", [])
-    out = {"asOf": date.today().isoformat(), "season": cur, "cap": CAP, "priority": PRIORITY,
+    out = {"asOf": date.today().isoformat(), "builtAt": datetime.now(timezone.utc).isoformat(), "season": cur, "cap": CAP, "priority": PRIORITY,
            "sources": {"term": "NHL.com team releases, ProHockeyRumors, Wikipedia (CC BY-SA)", "aav": "NHL.com team releases, ProHockeyRumors, Wikipedia (CC BY-SA)",
                        "rosters": "NHL api-web.nhle.com current rosters"},
            "players": players, "block": block}
