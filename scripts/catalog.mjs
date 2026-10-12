@@ -6,7 +6,7 @@ export const CATALOG = {
       id: "nightly-build", name: "Nightly build", schedule: "Every night, 11 PM Eastern (GitHub Actions: update.yml)", script: "scripts/redwings.mjs",
       sources: [
         { name: "NHL web API", host: "api-web.nhle.com", what: "standings, schedules, rosters, club stats, play-by-play for every game" },
-        { name: "NHL stats API", host: "api.nhle.com", what: "goalie game logs (quality starts)" },
+        { name: "NHL stats API", host: "api.nhle.com", what: "goalie game logs (quality starts), shift charts (who was on the ice: lines, pairs, on-ice results)" },
         { name: "MoneyPuck", host: "moneypuck.com", what: "every skater's on-ice expected goals, ice time, zone starts, blocks, takeaways (player ratings); Red Wings xG (widget)" },
         { name: "Firestore (last night)", host: "firestore", what: "games already scored, so only new games are fetched" },
       ],
@@ -17,6 +17,7 @@ export const CATALOG = {
         { doc: "hockey/players", pages: ["Hockey Lab · Skaters (ratings: offense, defense, usage)", "player cards"] },
         { doc: "hockey/games/{season}/*", pages: ["Hockey Lab · Shot maps (every shot)"] },
         { doc: "hockey/heat", pages: ["Hockey Lab · Shot maps (heat map)"] },
+        { doc: "hockey/lines", pages: ["Hockey Lab · Teams (lines and defense pairs)"] },
         { doc: "hockey/styles", pages: ["Hockey Lab · Teams (style, matchups, fits)", "player and goalie cards (system fits)"] },
         { doc: "hockey/projections", pages: ["Hockey Lab · Teams (projections, bracket)", "Overview"] },
         { doc: "hockey/history/{season}/*", pages: ["(nightly projection snapshots for odds-over-time)"] },

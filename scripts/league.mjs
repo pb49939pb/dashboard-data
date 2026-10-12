@@ -4,14 +4,25 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { gameShots, xg } from "./shots.mjs";
+import { shiftIndex } from "./lines.mjs";
 
 const KIND = { goal: "g", "shot-on-goal": "s", "missed-shot": "m", "blocked-shot": "b" };
-const FORMAT = 3; // bump when the compact shot record changes, so cached games are rebuilt
+const FORMAT = 4; // bump when the compact shot record changes, so cached games are rebuilt
 const STYPE = { wrist: "w", snap: "n", slap: "s", backhand: "b", "tip-in": "t", deflected: "d", "wrap-around": "r", bat: "o", poke: "o", "between-legs": "o", cradle: "o" };
 
 /** Compact, model-scored record of one game (stored in both teams' files). */
-function scoreGame(pbp, model) {
+function scoreGame(pbp, model, shifts = null) {
   const rows = gameShots(pbp).filter((r) => r.periodType !== "SO");
+  const ix = shifts ? shiftIndex(shifts, pbp) : null;
+  // faceoffs with who was on the ice: [zone from the home team's view, winner side, home skaters, away skaters]
+  const fo = [];
+  if (ix) for (const p of pbp.plays || []) {
+    if (p.typeDescKey !== "faceoff" || !p.details?.zoneCode || p.periodDescriptor?.periodType === "SO") continue;
+    const t = p.timeInPeriod ? p.timeInPeriod.split(":").reduce((m, s) => m * 60 + Number(s), 0) : 0, per = p.periodDescriptor.number;
+    const win = p.details.eventOwnerTeamId === pbp.homeTeam.id ? 0 : 1;
+    const zoneHome = win === 0 ? p.details.zoneCode : ({ O: "D", D: "O" }[p.details.zoneCode] || p.details.zoneCode);
+    fo.push([zoneHome, win, ix.onIce(per, t, 0, "faceoff"), ix.onIce(per, t, 1, "faceoff")]);
+  }
   const players = {};
   for (const p of pbp.rosterSpots || []) players[p.playerId] = [`${p.firstName.default} ${p.lastName.default}`, p.positionCode, p.teamId === pbp.homeTeam.id ? 0 : 1];
   // Pressure and puck management by zone, per team (for style fingerprints): [hits O,N,D, takeaways O,N,D, giveaways O,N,D]
@@ -27,6 +38,7 @@ function scoreGame(pbp, model) {
   return {
     id: pbp.id, date: pbp.gameDate, home: pbp.homeTeam.abbrev, away: pbp.awayTeam.abbrev,
     hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players, ev,
+    ...(ix ? { fo, u5: ix.u5, toi: [0, 1].map((sd) => Object.fromEntries(Object.entries(ix.toi).filter(([id]) => players[id]?.[2] === sd))) } : {}),
     // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type,
     //  flags (1 rebound, 2 rush, 4 crossed the middle within 5 s, 8 quick follow-up within 5 s)]
     shots: rows.map((r) => {
@@ -34,7 +46,8 @@ function scoreGame(pbp, model) {
       const quick = (r.prevGap ?? 999) <= 5;
       const cross = quick && r.prevY != null && Math.sign(r.prevY) * Math.sign(r.y) < 0 && Math.abs(r.prevY - r.y) >= 15;
       return [Math.round(r.x), Math.round(r.y), KIND[r.type], r.home ? 0 : 1, v === null ? null : Math.round(v * 1000) / 1000,
-        r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period, STYPE[r.shotType] || "o", (r.rebound ? 1 : 0) | (r.rush ? 2 : 0) | (cross ? 4 : 0) | (quick ? 8 : 0)];
+        r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period, STYPE[r.shotType] || "o", (r.rebound ? 1 : 0) | (r.rush ? 2 : 0) | (cross ? 4 : 0) | (quick ? 8 : 0),
+        ix ? [ix.onIce(r.period, r.t, 0, "shot"), ix.onIce(r.period, r.t, 1, "shot")] : null];
     }),
   };
 }
@@ -218,10 +231,10 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   }
   // 3) Score new games
   let fetched = 0, fromDisk = 0;
-  const missing = [];
+  const missing = [], missingShifts = [];
   const reused = known.size;
   for (const id of [...finished.keys()].sort()) {
-    if (known.has(id) && known.get(id).ev) continue;
+    if (known.has(id) && known.get(id).ev && known.get(id).u5) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
     if (pbp) fromDisk++;
@@ -231,7 +244,17 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
       if (!pbp) { missing.push(id); continue; } // left out tonight; not stored, so tomorrow's run tries it again
       fetched++;
     }
-    known.set(id, scoreGame(pbp, model));
+    // shift charts (who was on the ice): local cache when available, else one request
+    let shifts = null;
+    const shiftCache = process.env.SHIFT_CACHE;
+    if (shiftCache) shifts = await readFile(`${shiftCache}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b)), () => null);
+    if (!shifts) {
+      await new Promise((r) => setTimeout(r, 500));
+      shifts = (await get(`https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`).catch(() => null))?.data || null;
+      if (shifts && shiftCache) { const { gzipSync } = await import("node:zlib"); await (await import("node:fs/promises")).mkdir(shiftCache, { recursive: true }); await writeFile(`${shiftCache}/${id}.json.gz`, gzipSync(JSON.stringify(shifts))); }
+      if (!shifts) missingShifts.push(id);
+    }
+    known.set(id, scoreGame(pbp, model, shifts));
   }
   const games = [...known.values()].sort((a, b) => a.id - b.id);
   const sa = shooterAware(games, saModel);
@@ -254,5 +277,5 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs?.leagueSv ?? null, qsFetchedAt: qs ? new Date().toISOString() : null,
     throughDate: games.map((g) => g.date).sort().pop() || null, ...aggLean };
   await writeFile("public/hockey/league.json", JSON.stringify(league));
-  return { games: games.length, fetched, fromDisk, reused, missing, qsOk: !!qs, list: games, sa };
+  return { games: games.length, fetched, fromDisk, reused, missing, missingShifts, qsOk: !!qs, list: games, sa };
 }

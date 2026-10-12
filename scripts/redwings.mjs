@@ -8,6 +8,7 @@ import { teamRatings, simulate, schedulesAndDivisions, winProbability } from "./
 import { startRun, hostOf } from "./runlog.mjs";
 import { buildPlayers } from "./players.mjs";
 import { buildStyles } from "./style.mjs";
+import { buildLines } from "./lines.mjs";
 
 const run = startRun("nightly-build");
 const notes = {};
@@ -199,6 +200,11 @@ if (await access(MODEL).then(() => true, () => false)) {
   Object.assign(notes, { games: r.games, gamesFetched: r.fetched, gamesReusedFromLastNight: r.reused, gamesFromLocalCache: r.fromDisk });
   run.check(!r.missing.length, "Every finished game scored", r.missing.length ? `${r.missing.length} finished game(s) couldn't be fetched (${r.missing.slice(0, 5).join(", ")}); tonight's numbers leave them out and the next run tries again` : `${r.games} games`);
   run.check(r.qsOk, "Quality starts", r.qsOk ? "NHL stats API answered" : "NHL stats API failed; the stored quality-start numbers were kept (they may be a day old)");
+
+  /* ---------- Lines and defense pairs (shift charts) ---------- */
+  const lines = buildLines(r.list, allTeams);
+  await writeFile("public/hockey/lines.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null, teams: lines }));
+  run.check(!r.missingShifts.length, "Shift charts (lines and on-ice data)", r.missingShifts.length ? `${r.missingShifts.length} game(s) without shift charts; their lines and on-ice numbers are left out and retried next run` : "every game");
 
   /* ---------- Team styles (offense / defense fingerprints, archetypes, matchups) ---------- */
   const stylePrior = await (await import("node:fs/promises")).readFile("model/stylePrior.json", "utf8").then(JSON.parse, () => null);
