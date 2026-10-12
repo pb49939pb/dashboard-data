@@ -76,6 +76,8 @@ if (proj) {
 }
 const players = await load("public/hockey/players.json");
 if (players) await store.put("hockey/players", players, {}, { replace: true }); // rebuilt in full each night (only written when MoneyPuck answered)
+const styles = await load("public/hockey/styles.json");
+if (styles) await store.put("hockey/styles", styles, {}, { replace: true });
 const heat = await load("public/hockey/heat.json");
 if (heat) await store.put("hockey/heat", heat, {}, { replace: true }); // rebuilt from every stored game each night
 for (const name of ["model", "age", "gm", "heatPrior"]) {

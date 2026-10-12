@@ -7,6 +7,7 @@ import { buildLeague } from "./league.mjs";
 import { teamRatings, simulate, schedulesAndDivisions } from "./sim.mjs";
 import { startRun, hostOf } from "./runlog.mjs";
 import { buildPlayers } from "./players.mjs";
+import { buildStyles } from "./style.mjs";
 
 const run = startRun("nightly-build");
 const notes = {};
@@ -198,6 +199,14 @@ if (await access(MODEL).then(() => true, () => false)) {
   Object.assign(notes, { games: r.games, gamesFetched: r.fetched, gamesReusedFromLastNight: r.reused, gamesFromLocalCache: r.fromDisk });
   run.check(!r.missing.length, "Every finished game scored", r.missing.length ? `${r.missing.length} finished game(s) couldn't be fetched (${r.missing.slice(0, 5).join(", ")}); tonight's numbers leave them out and the next run tries again` : `${r.games} games`);
   run.check(r.qsOk, "Quality starts", r.qsOk ? "NHL stats API answered" : "NHL stats API failed; the stored quality-start numbers were kept (they may be a day old)");
+
+  /* ---------- Team styles (offense / defense fingerprints, archetypes, matchups) ---------- */
+  const stylePrior = await (await import("node:fs/promises")).readFile("model/stylePrior.json", "utf8").then(JSON.parse, () => null);
+  if (stylePrior) {
+    const styles = buildStyles(r.list, stylePrior, season);
+    await writeFile("public/hockey/styles.json", JSON.stringify(styles));
+    run.check(r.list.every((g) => g.ev), "Zone events for team styles", r.list.every((g) => g.ev) ? "every game has hits/takeaways/giveaways by zone" : "some games lack zone events");
+  }
 
   /* ---------- Projected standings and playoff odds ---------- */
   const fs = await import("node:fs/promises");

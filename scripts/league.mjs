@@ -6,7 +6,7 @@ import { gunzipSync } from "node:zlib";
 import { gameShots, xg } from "./shots.mjs";
 
 const KIND = { goal: "g", "shot-on-goal": "s", "missed-shot": "m", "blocked-shot": "b" };
-const FORMAT = 2; // bump when the compact shot record changes, so cached games are rebuilt
+const FORMAT = 3; // bump when the compact shot record changes, so cached games are rebuilt
 const STYPE = { wrist: "w", snap: "n", slap: "s", backhand: "b", "tip-in": "t", deflected: "d", "wrap-around": "r", bat: "o", poke: "o", "between-legs": "o", cradle: "o" };
 
 /** Compact, model-scored record of one game (stored in both teams' files). */
@@ -14,14 +14,27 @@ function scoreGame(pbp, model) {
   const rows = gameShots(pbp).filter((r) => r.periodType !== "SO");
   const players = {};
   for (const p of pbp.rosterSpots || []) players[p.playerId] = [`${p.firstName.default} ${p.lastName.default}`, p.positionCode, p.teamId === pbp.homeTeam.id ? 0 : 1];
+  // Pressure and puck management by zone, per team (for style fingerprints): [hits O,N,D, takeaways O,N,D, giveaways O,N,D]
+  // Zones are from the acting team's point of view (O = its offensive zone).
+  const ev = [new Array(9).fill(0), new Array(9).fill(0)];
+  const ZI = { O: 0, N: 1, D: 2 };
+  for (const p of pbp.plays || []) {
+    const base = { hit: 0, takeaway: 3, giveaway: 6 }[p.typeDescKey];
+    const d = p.details || {};
+    if (base === undefined || ZI[d.zoneCode] === undefined || !d.eventOwnerTeamId) continue;
+    ev[d.eventOwnerTeamId === pbp.homeTeam.id ? 0 : 1][base + ZI[d.zoneCode]]++;
+  }
   return {
     id: pbp.id, date: pbp.gameDate, home: pbp.homeTeam.abbrev, away: pbp.awayTeam.abbrev,
-    hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players,
-    // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type, flags (1 rebound, 2 rush)]
+    hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players, ev,
+    // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type,
+    //  flags (1 rebound, 2 rush, 4 crossed the middle within 5 s, 8 quick follow-up within 5 s)]
     shots: rows.map((r) => {
       const v = xg(r, model);
+      const quick = (r.prevGap ?? 999) <= 5;
+      const cross = quick && r.prevY != null && Math.sign(r.prevY) * Math.sign(r.y) < 0 && Math.abs(r.prevY - r.y) >= 15;
       return [Math.round(r.x), Math.round(r.y), KIND[r.type], r.home ? 0 : 1, v === null ? null : Math.round(v * 1000) / 1000,
-        r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period, STYPE[r.shotType] || "o", (r.rebound ? 1 : 0) | (r.rush ? 2 : 0)];
+        r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period, STYPE[r.shotType] || "o", (r.rebound ? 1 : 0) | (r.rush ? 2 : 0) | (cross ? 4 : 0) | (quick ? 8 : 0)];
     }),
   };
 }
@@ -174,6 +187,7 @@ async function qualityStarts(season, get) {
   return { leagueSv: Math.round(lg * 1000) / 1000, by };
 }
 
+export { scoreGame };
 export async function buildLeague({ season, get, nhl, model, loadPrevious, cacheDir, teams, saModel }) {
   // 1) Reuse last night's games (only if scored with the same model)
   const known = new Map();
@@ -207,7 +221,7 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   const missing = [];
   const reused = known.size;
   for (const id of [...finished.keys()].sort()) {
-    if (known.has(id) && known.get(id).shots.every((s) => s.length >= 11)) continue;
+    if (known.has(id) && known.get(id).ev) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
     if (pbp) fromDisk++;

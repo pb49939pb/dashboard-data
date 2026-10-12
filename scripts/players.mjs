@@ -38,7 +38,8 @@ function seasonStats(text) {
       onF60: (num(e.OnIce_F_xGoals) / toi5) * 60, onA60: (num(e.OnIce_A_xGoals) / toi5) * 60,
       offF60: (num(e.OffIce_F_xGoals) / off5) * 60, offA60: (num(e.OffIce_A_xGoals) / off5) * 60,
       oz: num(a.I_F_oZoneShiftStarts), dz: num(a.I_F_dZoneShiftStarts),
-      blk: num(a.shotsBlockedByPlayer), tk: num(a.I_F_takeaways), gv: num(a.I_F_giveaways),
+      blk: num(a.shotsBlockedByPlayer), tk: num(a.I_F_takeaways), gv: num(a.I_F_giveaways), hits: num(a.I_F_hits), dzgv: num(a.I_F_dZoneGiveaways),
+      hd: num(a.I_F_highDangerShots), ua: num(a.I_F_unblockedShotAttempts), shots: num(a.I_F_shotsOnGoal),
       fow: num(a.faceoffsWon), fol: num(a.faceoffsLost),
     };
   }
@@ -67,6 +68,10 @@ export function buildPlayers(curText, prevText) {
       relF: mix((r) => r.onF60 - r.offF60), relA: mix((r) => r.offA60 - r.onA60), onA60: mix((r) => r.onA60), onF60: mix((r) => r.onF60),
       dzs: mix((r) => r.dz / Math.max(1, r.oz + r.dz)), def60: mix((r) => ((r.blk + r.tk - r.gv) / r.toi) * 60),
       fo: mix((r) => (r.fow + r.fol >= 20 ? r.fow / (r.fow + r.fol) : NaN)),
+      // per-60 style rates (for system fit)
+      hits60: mix((r) => (r.hits / r.toi) * 60), tk60: mix((r) => (r.tk / r.toi) * 60), gv60: mix((r) => (r.gv / r.toi) * 60),
+      blk60: mix((r) => (r.blk / r.toi) * 60), dzgv60: mix((r) => (r.dzgv / r.toi) * 60), ua60: mix((r) => (r.ua / r.toi) * 60),
+      hdShare: mix((r) => (r.ua ? r.hd / r.ua : 0)),
       // this season only, for display
       season: c ? { gp: c.gp, toiGp: c.toi / Math.max(1, c.gp), xpm: c.onF - c.onA, pm: c.gf - c.ga, xgPct: c.onF + c.onA ? c.onF / (c.onF + c.onA) : null,
         gf: c.gf, ga: c.ga, onF: c.onF, onA: c.onA, dzs: c.dz / Math.max(1, c.oz + c.dz), blk: c.blk, tk: c.tk, gv: c.gv } : null,
