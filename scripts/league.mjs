@@ -257,9 +257,13 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     known.set(id, scoreGame(pbp, model, shifts));
   }
   const games = [...known.values()].sort((a, b) => a.id - b.id);
+  // official scoring (goals, assists, points) for every skater, from the NHL stats API
+  const summ = (await get(`https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=false&limit=-1&cayenneExp=seasonId=${season}%20and%20gameTypeId=2`).catch(() => null))?.data || [];
+  const scoring = new Map(summ.map((r) => [r.playerId, { g: r.goals, a: r.assists, pts: r.points, pm: r.plusMinus, ppp: r.ppPoints, toi: r.timeOnIcePerGame, gpOff: r.gamesPlayed }]));
   const sa = shooterAware(games, saModel);
   const agg = aggregate(games, sa);
   const qs = await qualityStarts(season, get);
+  for (const k of agg.skaters) { const x = scoring.get(k.id); if (x) Object.assign(k, { assists: x.a, points: x.pts, plusMinus: x.pm, ppPoints: x.ppp, toiGp: x.toi ? Math.round(x.toi / 6) / 10 : null, gpOfficial: x.gpOff }); }
   for (const gk of qs ? agg.goalies : []) {
     const q = qs.by[gk.id];
     Object.assign(gk, q ? { gs: q.gs, qs: q.qs, qsPct: q.gs ? Math.round((q.qs / q.gs) * 1000) / 1000 : null, rbs: q.rbs } : { gs: 0, qs: 0, qsPct: null, rbs: 0 });
