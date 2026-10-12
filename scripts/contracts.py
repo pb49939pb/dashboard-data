@@ -56,8 +56,10 @@ PAGES = {
 MONTHS = {m: i for i, m in enumerate(["January", "February", "March", "April", "May", "June", "July", "August",
                                       "September", "October", "November", "December"], 1)}
 NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
-MONEY = r"\$\s?([\d.,]+)\s*(million|M\b|K\b)?"
-TERM = r"\b(one|two|three|four|five|six|seven|eight|[1-8])[- ]year\b"
+MONEY = r"\$\s?([\d.,]+)\s*(million|MM\b|M\b|K\b)?"
+TERM = r"\b(one|two|three|four|five|six|seven|eight|[1-8])[- ]year\b(?=(?:[^.]|\.(?=\d)){0,45}?\b(?:contract|extension|deal|pact|ELC)\b)"
+SPECULATION = re.compile(r"\b(comparable|could|would|might|may|projected|projection|expected to|asking|seeking|ask|rumou?r|reportedly looking|in line for|similar to|like\s+[A-Z])", re.I)
+NAME = re.compile(r"\b[A-Z][a-z]+(?:[- ][A-Z][a-z]+)*\s+[A-Z][a-zA-Z'’-]+")
 
 _last: dict[str, float] = {}
 fetched = {"network": 0, "cache": 0}
@@ -125,7 +127,9 @@ def deal_from_text(text: str) -> dict | None:
     """Term and cap hit from one passage: 'a three-year contract extension with an average annual value of $3.2 million',
     'signed a two-year, $1.55MM deal'. Returns {term, aav, ext, elc, start} or None."""
     m = re.search(TERM, text, re.I)
-    if not m or not re.search(r"contract|extension|deal|pact", text, re.I):
+    if not m:
+        if re.search(r"entry[- ]level (?:contract|deal)", text, re.I) and re.search(r"\bsign", text, re.I):
+            return {"term": None, "aav": None, "ext": False, "elc": True, "start": None}
         return None
     term = NUM.get(m.group(1).lower()) or int(m.group(1))
     aav = re.search(r"(?:average annual value|AAV|cap hit|annual average|per season|per year|annually)[^$]{0,30}" + MONEY, text, re.I) \
@@ -249,7 +253,7 @@ def article_deals(text: str, url: str) -> list[dict]:
             if mo in MONTHS:
                 last_date = date(int(yy), MONTHS[mo], int(dd)).isoformat()
         d = deal_from_text(sent)
-        if not d:
+        if not d or EUROPE.search(sent):
             continue
         y = re.findall(r"\b(20[0-3]\d)\b", sent)
         when = last_date if dm or (last_date and y and last_date[:4] in y) else (f"{y[0]}-07-01" if y else None)
@@ -291,22 +295,33 @@ def phr_items(url: str, max_age: float) -> list[dict]:
         pub = parsedate_to_datetime(re.search(r"<pubDate>(.*?)</pubDate>", it).group(1)).date().isoformat()
         body = re.search(r"<content:encoded><!\[CDATA\[(.*?)\]\]>", it, re.S)
         text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", body.group(1) if body else "")).split())
+        text = re.sub(r"\s+([.,;:])", r"\1", text)  # "Lucas Raymond . The deal" (left by removed links)
         items.append({"title": title, "url": link, "date": pub, "text": text})
     return items
 
 
+OTHERS: set[str] = set()      # every rostered player's full name (normalized), filled in main()
+OTHER_LAST: set[str] = set()  # and last names, for possessives ("Marchenko's")
+EUROPE = re.compile(r"\b(SHL|KHL|Liiga|DEL|Swiss|Switzerland|Sweden|Swedish|Finland|Finnish|Czech|Extraliga|Germany|German|National League|overseas|Europe|European)\b", re.I)
+
+
 def phr_deals(name: str, items: list[dict]) -> list[dict]:
+    """Deals in news posts, only from sentences that name the player (roundup posts cover many players)."""
     last = norm(name).split()[-1]
     out = []
     for it in items:
-        if last not in norm(it["title"] + " " + it["text"][:600]):
-            continue
-        for para in re.split(r"(?<=[a-z0-9)])\.\s+(?=[A-Z])", it["text"])[:5]:
-            if last in norm(para) or last in norm(it["title"]):
-                d = deal_from_text(para)
-                if d and re.search(r"\bsign|extension|agree|inked|deal\b", it["title"] + " " + para, re.I):
-                    out.append({"source": "ProHockeyRumors", "url": it["url"], "date": it["date"], "quote": para[:240], **d})
-                    break
+        for sent in re.split(r"(?<=[a-z0-9)])\.\s+(?=[A-Z])", it["text"]):
+            if last not in norm(sent) or EUROPE.search(sent):
+                continue
+            d = deal_from_text(sent)
+            if d and re.search(r"\bsign|extension|agree|inked|deal|contract\b", sent, re.I) and not SPECULATION.search(sent):
+                # a sentence that also names another NHL player ("... like Tim Stützle and his eight-year deal",
+                # "Marchenko's six-year extension") is about someone else's deal, or comparing
+                ns = norm(sent)
+                if any(o in ns for o in OTHERS if o != norm(name)) or any(f"{l}s " in ns.replace("’", "").replace("'", "") for l in OTHER_LAST if l != last):
+                    continue
+                out.append({"source": "ProHockeyRumors", "url": it["url"], "date": it["date"], "quote": sent[:240], **d})
+                break
     return out
 
 
@@ -321,7 +336,19 @@ def start_season(d: dict) -> tuple[int, bool]:
     return start, day.month >= 9 or day.month <= 2
 
 
+def elc_years(born: str | None, signed: str) -> int | None:
+    """Entry-level contract length by age at signing (CBA): 18-21 -> 3, 22-23 -> 2, 24+ -> 1."""
+    if not born:
+        return None
+    b, s_ = date.fromisoformat(born), date.fromisoformat(signed)
+    age = s_.year - b.year - ((s_.month, s_.day) < (b.month, b.day))
+    return 3 if age <= 21 else 2 if age <= 23 else 1
+
+
 def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
+    for d in deals:
+        if d.get("elc") and not d.get("term") and d.get("date"):
+            d["term"], d["termFromAge"] = elc_years(player.get("born"), d["date"]), True
     row = {**player, "term": None, "signed": None, "start": None, "end": None, "aav": None, "status": "unknown",
            "startGuessed": False, "elc": False, "src": {}, "alts": []}
     deals = [d for d in deals if d.get("date") and d.get("term")]
@@ -334,6 +361,14 @@ def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
     pick = lambda f: next((d for d in same if d.get(f)), None)
     t, a, s = pick("term"), pick("aav"), pick("start")
     start, guessed = start_season(s or latest)
+    # Called an "extension" but signed after his previous deal had already run out (an RFA re-signing in
+    # September, say): it covers the season about to start, not the next one.
+    older = [d for d in deals if date.fromisoformat(d["date"]) < day - timedelta(days=150) and d.get("term")]
+    if not (s and s.get("start")) and older and latest.get("ext") and day.month >= 7:
+        prev = max(older, key=lambda d: d["date"])
+        prev_start, _ = start_season(prev)
+        if prev_start + prev["term"] - 1 < day.year:
+            start = day.year
     row.update(term=t["term"], signed=latest["date"], start=start, end=start + t["term"] - 1, startGuessed=guessed,
                elc=any(d.get("elc") for d in same), status="signed" if start + t["term"] - 1 >= cur_start else "expired?")
     row["src"]["term"] = {"source": t["source"], "url": t["url"], "date": t["date"]}
@@ -361,7 +396,11 @@ def main() -> None:
                 rosters[p["id"]] = {"id": p["id"], "name": f"{p['firstName']['default']} {p['lastName']['default']}", "team": t,
                                     "pos": p.get("positionCode"), "born": p.get("birthDate")}
     print(f"{len(rosters)} players on current NHL rosters")
-    prev = json.loads(PREV.read_text()) if PREV.exists() else (json.loads(OUT.read_text()) if OUT.exists() else None)
+    OTHERS.update(norm(p["name"]) for p in rosters.values())
+    OTHER_LAST.update(norm(p["name"]).split()[-1] for p in rosters.values() if len(norm(p["name"]).split()[-1]) > 3)
+    # last run: the stored copy (restored from Firestore), or a newer full build committed as model/contracts.json
+    cands = [json.loads(p.read_text()) for p in (PREV, ROOT / "model" / "contracts.json", OUT) if p.exists()]
+    prev = max(cands, key=lambda c: c.get("asOf", "")) if cands else None
 
     if recent:  # nightly: just apply the latest signing news to last run's list
         if not prev:
