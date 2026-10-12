@@ -1,7 +1,9 @@
 // Builds redwings.json for the dashboard from public NHL and MoneyPuck data.
 // Runs nightly at 11 PM Eastern in GitHub Actions (see .github/workflows/update.yml); Node 20+, no dependencies.
 // Neither source allows browsers on other sites to read it directly, so this republishes what the dashboard needs.
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, access } from "node:fs/promises";
+import { buildShots } from "./shots.mjs";
+import { buildLeague } from "./league.mjs";
 
 const TEAM = "DET";
 const NHL = "https://api-web.nhle.com/v1";
@@ -133,4 +135,34 @@ const out = {
 };
 await mkdir("public", { recursive: true });
 await writeFile("public/redwings.json", JSON.stringify(out));
+
+/* ---------- Shots with our xG (incremental) ---------- */
+const MODEL = "model/xg_logit.json";
+const PUBLISHED = "https://pb49939pb.github.io/dashboard-data/redwings-shots.json";
+let shotsNote = "skipped (no model yet)";
+if (await access(MODEL).then(() => true, () => false)) {
+  const previous = await get(PUBLISHED).catch(() => null); // first run, or the site isn't up yet
+  const done = finished.filter((g) => g.gameType === 2).map((g) => ({ id: g.id }));
+  const { file, fetched } = await buildShots({
+    team: TEAM, games: done, previous, modelPath: MODEL,
+    getPbp: async (id) => { await new Promise((r) => setTimeout(r, 1000)); return get(`${NHL}/gamecenter/${id}/play-by-play`); },
+  });
+  await writeFile("public/redwings-shots.json", JSON.stringify(file));
+  shotsNote = `${file.games.length} games (${fetched} newly fetched)`;
+}
 console.log(`redwings.json: ${out.team.w}-${out.team.l}-${out.team.otl}, ${skaters.length} skaters, ${goalies.length} goalies, next: ${out.nextGames[0]?.opponent.abbrev ?? "none"}${mpError ? `, MoneyPuck failed: ${mpError}` : ""}`);
+console.log(`redwings-shots.json: ${shotsNote}`);
+
+/* ---------- Hockey Lab: every game league-wide, scored with our model ---------- */
+if (await access(MODEL).then(() => true, () => false)) {
+  const model = JSON.parse(await (await import("node:fs/promises")).readFile(MODEL, "utf8"));
+  const allTeams = rows.map((t) => t.teamAbbrev.default).sort();
+  const r = await buildLeague({
+    season, get, nhl: NHL, model, teams: allTeams,
+    previousBase: "https://pb49939pb.github.io/dashboard-data/hockey",
+    cacheDir: process.env.HOCKEY_CACHE || null, // local runs: reuse hockey-models' downloaded games
+  });
+  // Static model report card from the last training run
+  await writeFile("public/hockey/model.json", await (await import("node:fs/promises")).readFile("model/model_card.json", "utf8"));
+  console.log(`hockey/league.json: ${r.games} games (${r.fetched} fetched from the NHL)`);
+}

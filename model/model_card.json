@@ -1,0 +1,266 @@
+{
+ "trained_on": "20252026",
+ "tested_on": "20262027",
+ "train_shots": 111099,
+ "train_goals": 7578,
+ "results": [
+  {
+   "model": "Baseline (league avg)",
+   "shots": 7023,
+   "goals": 493,
+   "xG": 479.0,
+   "log_loss": 0.2542,
+   "auc": 0.5,
+   "brier": 0.0653
+  },
+  {
+   "model": "Logistic regression",
+   "shots": 7023,
+   "goals": 493,
+   "xG": 488.0,
+   "log_loss": 0.2278,
+   "auc": 0.7491,
+   "brier": 0.0619
+  },
+  {
+   "model": "Gradient boosting",
+   "shots": 7023,
+   "goals": 493,
+   "xG": 487.9,
+   "log_loss": 0.2274,
+   "auc": 0.7468,
+   "brier": 0.0616
+  }
+ ],
+ "published": "Logistic regression",
+ "calibration": {
+  "Logistic regression": [
+   {
+    "pred": 0.0051,
+    "actual": 0.0034,
+    "n": 586
+   },
+   {
+    "pred": 0.0126,
+    "actual": 0.0103,
+    "n": 585
+   },
+   {
+    "pred": 0.0209,
+    "actual": 0.0188,
+    "n": 585
+   },
+   {
+    "pred": 0.0301,
+    "actual": 0.0154,
+    "n": 585
+   },
+   {
+    "pred": 0.0394,
+    "actual": 0.0291,
+    "n": 585
+   },
+   {
+    "pred": 0.0492,
+    "actual": 0.0648,
+    "n": 586
+   },
+   {
+    "pred": 0.0598,
+    "actual": 0.0667,
+    "n": 585
+   },
+   {
+    "pred": 0.0721,
+    "actual": 0.0752,
+    "n": 585
+   },
+   {
+    "pred": 0.0876,
+    "actual": 0.0803,
+    "n": 585
+   },
+   {
+    "pred": 0.1092,
+    "actual": 0.1368,
+    "n": 585
+   },
+   {
+    "pred": 0.1418,
+    "actual": 0.1538,
+    "n": 585
+   },
+   {
+    "pred": 0.2061,
+    "actual": 0.1877,
+    "n": 586
+   }
+  ],
+  "Gradient boosting": [
+   {
+    "pred": 0.0046,
+    "actual": 0.0051,
+    "n": 586
+   },
+   {
+    "pred": 0.0107,
+    "actual": 0.0119,
+    "n": 586
+   },
+   {
+    "pred": 0.0166,
+    "actual": 0.012,
+    "n": 585
+   },
+   {
+    "pred": 0.0255,
+    "actual": 0.0223,
+    "n": 584
+   },
+   {
+    "pred": 0.0354,
+    "actual": 0.0427,
+    "n": 585
+   },
+   {
+    "pred": 0.0468,
+    "actual": 0.058,
+    "n": 586
+   },
+   {
+    "pred": 0.0603,
+    "actual": 0.0564,
+    "n": 585
+   },
+   {
+    "pred": 0.0776,
+    "actual": 0.0718,
+    "n": 585
+   },
+   {
+    "pred": 0.0965,
+    "actual": 0.1026,
+    "n": 585
+   },
+   {
+    "pred": 0.1186,
+    "actual": 0.1026,
+    "n": 585
+   },
+   {
+    "pred": 0.1455,
+    "actual": 0.1521,
+    "n": 585
+   },
+   {
+    "pred": 0.1953,
+    "actual": 0.2048,
+    "n": 586
+   }
+  ]
+ },
+ "effects": [
+  {
+   "feature": "Distance",
+   "coef": -1.138
+  },
+  {
+   "feature": "Angle (sharp)",
+   "coef": -0.56
+  },
+  {
+   "feature": "Distance \u00d7 angle",
+   "coef": -0.395
+  },
+  {
+   "feature": "Angle",
+   "coef": 0.322
+  },
+  {
+   "feature": "Shot type: tip in",
+   "coef": -0.221
+  },
+  {
+   "feature": "Shot type: snap",
+   "coef": 0.209
+  },
+  {
+   "feature": "Shot type: slap",
+   "coef": 0.2
+  },
+  {
+   "feature": "Shot type: wrist",
+   "coef": 0.093
+  },
+  {
+   "feature": "After a faceoff",
+   "coef": -0.087
+  },
+  {
+   "feature": "Power play",
+   "coef": 0.083
+  },
+  {
+   "feature": "From behind the net",
+   "coef": 0.076
+  },
+  {
+   "feature": "Shot type: wrap around",
+   "coef": -0.071
+  }
+ ],
+ "distance_curve": [
+  {
+   "dist": 5,
+   "p": 0.2111
+  },
+  {
+   "dist": 10,
+   "p": 0.1806
+  },
+  {
+   "dist": 15,
+   "p": 0.1515
+  },
+  {
+   "dist": 20,
+   "p": 0.1256
+  },
+  {
+   "dist": 25,
+   "p": 0.1033
+  },
+  {
+   "dist": 30,
+   "p": 0.0844
+  },
+  {
+   "dist": 35,
+   "p": 0.0685
+  },
+  {
+   "dist": 40,
+   "p": 0.0554
+  },
+  {
+   "dist": 45,
+   "p": 0.0447
+  },
+  {
+   "dist": 50,
+   "p": 0.0359
+  },
+  {
+   "dist": 55,
+   "p": 0.0288
+  },
+  {
+   "dist": 60,
+   "p": 0.023
+  },
+  {
+   "dist": 65,
+   "p": 0.0184
+  }
+ ]
+}
