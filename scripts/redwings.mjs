@@ -205,6 +205,19 @@ if (await access(MODEL).then(() => true, () => false)) {
   if (stylePrior) {
     const styles = buildStyles(r.list, stylePrior, season);
     await writeFile("public/hockey/styles.json", JSON.stringify(styles));
+    // The widget is public, so the next opponent's style goes into redwings.json as a short summary
+    const nx = out.nextGames?.[0], us = styles.teams[TEAM], them = nx && styles.teams[nx.opponent.abbrev];
+    if (us && them) {
+      const A = styles.archetypes, find = (o, d) => styles.matchups.find((m) => m.off === o && m.def === d);
+      const label = (side, t) => (t[`${side}Fit`] >= 58 ? A[side][t[side]].name : `${A[side][t[side]].name} / ${A[side][t[`${side}2`]].name}`);
+      const ours = find(us.off, them.def), theirs = find(them.off, us.def);
+      const clear = (m) => !!m && (m.lo > 0 || m.hi < 0);
+      out.nextOpponentStyle = { opponent: nx.opponent.abbrev, gameId: nx.id, offense: label("off", them), defense: label("def", them),
+        ourOffense: ours ? { effect: ours.effect, clear: clear(ours), vs: A.def[them.def].name, ours: A.off[us.off].name } : null,
+        theirOffense: theirs ? { effect: theirs.effect, clear: clear(theirs), vs: A.def[us.def].name, theirs: A.off[them.off].name } : null,
+        fromSeasons: styles.prior.seasons, updatedAt: styles.updatedAt };
+      await writeFile("public/redwings.json", JSON.stringify(out));
+    }
     run.check(r.list.every((g) => g.ev), "Zone events for team styles", r.list.every((g) => g.ev) ? "every game has hits/takeaways/giveaways by zone" : "some games lack zone events");
   }
 
