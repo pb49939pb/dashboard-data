@@ -1,8 +1,11 @@
-# Every 15 minutes: fetch Red Wings data and publish it on GitHub Pages for the dashboard.
+# Nightly at 11 PM Eastern: fetch Red Wings data and publish it on GitHub Pages for the dashboard.
+# Cron is UTC, so both 03:00 and 04:00 UTC are scheduled (11 PM EDT / EST); the run that isn't
+# 11 PM in New York stops before fetching anything. Manual runs and pushes always fetch.
 name: Update dashboard data
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "0 3 * * *"
+    - cron: "0 4 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -23,22 +26,37 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - name: Only at 11 PM Eastern
+        id: hour
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(TZ=America/New_York date +%H)" != "23" ]; then
+            echo "Not 11 PM in New York; skipping this scheduled run."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.hour.outputs.skip != 'true'
       - uses: actions/setup-node@v4
+        if: steps.hour.outputs.skip != 'true'
         with:
           node-version: 20
       - name: Build redwings.json
+        if: steps.hour.outputs.skip != 'true'
         run: node scripts/redwings.mjs
       - name: Add an index page
+        if: steps.hour.outputs.skip != 'true'
         run: cp index.html public/index.html
       - uses: actions/configure-pages@v5
+        if: steps.hour.outputs.skip != 'true'
       - uses: actions/upload-pages-artifact@v3
+        if: steps.hour.outputs.skip != 'true'
         with:
           path: public
       - id: deploy
+        if: steps.hour.outputs.skip != 'true'
         uses: actions/deploy-pages@v4
       # GitHub pauses scheduled workflows in repos with no commits for 60 days. Nudge it well before that.
       - name: Keep the schedule alive
+        if: steps.hour.outputs.skip != 'true'
         run: |
           last=$(git log -1 --format=%ct)
           if [ $(( $(date +%s) - last )) -gt $(( 45 * 86400 )) ]; then

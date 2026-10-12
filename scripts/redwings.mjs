@@ -1,5 +1,5 @@
 // Builds redwings.json for the dashboard from public NHL and MoneyPuck data.
-// Runs on a schedule in GitHub Actions (see .github/workflows/update.yml); Node 20+, no dependencies.
+// Runs nightly at 11 PM Eastern in GitHub Actions (see .github/workflows/update.yml); Node 20+, no dependencies.
 // Neither source allows browsers on other sites to read it directly, so this republishes what the dashboard needs.
 import { writeFile, mkdir } from "node:fs/promises";
 
