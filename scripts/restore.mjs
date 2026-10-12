@@ -11,6 +11,8 @@ await mkdir(`${out}/hockey/teams`, { recursive: true });
 
 const shots = await store.read("public/redwingsShots");
 if (shots) await writeFile(`${out}/redwings-shots.json`, JSON.stringify(shots));
+const contracts = await store.read("hockey/contracts");
+if (contracts) await writeFile(`${out}/hockey/contracts.json`, JSON.stringify(contracts));
 const league = await store.read("hockey/league");
 if (league) {
   await writeFile(`${out}/hockey/league.json`, JSON.stringify(league));

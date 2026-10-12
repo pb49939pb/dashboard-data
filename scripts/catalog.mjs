@@ -1,0 +1,65 @@
+// What every data job does, where it gets data, and which pages use it. Published to Firestore admin/catalog
+// for the admin panel (owner only). Keep this in step with the scripts and workflows.
+export const CATALOG = {
+  jobs: [
+    {
+      id: "nightly-build", name: "Nightly build", schedule: "Every night, 11 PM Eastern (GitHub Actions: update.yml)", script: "scripts/redwings.mjs",
+      sources: [
+        { name: "NHL web API", host: "api-web.nhle.com", what: "standings, schedules, rosters, club stats, play-by-play for every game" },
+        { name: "NHL stats API", host: "api.nhle.com", what: "goalie game logs (quality starts)" },
+        { name: "MoneyPuck", host: "moneypuck.com", what: "Red Wings player expected goals (widget)" },
+        { name: "Firestore (last night)", host: "firestore", what: "games already scored, so only new games are fetched" },
+      ],
+      outputs: [
+        { doc: "public/redwings", pages: ["Dashboard · Red Wings widget"] },
+        { doc: "public/redwingsShots", pages: ["Dashboard · Red Wings detail · Shots"] },
+        { doc: "hockey/league", pages: ["Hockey Lab · Overview", "Teams", "Skaters", "Goalies"] },
+        { doc: "hockey/games/{season}/*", pages: ["Hockey Lab · Shot maps (every shot)"] },
+        { doc: "hockey/heat", pages: ["Hockey Lab · Shot maps (heat map)"] },
+        { doc: "hockey/projections", pages: ["Hockey Lab · Teams (projections, bracket)", "Overview"] },
+        { doc: "hockey/history/{season}/*", pages: ["(nightly projection snapshots for odds-over-time)"] },
+      ],
+    },
+    {
+      id: "contracts", name: "Contracts (full refresh)", schedule: "Weekly, Sunday morning (GitHub Actions: contracts.yml)", script: "scripts/contracts.py",
+      sources: [
+        { name: "NHL.com team releases", host: "www.nhl.com", what: "term and cap hit (priority 2)" },
+        { name: "ProHockeyRumors", host: "www.prohockeyrumors.com", what: "term and cap hit from signing news (priority 3)" },
+        { name: "Wikipedia player articles", host: "en.wikipedia.org", what: "term and cap hit (priority 4)" },
+        { name: "Wikipedia team season pages", host: "en.wikipedia.org", what: "term, signing date, links to team releases (priority 5)" },
+        { name: "NHL web API", host: "api-web.nhle.com", what: "current rosters" },
+      ],
+      outputs: [{ doc: "hockey/contracts", pages: ["Hockey Lab · Cap & trades"] }],
+    },
+    {
+      id: "contracts-news", name: "Contract news", schedule: "Every night, after the build (update.yml)", script: "scripts/contracts.py --recent",
+      sources: [
+        { name: "ProHockeyRumors news feeds", host: "www.prohockeyrumors.com", what: "new signings and extensions" },
+        { name: "NHL web API", host: "api-web.nhle.com", what: "current rosters (trades move players' teams)" },
+      ],
+      outputs: [{ doc: "hockey/contracts", pages: ["Hockey Lab · Cap & trades"] }],
+    },
+    {
+      id: "publish", name: "Publish to Firestore", schedule: "After each job", script: "scripts/publish.mjs",
+      sources: [{ name: "This run's files", host: "local", what: "merged into Firestore; nothing stored is ever dropped" }],
+      outputs: [{ doc: "(all of the above)", pages: [] }],
+    },
+    {
+      id: "models", name: "Offline models", schedule: "By hand on the Mac (hockey-models), then committed to dashboard-data/model", script: "python -m hockey.<model>",
+      sources: [
+        { name: "NHL stats API", host: "api.nhle.com", what: "player seasons since 2005, draft picks, bios" },
+        { name: "NHL web API", host: "api-web.nhle.com", what: "play-by-play for model training" },
+        { name: "Wikipedia NHL transactions pages", host: "en.wikipedia.org", what: "every trade, free-agent signing and waiver claim" },
+        { name: "Wikipedia GM lists", host: "en.wikipedia.org", what: "GM eras by team" },
+      ],
+      outputs: [
+        { doc: "hockey/model", pages: ["Hockey Lab · Model", "Overview"] },
+        { doc: "hockey/frontOffice", pages: ["Hockey Lab · Front office (trades, drafting, pro scouting)"] },
+        { doc: "hockey/gm", pages: ["Hockey Lab · Front office (GM eras)"] },
+        { doc: "hockey/age", pages: ["Hockey Lab · Front office (age of scoring)"] },
+        { doc: "hockey/heatPrior", pages: ["Hockey Lab · Shot maps (early-season blend)"] },
+        { doc: "model/ratings.json", pages: ["Hockey Lab · Teams (projections prior)"] },
+      ],
+    },
+  ],
+};

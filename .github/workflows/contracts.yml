@@ -1,0 +1,51 @@
+# Weekly (Sundays, 6 AM Eastern-ish): rebuild every current contract from all sources, in priority order
+# (NHL.com team releases, ProHockeyRumors, Wikipedia articles, Wikipedia season pages), and merge into Firestore.
+# Fetched pages are cached between runs (.cache/contracts), so each week only new or changed pages are downloaded.
+name: Refresh contracts
+on:
+  schedule:
+    - cron: "0 10 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contracts
+  cancel-in-progress: false
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci && pip install requests
+      - name: Page cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/contracts
+          key: contracts-${{ github.run_id }}
+          restore-keys: contracts-
+      - name: Last stored contracts (keeps the trade block and anything a source misses)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/restore.mjs
+      - name: Build contracts
+        run: python scripts/contracts.py
+      - name: Publish to Firestore
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/publish.mjs contracts
+      - name: Record a failed run for the admin panel
+        if: failure()
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/publish.mjs admin

@@ -54,6 +54,22 @@ function shooterAware(games, sa) {
   return out;
 }
 
+/** Heat map grid over the offensive zone (every team shoots to the right; the net is at x = 89). 5 ft cells. */
+export const GRID = { x0: 25, dx: 5, nx: 15, y0: -42.5, dy: 5, ny: 17 };
+export function cell(x, y) {
+  if (x < GRID.x0 || x >= GRID.x0 + GRID.dx * GRID.nx) return null;
+  const xi = Math.floor((x - GRID.x0) / GRID.dx), yi = Math.min(GRID.ny - 1, Math.max(0, Math.floor((y - GRID.y0) / GRID.dy)));
+  return xi * GRID.ny + yi;
+}
+/** Where a shot came from, for "what kind of shooter" profiles. */
+export function zone(x, y) {
+  const dist = Math.hypot(NET - x, y);
+  if (dist < 15) return "nf";                       // net front
+  if (dist < 32 && Math.abs(y) <= 18 && x < NET) return "slot";
+  if (dist < 48) return "flank";                    // circles / half walls
+  return "point";
+}
+
 /** Shot categories for goalie profiles (a shot can be in several). */
 const NET = 89;
 export function categories(s) {
@@ -72,6 +88,9 @@ export function categories(s) {
 
 function aggregate(games, saLookup) {
   const teams = {}, skaters = {}, goalies = {};
+  const N = GRID.nx * GRID.ny, blank = () => ({ n: new Array(N).fill(0), x: new Array(N).fill(0) });
+  const heat = {}; // team -> { all: {f, a}, ev5: {f, a} }
+  const H = (t) => (heat[t] ??= { all: { f: blank(), a: blank() }, ev5: { f: blank(), a: blank() } });
   const T = (a) => (teams[a] ??= { team: a, gp: 0, w: 0, l: 0, otl: 0, gf: 0, ga: 0, sf: 0, sa: 0, xgf: 0, xga: 0, xgf5: 0, xga5: 0, gf5: 0, ga5: 0, gfPP: 0, xgfPP: 0, gaPK: 0, xgaPK: 0 });
   for (const g of games) {
     const sides = [g.home, g.away], score = [g.hs, g.as];
@@ -84,6 +103,13 @@ function aggregate(games, saLookup) {
       const [, , kind, side, v, shooter, goalie, strength] = s;
       if (kind === "b") return;
       const own = T(sides[side]), opp = T(sides[1 - side]);
+      if (v !== 0.9 && v !== null) { // heat maps: unblocked, not into an empty net
+        const c = cell(s[0], s[1]);
+        if (c !== null) for (const k of strength === "5v5" ? ["all", "ev5"] : ["all"]) {
+          const hf = H(sides[side])[k].f, ha = H(sides[1 - side])[k].a;
+          hf.n[c]++; hf.x[c] += v; ha.n[c]++; ha.x[c] += v;
+        }
+      }
       const x = v ?? 0, five = strength === "5v5";
       own.sf++; opp.sa++; own.xgf += x; opp.xga += x;
       const goal = kind === "g" ? 1 : 0;
@@ -91,7 +117,8 @@ function aggregate(games, saLookup) {
       if (strength === "PP") { own.xgfPP += x; own.gfPP += goal; opp.xgaPK += x; opp.gaPK += goal; }
       if (shooter) {
         const p = g.players[shooter];
-        const k = (skaters[shooter] ??= { id: shooter, name: p?.[0] || "Unknown", pos: p?.[1] || "", team: sides[side], shots: 0, goals: 0, xg: 0, xg5: 0, g5: 0, games: new Set() });
+        const k = (skaters[shooter] ??= { id: shooter, name: p?.[0] || "Unknown", pos: p?.[1] || "", team: sides[side], shots: 0, goals: 0, xg: 0, xg5: 0, g5: 0, games: new Set(), zones: { nf: [0, 0, 0], slot: [0, 0, 0], flank: [0, 0, 0], point: [0, 0, 0] } });
+        if (v !== 0.9) { const z = k.zones[zone(s[0], s[1])]; z[0]++; z[1] += kind === "g" ? 1 : 0; z[2] += x; }
         k.team = sides[side]; k.shots++; k.xg += x; k.games.add(g.id);
         if (kind === "g") k.goals++;
         if (five) { k.xg5 += x; if (kind === "g") k.g5++; }
@@ -112,7 +139,10 @@ function aggregate(games, saLookup) {
   return {
     teams: Object.values(teams).map((t) => ({ ...t, pts: t.w * 2 + t.otl, xgf: r2(t.xgf), xga: r2(t.xga), xgf5: r2(t.xgf5), xga5: r2(t.xga5), xgfPP: r2(t.xgfPP), xgaPK: r2(t.xgaPK),
       xgPct: t.xgf + t.xga ? r2((t.xgf / (t.xgf + t.xga)) * 100) : null })),
-    skaters: Object.values(skaters).map(({ games, ...k }) => ({ ...k, gp: games.size, xg: r2(k.xg), xg5: r2(k.xg5), gax: r2(k.goals - k.xg) })),
+    skaters: Object.values(skaters).map(({ games, ...k }) => ({ ...k, gp: games.size, xg: r2(k.xg), xg5: r2(k.xg5), gax: r2(k.goals - k.xg),
+      zones: Object.fromEntries(Object.entries(k.zones).map(([z, [n, g, x]]) => [z, [n, g, r2(x)]])) })),
+    heat: Object.fromEntries(Object.entries(heat).map(([t, h]) => [t, Object.fromEntries(Object.entries(h).map(([k, fa]) => [k,
+      Object.fromEntries(Object.entries(fa).map(([w, g]) => [w, { n: g.n, x: g.x.map((v) => Math.round(v * 100) / 100) }]))]))])),
     goalies: Object.values(goalies).map(({ games, split, ...k }) => ({ ...k, gp: games.size,
       split: Object.fromEntries(Object.entries(split).map(([c, [n, ga, x]]) => [c, [n, ga, r2(x)]])), xga: r2(k.xga), gsax: r2(k.xga - k.ga),
       saxga: r2(k.saxga), sa_gsax: r2(k.saxga - k.ga),
@@ -173,11 +203,13 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     }
   }
   // 3) Score new games
-  let fetched = 0;
+  let fetched = 0, fromDisk = 0;
+  const reused = known.size;
   for (const id of [...finished.keys()].sort()) {
     if (known.has(id) && known.get(id).shots.every((s) => s.length >= 11)) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
+    if (pbp) fromDisk++;
     if (!pbp) { await new Promise((r) => setTimeout(r, 1000)); pbp = await get(`${nhl}/gamecenter/${id}/play-by-play`); fetched++; }
     known.set(id, scoreGame(pbp, model));
   }
@@ -195,9 +227,12 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     const mine = games.filter((g) => g.home === t || g.away === t);
     await writeFile(`public/hockey/teams/${t}.json`, JSON.stringify({ updatedAt: stamp, season, team: t, model: { trained_on: model.trained_on }, games: mine }));
   }
+  const { heat, ...aggLean } = agg;
+  await writeFile("public/hockey/heat.json", JSON.stringify({ updatedAt: stamp, season, grid: GRID,
+    gp: Object.fromEntries(agg.teams.map((t) => [t.team, t.gp])), teams: heat, throughDate: games.map((g) => g.date).sort().pop() || null }));
   const league = { format: FORMAT, updatedAt: stamp, season, games: games.length, model: { trained_on: model.trained_on, test: model.test },
     saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs?.leagueSv ?? null, qsFetchedAt: qs ? new Date().toISOString() : null,
-    throughDate: games.map((g) => g.date).sort().pop() || null, ...agg };
+    throughDate: games.map((g) => g.date).sort().pop() || null, ...aggLean };
   await writeFile("public/hockey/league.json", JSON.stringify(league));
-  return { games: games.length, fetched, list: games, sa };
+  return { games: games.length, fetched, fromDisk, reused, list: games, sa };
 }

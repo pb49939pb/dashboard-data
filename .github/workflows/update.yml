@@ -36,9 +36,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-python@v5
+        if: steps.hour.outputs.skip != 'true'
+        with:
+          python-version: "3.12"
       - name: Install
         if: steps.hour.outputs.skip != 'true'
-        run: npm ci
+        run: npm ci && pip install requests
       # Last night's games from Firestore, so the build only fetches new ones from the NHL
       - name: Restore from Firestore
         if: steps.hour.outputs.skip != 'true'
@@ -48,12 +52,21 @@ jobs:
       - name: Build
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/redwings.mjs
+      # New signings from tonight's news, applied to the stored contract list (the weekly job does the full refresh)
+      - name: Contract news
+        if: steps.hour.outputs.skip != 'true'
+        run: python scripts/contracts.py --recent || echo "contract news check failed; stored contracts are kept"
       # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/publish.mjs
+      - name: Record a failed run for the admin panel
+        if: failure() && steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/publish.mjs admin
       # GitHub pauses scheduled workflows in repos with no commits for 60 days. Nudge it well before that.
       - name: Keep the schedule alive
         if: steps.hour.outputs.skip != 'true'

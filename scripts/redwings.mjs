@@ -5,6 +5,10 @@ import { writeFile, mkdir, access } from "node:fs/promises";
 import { buildShots } from "./shots.mjs";
 import { buildLeague } from "./league.mjs";
 import { teamRatings, simulate } from "./sim.mjs";
+import { startRun, hostOf } from "./runlog.mjs";
+
+const run = startRun("nightly-build");
+const notes = {};
 
 const TEAM = "DET";
 const NHL = "https://api-web.nhle.com/v1";
@@ -14,6 +18,7 @@ async function get(url, as = "json") {
   for (let attempt = 1; ; attempt++) {
     try {
       const res = await fetch(url, { headers: { "user-agent": "pat-dashboard (personal, low volume)" }, redirect: "follow" });
+      run.count(hostOf(url), { ok: res.ok });
       if (!res.ok) throw new Error(`${res.status} ${url}`);
       return as === "json" ? await res.json() : await res.text();
     } catch (e) {
@@ -171,6 +176,7 @@ if (await access(MODEL).then(() => true, () => false)) {
   // Static model report card from the last training run
   await writeFile("public/hockey/model.json", await (await import("node:fs/promises")).readFile("model/model_card.json", "utf8"));
   console.log(`hockey/league.json: ${r.games} games (${r.fetched} fetched from the NHL)`);
+  Object.assign(notes, { games: r.games, gamesFetched: r.fetched, gamesReusedFromLastNight: r.reused, gamesFromLocalCache: r.fromDisk });
 
   /* ---------- Projected standings and playoff odds ---------- */
   const fs = await import("node:fs/promises");
@@ -186,10 +192,11 @@ if (await access(MODEL).then(() => true, () => false)) {
     const sim = simulate({ R, standings: rows, remaining: [...remaining.values()] });
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
       standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim }));
+    Object.assign(notes, { gamesLeftSimulated: sim.remaining, simulations: sim.sims });
     console.log(`hockey/projections.json: ${sim.remaining} games left, top: ${sim.teams.slice(0, 3).map((t) => `${t.team} ${t.projPts}`).join(", ")}, DET ${sim.teams.find((t) => t.team === "DET")?.projPts} (${sim.teams.find((t) => t.team === "DET")?.playoffs}% playoffs)`);
   }
   // Front-office models and the starter contract list, built offline by hockey-models
-  for (const f of ["age", "trades", "gm", "draft", "scouting", "contracts"]) {
+  for (const f of ["age", "trades", "gm", "draft", "scouting", "heatPrior"]) { // contracts come from scripts/contracts.py
     // stamp when the offline model was built (file time), for the "source · updated" lines in the app
     const [text, st] = await Promise.all([fs.readFile(`model/${f}.json`, "utf8"), fs.stat(`model/${f}.json`)]).catch(() => [null, null]);
     if (!text) continue;
@@ -199,3 +206,5 @@ if (await access(MODEL).then(() => true, () => false)) {
     await writeFile(`public/hockey/${f}.json`, JSON.stringify(out));
   }
 }
+notes.moneyPuck = mpError ? `failed: ${mpError}` : "ok";
+run.finish({ ok: true, notes, outputs: ["public/redwings.json", "public/redwings-shots.json", "public/hockey/league.json", "public/hockey/teams/*.json", "public/hockey/heat.json", "public/hockey/projections.json"] });
