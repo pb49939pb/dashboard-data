@@ -3,7 +3,7 @@
 // giveaways, faceoffs). This season blends with last season at half weight, so a few games can't swing a rating.
 // Ratings run 40-99 like EA NHL: league average 75, one standard deviation 8 points, compared within position.
 //
-//   Offense = 35% individual xG/60 + 30% primary assists/60 + 35% on-ice xGF/60 relative to off-ice (5v5)
+//   Offense = 34% individual xG/60 + 20% primary assists/60 + 14% secondary assists/60 + 32% on-ice xGF/60 relative to off-ice (5v5)
 //   Defense = 45% on-ice xGA/60 relative to off-ice (5v5, lower is better) + 20% defensive-zone start share
 //             + 20% penalty-kill minutes per game + 15% (blocks + takeaways - giveaways)/60
 //   Usage   = ice time per game (coaches play who they trust)
@@ -33,7 +33,7 @@ function seasonStats(text) {
     out[id] = {
       id: Number(id), name: a.name, team: a.team, pos: a.position === "D" ? "D" : "F", posRaw: a.position, gp, toi, toi5,
       pktoi: pk ? num(pk.icetime) / 60 : 0, pptoi: pp ? num(pp.icetime) / 60 : 0,
-      ixg: num(a.I_F_xGoals), pa: num(a.I_F_primaryAssists), pts: num(a.I_F_points),
+      ixg: num(a.I_F_xGoals), pa: num(a.I_F_primaryAssists), sa: num(a.I_F_secondaryAssists), pts: num(a.I_F_points),
       onF: num(e.OnIce_F_xGoals), onA: num(e.OnIce_A_xGoals), gf: num(e.OnIce_F_goals), ga: num(e.OnIce_A_goals),
       onF60: (num(e.OnIce_F_xGoals) / toi5) * 60, onA60: (num(e.OnIce_A_xGoals) / toi5) * 60,
       offF60: (num(e.OffIce_F_xGoals) / off5) * 60, offA60: (num(e.OffIce_A_xGoals) / off5) * 60,
@@ -64,7 +64,7 @@ export function buildPlayers(curText, prevText) {
     players.push({
       id: base.id, name: base.name, team: (c || p).team, pos: base.pos, posRaw: base.posRaw, minutes: Math.round(W),
       toiGp: mix((r) => r.toi / Math.max(1, r.gp)), pkGp: mix((r) => r.pktoi / Math.max(1, r.gp)), ppGp: mix((r) => r.pptoi / Math.max(1, r.gp)),
-      ixg60: mix((r) => (r.ixg / r.toi) * 60), pa60: mix((r) => (r.pa / r.toi) * 60), pts60: mix((r) => (r.pts / r.toi) * 60),
+      ixg60: mix((r) => (r.ixg / r.toi) * 60), pa60: mix((r) => (r.pa / r.toi) * 60), sa60: mix((r) => (r.sa / r.toi) * 60), pts60: mix((r) => (r.pts / r.toi) * 60),
       relF: mix((r) => r.onF60 - r.offF60), relA: mix((r) => r.offA60 - r.onA60), onA60: mix((r) => r.onA60), onF60: mix((r) => r.onF60),
       dzs: mix((r) => r.dz / Math.max(1, r.oz + r.dz)), def60: mix((r) => ((r.blk + r.tk - r.gv) / r.toi) * 60),
       fo: mix((r) => (r.fow + r.fol >= 20 ? r.fow / (r.fow + r.fol) : NaN)),
@@ -80,8 +80,9 @@ export function buildPlayers(curText, prevText) {
   for (const pos of ["D", "F"]) {
     const G = players.filter((x) => x.pos === pos), ref = G.filter((x) => x.minutes >= 200);
     const z = (k) => zer(ref.map((x) => x[k]));
-    const [zi, za, zf, zA, zd, zpk, zdef, zt] = ["ixg60", "pa60", "relF", "relA", "dzs", "pkGp", "def60", "toiGp"].map(z);
-    const off = (x) => 0.35 * zi(x.ixg60) + 0.3 * za(x.pa60) + 0.35 * zf(x.relF);
+    const [zi, za, zs, zf, zA, zd, zpk, zdef, zt] = ["ixg60", "pa60", "sa60", "relF", "relA", "dzs", "pkGp", "def60", "toiGp"].map(z);
+    // goals 34% (own chances), primary assists 20%, secondary 14% (assists together = a goal), team chances on/off 32%
+    const off = (x) => 0.34 * zi(x.ixg60) + 0.2 * za(x.pa60) + 0.14 * zs(x.sa60) + 0.32 * zf(x.relF);
     const def = (x) => 0.45 * zA(x.relA) + 0.2 * zd(x.dzs) + 0.2 * zpk(x.pkGp) + 0.15 * zdef(x.def60);
     const use = (x) => zt(x.toiGp);
     const w = pos === "D" ? [0.3, 0.35, 0.35] : [0.45, 0.25, 0.3];

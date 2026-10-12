@@ -60,9 +60,9 @@
    "job": "draft",
    "ok": true,
    "error": null,
-   "startedAt": "2026-10-12T18:12:44.026367+00:00",
-   "finishedAt": "2026-10-12T18:12:59.212891+00:00",
-   "seconds": 15.2,
+   "startedAt": "2026-10-12T19:55:47.331730+00:00",
+   "finishedAt": "2026-10-12T19:56:03.381854+00:00",
+   "seconds": 16.1,
    "sources": {
     "api-web.nhle.com": {
      "requests": 2,
@@ -84,9 +84,9 @@
    "job": "trades",
    "ok": true,
    "error": null,
-   "startedAt": "2026-10-12T18:13:00.378910+00:00",
-   "finishedAt": "2026-10-12T18:13:15.675449+00:00",
-   "seconds": 15.3,
+   "startedAt": "2026-10-12T19:56:04.538314+00:00",
+   "finishedAt": "2026-10-12T19:56:20.395039+00:00",
+   "seconds": 15.9,
    "sources": {
     "api-web.nhle.com": {
      "requests": 2,
@@ -113,9 +113,9 @@
    "job": "scouting",
    "ok": true,
    "error": null,
-   "startedAt": "2026-10-12T18:13:16.847787+00:00",
-   "finishedAt": "2026-10-12T18:13:31.746807+00:00",
-   "seconds": 14.9,
+   "startedAt": "2026-10-12T19:56:21.583779+00:00",
+   "finishedAt": "2026-10-12T19:56:36.865280+00:00",
+   "seconds": 15.3,
    "sources": {
     "api-web.nhle.com": {
      "requests": 2,
