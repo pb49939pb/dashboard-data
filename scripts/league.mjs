@@ -204,13 +204,19 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   }
   // 3) Score new games
   let fetched = 0, fromDisk = 0;
+  const missing = [];
   const reused = known.size;
   for (const id of [...finished.keys()].sort()) {
     if (known.has(id) && known.get(id).shots.every((s) => s.length >= 11)) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
     if (pbp) fromDisk++;
-    if (!pbp) { await new Promise((r) => setTimeout(r, 1000)); pbp = await get(`${nhl}/gamecenter/${id}/play-by-play`); fetched++; }
+    if (!pbp) {
+      await new Promise((r) => setTimeout(r, 1000));
+      pbp = await get(`${nhl}/gamecenter/${id}/play-by-play`).catch(() => null);
+      if (!pbp) { missing.push(id); continue; } // left out tonight; not stored, so tomorrow's run tries it again
+      fetched++;
+    }
     known.set(id, scoreGame(pbp, model));
   }
   const games = [...known.values()].sort((a, b) => a.id - b.id);
@@ -234,5 +240,5 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs?.leagueSv ?? null, qsFetchedAt: qs ? new Date().toISOString() : null,
     throughDate: games.map((g) => g.date).sort().pop() || null, ...aggLean };
   await writeFile("public/hockey/league.json", JSON.stringify(league));
-  return { games: games.length, fetched, fromDisk, reused, list: games, sa };
+  return { games: games.length, fetched, fromDisk, reused, missing, qsOk: !!qs, list: games, sa };
 }

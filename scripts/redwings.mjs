@@ -20,9 +20,11 @@ async function get(url, as = "json") {
       const res = await fetch(url, { headers: { "user-agent": "pat-dashboard (personal, low volume)" }, redirect: "follow" });
       run.count(hostOf(url), { ok: res.ok });
       if (!res.ok) throw new Error(`${res.status} ${url}`);
-      return as === "json" ? await res.json() : await res.text();
+      const body = as === "json" ? await res.json() : await res.text();
+      if (attempt > 1) run.retry(hostOf(url), true); // failed at first, fine on a retry
+      return body;
     } catch (e) {
-      if (attempt >= 3) throw e;
+      if (attempt >= 3) { run.retry(hostOf(url), false); throw e; }
       await new Promise((r) => setTimeout(r, 2000 * attempt));
     }
   }
@@ -177,17 +179,21 @@ if (await access(MODEL).then(() => true, () => false)) {
   await writeFile("public/hockey/model.json", await (await import("node:fs/promises")).readFile("model/model_card.json", "utf8"));
   console.log(`hockey/league.json: ${r.games} games (${r.fetched} fetched from the NHL)`);
   Object.assign(notes, { games: r.games, gamesFetched: r.fetched, gamesReusedFromLastNight: r.reused, gamesFromLocalCache: r.fromDisk });
+  run.check(!r.missing.length, "Every finished game scored", r.missing.length ? `${r.missing.length} finished game(s) couldn't be fetched (${r.missing.slice(0, 5).join(", ")}); tonight's numbers leave them out and the next run tries again` : `${r.games} games`);
+  run.check(r.qsOk, "Quality starts", r.qsOk ? "NHL stats API answered" : "NHL stats API failed; the stored quality-start numbers were kept (they may be a day old)");
 
   /* ---------- Projected standings and playoff odds ---------- */
   const fs = await import("node:fs/promises");
   const ratings = await fs.readFile("model/ratings.json", "utf8").then(JSON.parse, () => null);
   if (ratings) {
     const remaining = new Map();
+    let schedFails = 0;
     for (const t of allTeams) {
       await new Promise((res) => setTimeout(res, 500));
-      const sc = await get(`${NHL}/club-schedule-season/${t}/${season}`).catch(() => null);
+      const sc = await get(`${NHL}/club-schedule-season/${t}/${season}`).catch(() => { schedFails++; return null; });
       for (const g of sc?.games || []) if (g.gameType === 2 && !["FINAL", "OFF"].includes(g.gameState)) remaining.set(g.id, { id: g.id, date: g.gameDate, home: g.homeTeam.abbrev, away: g.awayTeam.abbrev });
     }
+    run.check(!schedFails, "Remaining schedule for projections", schedFails ? `${schedFails} team schedule(s) failed; projections leave out their unplayed games` : `${remaining.size} games left`);
     const R = teamRatings(r.list, ratings, r.sa);
     const sim = simulate({ R, standings: rows, remaining: [...remaining.values()] });
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
@@ -207,4 +213,5 @@ if (await access(MODEL).then(() => true, () => false)) {
   }
 }
 notes.moneyPuck = mpError ? `failed: ${mpError}` : "ok";
+run.check(!mpError, "MoneyPuck expected goals (widget)", mpError ? `MoneyPuck failed (${mpError}); the widget keeps the last good xG and says how old it is` : "fresh");
 run.finish({ ok: true, notes, outputs: ["public/redwings.json", "public/redwings-shots.json", "public/hockey/league.json", "public/hockey/teams/*.json", "public/hockey/heat.json", "public/hockey/projections.json"] });

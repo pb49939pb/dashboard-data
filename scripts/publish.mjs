@@ -20,7 +20,9 @@ async function publishAdmin(extra = []) {
   for (const l of logs) {
     const id = l.model ? `models-${l.model}` : l.job;
     const before = await store.read(`admin/jobs/latest/${id}`).catch(() => null);
-    const brief = (x) => ({ startedAt: x.startedAt, ok: x.ok, seconds: x.seconds, requests: Object.values(x.sources || {}).reduce((n, v) => n + (v.requests || 0), 0) });
+    const sum = (x, k) => Object.values(x.sources || {}).reduce((n, v) => n + (v[k] || 0), 0);
+    const brief = (x) => ({ startedAt: x.startedAt, ok: x.ok, seconds: x.seconds, requests: sum(x, "requests"), recovered: sum(x, "recovered"), gaveUp: sum(x, "gaveUp"),
+      issues: (x.health || []).filter((h) => !h.ok).length });
     const history = [brief(l), ...(before?.history || []).filter((h) => h.startedAt !== l.startedAt)].slice(0, 30);
     await store.put(`admin/jobs/latest/${id}`, { ...l, history }, { job: l.job }, { replace: true });
     if (l.ok) await store.put(`admin/jobs/success/${id}`, l, { job: l.job }, { replace: true });

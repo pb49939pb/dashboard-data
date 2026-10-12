@@ -67,7 +67,7 @@ by_host: dict[str, dict] = {}  # for the admin panel's run log
 
 
 def tally(host: str, kind: str) -> None:
-    by_host.setdefault(host, {"requests": 0, "cached": 0, "failed": 0})[kind] += 1
+    by_host.setdefault(host, {"requests": 0, "cached": 0, "failed": 0, "retried": 0, "recovered": 0, "gaveUp": 0})[kind] += 1
 
 
 def get(url: str, max_age_days: float | None, as_json: bool = False, params: dict | None = None):
@@ -80,6 +80,11 @@ def get(url: str, max_age_days: float | None, as_json: bool = False, params: dic
         text = gzip.open(path, "rt").read()
         return json.loads(text) if as_json else text
     host = urllib.parse.urlparse(url).netloc
+    def give_up():
+        if attempt:
+            tally(host, "retried"); tally(host, "gaveUp")
+        return None
+    attempt = 0
     for attempt in range(4):
         wait = DELAY.get(host, 2.0) - (time.time() - _last.get(host, 0))
         if wait > 0:
@@ -88,19 +93,23 @@ def get(url: str, max_age_days: float | None, as_json: bool = False, params: dic
         try:
             r = requests.get(full, headers=UA, timeout=45)
         except requests.RequestException:
+            tally(host, "requests"); tally(host, "failed")
             time.sleep(5 * (attempt + 1)); continue
         if r.status_code == 429 or r.status_code >= 500:
+            tally(host, "requests"); tally(host, "failed")  # rate-limited or server error: wait and retry
             time.sleep(int(r.headers.get("Retry-After", 20)) + 10 * attempt); continue
         tally(host, "requests")
         if r.status_code != 200:
             tally(host, "failed")
-            return None
+            return give_up()
         fetched["network"] += 1
+        if attempt:
+            tally(host, "retried"); tally(host, "recovered")  # failed at first, fine on a retry
         path.parent.mkdir(parents=True, exist_ok=True)
         with gzip.open(path, "wt") as f:
             f.write(r.text)
         return r.json() if as_json else r.text
-    return None
+    return give_up()
 
 
 def norm(name: str) -> str:
@@ -497,7 +506,7 @@ def write(out: dict) -> None:
 def run_logged() -> None:
     job = "contracts-news" if "--recent" in sys.argv else "contracts"
     started = datetime.now(timezone.utc)
-    ok, err, notes = True, None, {}
+    ok, err, notes, health = True, None, {}, []
     try:
         main()
         if OUT.exists():
@@ -505,6 +514,12 @@ def run_logged() -> None:
             ps = c.get("players", [])
             notes = {"players": len(ps), "withCurrentDeal": sum(p.get("status") == "signed" for p in ps),
                      "withCapHit": sum(bool(p.get("aav")) for p in ps if p.get("status") == "signed")}
+            deal_share = notes["withCurrentDeal"] / max(1, notes["players"])
+            health.append({"ok": deal_share >= 0.9, "what": "Players with a current deal", "detail": f"{notes['withCurrentDeal']} of {notes['players']} ({deal_share:.0%})"})
+            health.append({"ok": notes["withCapHit"] >= 0.7 * notes["withCurrentDeal"], "what": "Current deals with a cap hit", "detail": f"{notes['withCapHit']} of {notes['withCurrentDeal']}; the rest show blank until a source or your edit fills them"})
+        for h, v in by_host.items():
+            if v.get("gaveUp"):
+                health.append({"ok": False, "what": f"{h} requests", "detail": f"{v['gaveUp']} gave up after retries; those players keep last week's values"})
     except Exception as e:  # noqa: BLE001 - logged for the admin panel, then re-raised
         ok, err = False, repr(e)
         raise
@@ -512,7 +527,7 @@ def run_logged() -> None:
         done = datetime.now(timezone.utc)
         gh = os.environ.get("GITHUB_RUN_ID")
         log = {"job": job, "ok": ok, "error": err, "startedAt": started.isoformat(), "finishedAt": done.isoformat(),
-               "seconds": round((done - started).total_seconds(), 1), "sources": by_host, "notes": notes,
+               "seconds": round((done - started).total_seconds(), 1), "sources": by_host, "notes": notes, "health": health,
                "outputs": ["public/hockey/contracts.json"],
                "github": {"run": gh, "url": f"{os.environ.get('GITHUB_SERVER_URL')}/{os.environ.get('GITHUB_REPOSITORY')}/actions/runs/{gh}"} if gh else {"local": True}}
         (ROOT / "public" / "admin").mkdir(parents=True, exist_ok=True)
