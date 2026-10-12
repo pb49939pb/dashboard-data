@@ -31,6 +31,19 @@ async function publishAdmin(extra = []) {
   await store.put("admin/catalog", CATALOG, {}, { replace: true });
 }
 if (only.includes("admin")) { await publishAdmin(); console.log("admin logs published"); process.exit(0); }
+// A frozen past season (built by scripts/buildSeason.mjs): `node scripts/publish.mjs season 20252026`
+if (only[0] === "season" && only[1]) {
+  const s = only[1], dir = `public/hockey/seasons/${s}`;
+  for (const name of ["league", "heat", "players", "styles", "lines", "projections"]) {
+    const d = await load(`${dir}/${name}.json`);
+    if (d) await store.put(`hockey/seasons/${s}/${name}`, d, {}, { replace: true });
+  }
+  const games = new Map();
+  for (const f of await readdir(`${dir}/teams`).catch(() => [])) { const t = await load(`${dir}/teams/${f}`); for (const g of t?.games || []) games.set(g.id, g); }
+  const n = await store.putMany([...games.values()].map((g) => ({ path: `hockey/games/${s}/${g.id}`, data: g, fields: { teams: [g.home, g.away], date: g.date } })));
+  console.log(`season ${s}: ${games.size} games (${n} written), ${store.writes} documents`);
+  process.exit(0);
+}
 const load = (p) => readFile(p, "utf8").then(JSON.parse, () => null);
 const publishLog = () => ({ job: "publish", ok: true, error: null, startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
   seconds: Math.round((Date.now() - t0) / 100) / 10, sources: { firestore: { requests: store.writes, cached: 0, failed: 0 } }, notes: { documentsWritten: store.writes, only: only.join(",") || "all" },

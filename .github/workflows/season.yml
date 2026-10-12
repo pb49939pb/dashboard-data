@@ -1,0 +1,35 @@
+# Build and publish frozen past seasons for Hockey Lab's season picker. Runs when archive-seasons.txt changes
+# (one season per line) or by hand. Fetches each season's play-by-play and shift charts politely (~40 minutes a season).
+name: Archive past seasons
+on:
+  push:
+    branches: [main]
+    paths: [archive-seasons.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: season-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build and publish each season
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          for s in $(cat archive-seasons.txt); do
+            node scripts/buildSeason.mjs "$s"
+            node scripts/publish.mjs season "$s"
+          done

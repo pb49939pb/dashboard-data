@@ -201,7 +201,7 @@ async function qualityStarts(season, get) {
 }
 
 export { scoreGame };
-export async function buildLeague({ season, get, nhl, model, loadPrevious, cacheDir, teams, saModel }) {
+export async function buildLeague({ season, get, nhl, model, loadPrevious, cacheDir, teams, saModel, outDir = "public/hockey" }) {
   // 1) Reuse last night's games (only if scored with the same model)
   const known = new Map();
   if (loadPrevious) {
@@ -269,17 +269,17 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     Object.assign(gk, q ? { gs: q.gs, qs: q.qs, qsPct: q.gs ? Math.round((q.qs / q.gs) * 1000) / 1000 : null, rbs: q.rbs } : { gs: 0, qs: 0, qsPct: null, rbs: 0 });
   }
   const stamp = new Date().toISOString();
-  await mkdir("public/hockey/teams", { recursive: true });
+  await mkdir(`${outDir}/teams`, { recursive: true });
   for (const t of teams) {
     const mine = games.filter((g) => g.home === t || g.away === t);
-    await writeFile(`public/hockey/teams/${t}.json`, JSON.stringify({ updatedAt: stamp, season, team: t, model: { trained_on: model.trained_on }, games: mine }));
+    await writeFile(`${outDir}/teams/${t}.json`, JSON.stringify({ updatedAt: stamp, season, team: t, model: { trained_on: model.trained_on }, games: mine }));
   }
   const { heat, ...aggLean } = agg;
-  await writeFile("public/hockey/heat.json", JSON.stringify({ updatedAt: stamp, season, grid: GRID,
+  await writeFile(`${outDir}/heat.json`, JSON.stringify({ updatedAt: stamp, season, grid: GRID,
     gp: Object.fromEntries(agg.teams.map((t) => [t.team, t.gp])), teams: heat, throughDate: games.map((g) => g.date).sort().pop() || null }));
   const league = { format: FORMAT, updatedAt: stamp, season, games: games.length, model: { trained_on: model.trained_on, test: model.test },
     saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs?.leagueSv ?? null, qsFetchedAt: qs ? new Date().toISOString() : null,
     throughDate: games.map((g) => g.date).sort().pop() || null, ...aggLean };
-  await writeFile("public/hockey/league.json", JSON.stringify(league));
+  await writeFile(`${outDir}/league.json`, JSON.stringify(league));
   return { games: games.length, fetched, fromDisk, reused, missing, missingShifts, qsOk: !!qs, list: games, sa };
 }
