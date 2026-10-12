@@ -193,3 +193,53 @@ export function simulate({ R, standings, remaining, seed = 20261012 }) {
   bracket.final = series(bracket[confs[0]].cf.fav, bracket[confs[1]].cf.fav);
   return { sims: SIMS, mu: R.mu, remaining: games.length, teams: proj, bracket };
 }
+
+/**
+ * Strength of schedule and division strength.
+ * Team strength = expected goal margin per game vs an average opponent (from the ratings: goals for − goals against).
+ * SOS = average strength of the opponents faced (played, remaining, whole season), ranked 1 (hardest) to 32.
+ * Divisions: (1) results in games between divisions only (in-division games are a wash), as a record and per-pair
+ * grid; (2) average team strength, which is steadier early on.
+ */
+export function schedulesAndDivisions({ R, standings, played, remaining }) {
+  const info = Object.fromEntries(standings.map((s) => [s.teamAbbrev.default, { div: s.divisionAbbrev, divName: s.divisionName, conf: s.conferenceAbbrev }]));
+  const str = Object.fromEntries(Object.entries(R.teams).map(([t, r]) => [t, r.gf - r.ga]));
+  const opp = {};
+  const add = (t, o, k) => { const x = (opp[t] ??= { played: [], remaining: [] }); if (str[o] !== undefined) x[k].push(str[o]); };
+  for (const g of played) { add(g.home, g.away, "played"); add(g.away, g.home, "played"); }
+  for (const g of remaining) { add(g.home, g.away, "remaining"); add(g.away, g.home, "remaining"); }
+  const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const sos = Object.fromEntries(Object.entries(opp).map(([t, o]) => [t, { played: avg(o.played), remaining: avg(o.remaining), total: avg([...o.played, ...o.remaining]), gp: o.played.length, left: o.remaining.length }]));
+  for (const k of ["played", "remaining", "total"]) {
+    const order = Object.keys(sos).filter((t) => sos[t][k] !== null).sort((a, b) => sos[b][k] - sos[a][k]);
+    order.forEach((t, i) => (sos[t][`${k}Rank`] = i + 1)); // 1 = hardest
+  }
+  // divisions
+  const divs = [...new Set(Object.values(info).map((x) => x.div))];
+  const grid = {}, rec = Object.fromEntries(divs.map((d) => [d, { w: 0, l: 0, otl: 0, gf: 0, ga: 0, gp: 0 }]));
+  for (const g of played) {
+    const dh = info[g.home]?.div, da = info[g.away]?.div;
+    if (!dh || !da || dh === da) continue; // in-division games are a wash
+    const homeWon = g.hs > g.as, ot = g.end && g.end !== "REG";
+    for (const [d, won, gf, ga] of [[dh, homeWon, g.hs, g.as], [da, !homeWon, g.as, g.hs]]) {
+      const o = d === dh ? da : dh, r = rec[d], c = ((grid[d] ??= {})[o] ??= { w: 0, l: 0, otl: 0 });
+      r.gp++; r.gf += gf; r.ga += ga;
+      if (won) { r.w++; c.w++; } else if (ot) { r.otl++; c.otl++; } else { r.l++; c.l++; }
+    }
+  }
+  const division = divs.map((d) => {
+    const ts = Object.keys(info).filter((t) => info[t].div === d && str[t] !== undefined);
+    const r = rec[d];
+    return { div: d, name: standings.find((s) => s.divisionAbbrev === d)?.divisionName || d, conf: info[ts[0]]?.conf, teams: ts.sort((a, b) => str[b] - str[a]),
+      strength: avg(ts.map((t) => str[t])), cross: { ...r, ptsPct: r.gp ? (2 * r.w + r.otl) / (2 * r.gp) : null }, vs: grid[d] || {} };
+  });
+  // rank: lean on results as they pile up (weight = cross-division games / (games + 60)), otherwise strength
+  const zs = (k) => { const v = division.map(k); const m = avg(v); const sd = Math.sqrt(avg(v.map((x) => (x - m) ** 2))) || 1; return (x) => (x - m) / sd; };
+  const zStr = zs((d) => d.strength), zRes = zs((d) => d.cross.ptsPct ?? 0.5);
+  for (const d of division) { const w = d.cross.gp / (d.cross.gp + 60); d.score = (1 - w) * zStr(d.strength) + w * zRes(d.cross.ptsPct ?? 0.5); d.resultsWeight = w; }
+  division.sort((a, b) => b.score - a.score).forEach((d, i) => (d.rank = i + 1));
+  const r3 = (v) => (v === null || v === undefined ? null : Math.round(v * 1000) / 1000);
+  for (const t in sos) for (const k of ["played", "remaining", "total"]) sos[t][k] = r3(sos[t][k]);
+  for (const d of division) { d.strength = r3(d.strength); d.score = r3(d.score); d.resultsWeight = r3(d.resultsWeight); d.cross.ptsPct = r3(d.cross.ptsPct); }
+  return { sos, divisions: division, strength: Object.fromEntries(Object.entries(str).map(([t, v]) => [t, r3(v)])) };
+}

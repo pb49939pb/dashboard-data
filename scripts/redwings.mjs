@@ -4,7 +4,7 @@
 import { writeFile, mkdir, access } from "node:fs/promises";
 import { buildShots } from "./shots.mjs";
 import { buildLeague } from "./league.mjs";
-import { teamRatings, simulate } from "./sim.mjs";
+import { teamRatings, simulate, schedulesAndDivisions } from "./sim.mjs";
 import { startRun, hostOf } from "./runlog.mjs";
 import { buildPlayers } from "./players.mjs";
 
@@ -213,6 +213,7 @@ if (await access(MODEL).then(() => true, () => false)) {
     run.check(!schedFails, "Remaining schedule for projections", schedFails ? `${schedFails} team schedule(s) failed; projections leave out their unplayed games` : `${remaining.size} games left`);
     const R = teamRatings(r.list, ratings, r.sa);
     const sim = simulate({ R, standings: rows, remaining: [...remaining.values()] });
+    Object.assign(sim, schedulesAndDivisions({ R, standings: rows, played: r.list, remaining: [...remaining.values()] }));
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
       standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim }));
     Object.assign(notes, { gamesLeftSimulated: sim.remaining, simulations: sim.sims });
