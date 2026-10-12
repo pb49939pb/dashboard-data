@@ -129,6 +129,7 @@ function aggregate(games, saLookup) {
 async function qualityStarts(season, get) {
   const url = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&limit=-1&cayenneExp=seasonId=${season}%20and%20gameTypeId=2`;
   const rows = (await get(url).catch(() => null))?.data || [];
+  if (!rows.length) return null; // the stats API failed: leave quality starts out so stored values are kept
   const sa = rows.reduce((n, r) => n + (r.shotsAgainst || 0), 0), ga = rows.reduce((n, r) => n + (r.goalsAgainst || 0), 0);
   const lg = sa ? 1 - ga / sa : 0.9;
   const by = {};
@@ -184,7 +185,7 @@ export async function buildLeague({ season, get, nhl, model, previousBase, cache
   const sa = shooterAware(games, saModel);
   const agg = aggregate(games, sa);
   const qs = await qualityStarts(season, get);
-  for (const gk of agg.goalies) {
+  for (const gk of qs ? agg.goalies : []) {
     const q = qs.by[gk.id];
     Object.assign(gk, q ? { gs: q.gs, qs: q.qs, qsPct: q.gs ? Math.round((q.qs / q.gs) * 1000) / 1000 : null, rbs: q.rbs } : { gs: 0, qs: 0, qsPct: null, rbs: 0 });
   }
@@ -195,7 +196,7 @@ export async function buildLeague({ season, get, nhl, model, previousBase, cache
     await writeFile(`public/hockey/teams/${t}.json`, JSON.stringify({ updatedAt: stamp, season, team: t, model: { trained_on: model.trained_on }, games: mine }));
   }
   const league = { format: FORMAT, updatedAt: stamp, season, games: games.length, model: { trained_on: model.trained_on, test: model.test },
-    saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs.leagueSv,
+    saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs?.leagueSv ?? null, qsFetchedAt: qs ? new Date().toISOString() : null,
     throughDate: games.map((g) => g.date).sort().pop() || null, ...agg };
   await writeFile("public/hockey/league.json", JSON.stringify(league));
   return { games: games.length, fetched, list: games, sa };

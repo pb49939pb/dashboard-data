@@ -132,7 +132,9 @@ const out = {
   nextGames: upcoming.map(gameOut),
   lastGame: finished.length ? gameOut(finished[finished.length - 1]) : null,
   skaters, goalies,
-  sources: { nhl: "api-web.nhle.com", xg: mpError ? null : "MoneyPuck.com", xgError: mpError },
+  sources: { nhl: "api-web.nhle.com", xg: mpError ? null : "MoneyPuck.com", xgError: mpError || "" }, // "" (not null) so a cleared error replaces an old one
+  // when each source last answered (stored values keep the last good time when a source fails)
+  sourceTimes: { nhl: new Date().toISOString(), moneypuck: mpError ? null : new Date().toISOString() },
 };
 await mkdir("public", { recursive: true });
 await writeFile("public/redwings.json", JSON.stringify(out));

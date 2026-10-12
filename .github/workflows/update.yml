@@ -39,9 +39,19 @@ jobs:
         if: steps.hour.outputs.skip != 'true'
         with:
           node-version: 20
+          cache: npm
+      - name: Install
+        if: steps.hour.outputs.skip != 'true'
+        run: npm ci
       - name: Build redwings.json
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/redwings.mjs
+      # Merge tonight's data into Firestore (only overwrites what came back new); skipped until the secret exists
+      - name: Publish to Firestore
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/publish.mjs
       - name: Add an index page
         if: steps.hour.outputs.skip != 'true'
         run: cp index.html public/index.html
