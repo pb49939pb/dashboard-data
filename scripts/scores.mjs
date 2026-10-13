@@ -75,7 +75,7 @@ async function want(date, isToday) {
   fetched++;
   const games = await day(date);
   // keep what we knew: predictions (frozen at puck drop) and recap status
-  for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal", "recapV"]) if (o[k] !== undefined) g[k] = o[k]; }
+  for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal", "recapV", "live", "trail"]) if (o[k] !== undefined) g[k] = o[k]; }
   return { date, checkedAt: new Date().toISOString(), games };
 }
 const days = [await want(yesterday, false), await want(today, true)];
@@ -91,6 +91,60 @@ if (store && upcoming.length && (fetched || upcoming.some((g) => g.pred?.model =
     if ((m && g.pred?.model == null) || (mk && g.pred?.market == null)) predsFilled++;
     g.pred = { model: m?.pHome ?? g.pred?.model ?? null, market: mk?.pHome ?? g.pred?.market ?? null, at: new Date().toISOString(),
       modelAt: proj?.updatedAt || null, slug: mk?.slug || g.pred?.slug || null };
+  }
+}
+
+/* ---------- live win odds ----------
+   Our model: each team's scoring rate is worked back from our pre-game win odds (league goals per team-game, split so
+   that a full game reproduces those odds); then the goals still to come are random arrivals at those rates over the
+   regulation time left, on top of the current score. A tie after regulation goes to overtime (3-on-3, then a near
+   coin-flip shootout; playoffs: sudden death until someone scores), with the goalie pulled late in 1-2 goal games. Polymarket: its moneyline's current price, which
+   keeps trading during the game. A trail of both through the game feeds the recap's chart. */
+const pois = (l) => { const out = [Math.exp(-l)]; for (let k = 1; k <= 15; k++) out.push(out[k - 1] * l / k); return out; };
+function winProb(lh, la, diff, frac, playoff, inOT) {
+  const share = lh / (lh + la), pOT = playoff ? share : 0.6 * share + 0.4 * 0.5;
+  if (inOT) return diff > 0 ? 1 : diff < 0 ? 0 : pOT;
+  // pulled goalie: in the last 3 minutes of a 1-2 goal game the trailing team scores ~2.5× as often and the leading
+  // team ~3.5× (into the empty net)
+  if (frac <= 3 / 60 && Math.abs(diff) >= 1 && Math.abs(diff) <= 2) { const lead = diff > 0; lh *= lead ? 3.5 : 2.5; la *= lead ? 2.5 : 3.5; }
+  const ph = pois(lh * frac), pa = pois(la * frac);
+  let win = 0, tie = 0;
+  for (let x = 0; x < ph.length; x++) for (let y = 0; y < pa.length; y++) { const d = diff + x - y, p = ph[x] * pa[y]; if (d > 0) win += p; else if (d === 0) tie += p; }
+  return win + tie * pOT;
+}
+/** Scoring rates (per regulation game) that reproduce a pre-game home win probability, around `mu` goals per team. */
+function ratesFor(pHome, mu, playoff) {
+  let lo = -1.5, hi = 1.5;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (winProb(mu * Math.exp(m), mu * Math.exp(-m), 0, 1, playoff, false) < pHome) lo = m; else hi = m; }
+  const d = (lo + hi) / 2;
+  return [mu * Math.exp(d), mu * Math.exp(-d)];
+}
+const regLeft = (g) => { // regulation minutes left, from the period and clock
+  if (g.period == null) return 60;
+  if (g.period > 3) return 0;
+  const [mm, ss] = String(g.clock || "20:00").split(":").map(Number);
+  return Math.max(0, (3 - g.period) * 20 + (g.intermission ? (g.clock && g.clock !== "00:00" ? mm + ss / 60 : 0) : mm + (ss || 0) / 60));
+};
+const inPlay = days.flatMap((d) => d.games).filter((g) => live(g) || (done(g) && g.live && g.live.final !== true));
+if (inPlay.length) {
+  const proj = store ? await store.read("hockey/projections").catch(() => null) : null;
+  const mu = proj?.mu || 3.0, markets = await polymarket(), at = new Date().toISOString();
+  for (const g of inPlay) {
+    const playoff = String(g.id).slice(4, 6) === "03", diff = (g.home.score ?? 0) - (g.away.score ?? 0);
+    const pre = g.pred?.model ?? g.pred?.market ?? 0.5;
+    const [lh, la] = ratesFor(pre, mu, playoff);
+    const left = regLeft(g), inOT = (g.period ?? 0) > 3, so = g.periodType === "SO";
+    let model = so ? (diff > 0 ? 1 : diff < 0 ? 0 : 0.5) : winProb(lh, la, diff, left / 60, playoff, inOT);
+    if (done(g)) model = diff > 0 ? 1 : 0;
+    const mk = done(g) ? null : marketFor(markets, g);
+    const market = done(g) ? (diff > 0 ? 1 : 0) : mk?.pHome ?? null;
+    g.live = { model: Math.round(model * 1000) / 1000, market, at, final: done(g) };
+    const minute = Math.round((inOT ? 60 + (g.period - 3) * 5 : 60 - left) * 10) / 10;
+    const trail = g.trail || (g.pred ? [[0, g.pred.model ?? null, g.pred.market ?? null, 0, 0]] : []);
+    const last = trail[trail.length - 1];
+    const point = [minute, g.live.model, market, g.home.score ?? 0, g.away.score ?? 0];
+    if (!last || last[0] !== minute || last[1] !== point[1] || last[2] !== point[2]) trail.push(point);
+    g.trail = trail.slice(-120);
   }
 }
 
