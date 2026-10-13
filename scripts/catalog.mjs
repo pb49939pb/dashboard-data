@@ -43,6 +43,16 @@ export const CATALOG = {
       outputs: [{ doc: "hockey/contracts", pages: ["Hockey Lab · Cap & trades"] }],
     },
     {
+      id: "trade-block", name: "Trade block from the news", schedule: "Every night, after contract news (update.yml)", script: "scripts/block.py",
+      sources: [
+        { name: "ProHockeyRumors league and team feeds", host: "www.prohockeyrumors.com", what: "trade requests and players being shopped" },
+        { name: "NHL Trade Rumors", host: "www.nhltraderumors.me", what: "insider reports (Friedman, LeBrun, Seravalli, Pagnotta...) quoted from X and TV" },
+        { name: "Daily Faceoff", host: "www.dailyfaceoff.com", what: "news and insider notes" },
+        { name: "NHL web API", host: "api-web.nhle.com", what: "current rosters (a traded player drops off)" },
+      ],
+      outputs: [{ doc: "hockey/contracts (block)", pages: ["Hockey Lab · Cap & trades (trade block)"] }],
+    },
+    {
       id: "publish", name: "Publish to Firestore", schedule: "After each job", script: "scripts/publish.mjs",
       sources: [{ name: "This run's files", host: "local", what: "merged into Firestore; nothing stored is ever dropped" }],
       outputs: [{ doc: "(all of the above)", pages: [] }],

@@ -307,7 +307,11 @@ def phr_items(url: str, max_age: float) -> list[dict]:
         link = re.search(r"<link>(.*?)</link>", it).group(1)
         pub = parsedate_to_datetime(re.search(r"<pubDate>(.*?)</pubDate>", it).group(1)).date().isoformat()
         body = re.search(r"<content:encoded><!\[CDATA\[(.*?)\]\]>", it, re.S)
-        text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", body.group(1) if body else "")).split())
+        raw = body.group(1) if body else ""
+        if not raw:  # Blogger and other feeds put the article in <description>, escaped or in CDATA
+            dm = re.search(r"<description>(.*?)</description>", it, re.S)
+            raw = html.unescape(re.sub(r"<!\[CDATA\[|\]\]>", "", dm.group(1))) if dm else ""
+        text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", raw)).split())
         text = re.sub(r"\s+([.,;:])", r"\1", text)  # "Lucas Raymond . The deal" (left by removed links)
         items.append({"title": title, "url": link, "date": pub, "text": text})
     return items
