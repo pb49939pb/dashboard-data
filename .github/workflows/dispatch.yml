@@ -30,3 +30,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JOBS_TOKEN: ${{ secrets.JOBS_TOKEN }}
         run: node scripts/dispatch.mjs
+      - name: Recent games for the Overview (yesterday and today, with scores)
+        if: always()
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/scores.mjs || echo "scores fetch failed; the last saved scores stay up"
