@@ -41,7 +41,7 @@ const ppgOf = (p) => (p.group === "G" ? 0 : ppgSeen.get(p.id) ?? Math.max(0.05, 
 async function gamesOf(s, t) {
   const path = s === current ? `public/hockey/teams/${t}.json` : `public/hockey/seasons/${s}/teams/${t}.json`;
   const d = await readJson(path);
-  return (d?.games || []).filter((g) => g.players).sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
+  return (d?.games || []).filter((g) => g.players && String(g.id).slice(4, 6) === "02") // regular season only.sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
     .map((g) => ({ id: g.id, date: g.date, dressed: new Set(Object.entries(g.players).filter(([, v]) => (v[2] === 0) === (g.home === t)).map(([id]) => Number(id))) }));
 }
 
