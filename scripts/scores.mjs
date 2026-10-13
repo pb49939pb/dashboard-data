@@ -82,11 +82,13 @@ const days = [await want(yesterday, false), await want(today, true)];
 
 // predictions for games that haven't started: our model (nightly) and Polymarket (now); frozen once the puck drops
 const upcoming = days.flatMap((d) => d.games).filter((g) => !done(g) && !live(g) && g.state !== "PPD");
-if (fetched && upcoming.length && store) {
+let predsFilled = 0;
+if (store && upcoming.length && (fetched || upcoming.some((g) => g.pred?.model == null || g.pred?.market == null))) {
   const proj = await store.read("hockey/projections").catch(() => null);
   const markets = await polymarket();
   for (const g of upcoming) {
     const m = proj?.upcoming?.[g.id], mk = marketFor(markets, g);
+    if ((m && g.pred?.model == null) || (mk && g.pred?.market == null)) predsFilled++;
     g.pred = { model: m?.pHome ?? g.pred?.model ?? null, market: mk?.pHome ?? g.pred?.market ?? null, at: new Date().toISOString(),
       modelAt: proj?.updatedAt || null, slug: mk?.slug || g.pred?.slug || null };
   }
@@ -147,7 +149,7 @@ if (store) {
   if (backfilled || recaps) await store.put("hockey/recapMeta", { done: [...doneIds].sort((a, b) => a - b), updatedAt: new Date().toISOString() }, {}, { replace: true });
 }
 
-if (!fetched && !recaps && !backfilled) { console.log("scores: nothing live or starting soon; no NHL call"); process.exit(0); }
+if (!fetched && !recaps && !backfilled && !predsFilled) { console.log("scores: nothing live or starting soon; no NHL call"); process.exit(0); }
 const doc = { updatedAt: new Date().toISOString(), days };
 if (!store) { console.log(JSON.stringify(doc).slice(0, 600)); process.exit(0); }
 await store.put("public/scores", doc, {}, { replace: true });
