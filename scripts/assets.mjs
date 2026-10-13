@@ -4,6 +4,7 @@
 //          (CC BY-SA), which list each one as "The [[A]]' first-round pick will go to the [[B]] ..."
 //   hands: shoots L/R for every skater (stats API bios); prevStandings: last season's finish (seasons/{prev}/projections.json,
 //          from a local build or the site's published copy)
+//   market: Polymarket odds to make the playoffs and win the Cup (public Gamma API), for team phases
 //   prospects: the NHL's /v1/prospects/{team}; draft slot joined from our draft history (model/draft.json); teams whose
 //          list comes back empty fall back to their recent draftees who haven't become NHL regulars
 //   node scripts/assets.mjs     → public/hockey/assets.json
@@ -112,8 +113,22 @@ const prev = JSON.parse(await readFile(`public/hockey/seasons/${prevSeason}/proj
   ?? await fetch(`https://patrickreidbaldwin.com/data/hockey/seasons/${prevSeason}/projections.json`, { headers: UA }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const prevStandings = prev ? Object.fromEntries(prev.teams.map((t) => [t.team, { pts: t.projPts, playoffs: t.playoffs, round: t.round ?? 0 }])) : null;
 
-const out = { builtAt: new Date().toISOString(), season, draftYears: years, picks, prospects, wikiPages: pages, prospectFallback: empty, hands, prevSeason, prevStandings,
+// the betting market's view of every team (Polymarket's public Gamma API): odds to make the playoffs and to win the Cup.
+// It knows what our models don't (who's healthy, offseason moves), so team phases lean on it.
+async function marketOdds() {
+  const label = `${season.slice(0, 4)}-${season.slice(6)}`, cupYear = season.slice(4);
+  const search = async (q) => (await fetch(`https://gamma-api.polymarket.com/public-search?q=${encodeURIComponent(q)}&limit_per_type=10`, { headers: UA }).then((r) => (r.ok ? r.json() : null)).catch(() => null))?.events || [];
+  const read = (e) => e ? Object.fromEntries(e.markets.filter((m) => !m.closed).map((m) => [abbrevOf(m.groupItemTitle), Number(JSON.parse(m.outcomePrices || "[0]")[0])]).filter(([t]) => t)) : null;
+  const playoffs = (await search(`make the nhl playoffs ${label}`)).find((e) => !e.closed && /make the NHL Playoffs/i.test(e.title) && e.slug.includes(label));
+  await pause(800);
+  const cup = (await search(`nhl ${cupYear} champion`)).find((e) => !e.closed && new RegExp(`^NHL: ${cupYear} Champion$`).test(e.title));
+  const out = { playoffs: read(playoffs), cup: read(cup), urls: [playoffs, cup].filter(Boolean).map((e) => `https://polymarket.com/event/${e.slug}`), asOf: new Date().toISOString() };
+  return out.playoffs && Object.keys(out.playoffs).length >= 30 ? out : null;
+}
+const market = await marketOdds().catch(() => null);
+
+const out = { builtAt: new Date().toISOString(), season, draftYears: years, picks, prospects, wikiPages: pages, prospectFallback: empty, hands, prevSeason, prevStandings, market,
   curve: draft.curve.map((c) => [c.overall, c.war]), curveWindow: draft.window,
   sources: { picks: "Wikipedia NHL entry draft articles (CC BY-SA), traded picks", prospects: "NHL prospects (api-web.nhle.com) + Hockey Lab draft history" } };
 await writeFile("public/hockey/assets.json", JSON.stringify(out));
-console.log(`assets: ${Object.keys(hands).length} skater hands, last season ${prevStandings ? "found" : "missing"}; ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects; fallback for ${empty.join(", ") || "none"}`);
+console.log(`assets: ${Object.keys(hands).length} skater hands, last season ${prevStandings ? "found" : "missing"}, market odds ${market ? `${Object.keys(market.playoffs).length} teams` : "missing"}; ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects; fallback for ${empty.join(", ") || "none"}`);
