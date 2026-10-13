@@ -53,6 +53,15 @@ export const CATALOG = {
       outputs: [{ doc: "hockey/contracts (block)", pages: ["Hockey Lab · Cap & trades (trade block)"] }],
     },
     {
+      id: "assets", name: "Team assets (picks and prospects)", schedule: "Every night, after the trade block (update.yml)", script: "scripts/assets.mjs",
+      sources: [
+        { name: "Wikipedia NHL entry draft articles", host: "en.wikipedia.org", what: "who owns each traded pick in the next three drafts, with conditions (CC BY-SA)" },
+        { name: "NHL prospects", host: "api-web.nhle.com", what: "each team's prospect list" },
+        { name: "Hockey Lab draft model", host: "local", what: "draft slots for prospects, expected value by slot, fallback prospect lists" },
+      ],
+      outputs: [{ doc: "hockey/assets", pages: ["Hockey Lab · Teams (assets card, trade explorer)"] }],
+    },
+    {
       id: "publish", name: "Publish to Firestore", schedule: "After each job", script: "scripts/publish.mjs",
       sources: [{ name: "This run's files", host: "local", what: "merged into Firestore; nothing stored is ever dropped" }],
       outputs: [{ doc: "(all of the above)", pages: [] }],

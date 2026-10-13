@@ -58,6 +58,8 @@ jobs:
         run: python scripts/contracts.py --recent || echo "contract news check failed; stored contracts are kept"
       - name: Trade block from the news
         run: python scripts/block.py || echo "trade block scan failed; last night's list is kept"
+      - name: Team assets (draft picks and prospects)
+        run: node scripts/assets.mjs || echo "assets build failed; last night's assets are kept"
       # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'

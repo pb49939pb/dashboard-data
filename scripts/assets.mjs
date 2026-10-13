@@ -1,0 +1,103 @@
+// Every team's future assets for Hockey Lab's trade explorer: draft picks for the next three drafts (own and acquired,
+// with conditions) and prospects. Values are computed on the site from these facts (draft model + each team's phase).
+//   picks: every team owns rounds 1-7 by default; traded picks come from Wikipedia's "{year} NHL entry draft" articles
+//          (CC BY-SA), which list each one as "The [[A]]' first-round pick will go to the [[B]] ..."
+//   prospects: the NHL's /v1/prospects/{team}; draft slot joined from our draft history (model/draft.json); teams whose
+//          list comes back empty fall back to their recent draftees who haven't become NHL regulars
+//   node scripts/assets.mjs     → public/hockey/assets.json
+import { readFile, writeFile } from "node:fs/promises";
+
+const UA = { "User-Agent": "hockey-lab/1.0 (+https://patrickreidbaldwin.com/hockey; personal, non-commercial)" };
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+const TEAMS = { ANA: "Anaheim Ducks", BOS: "Boston Bruins", BUF: "Buffalo Sabres", CGY: "Calgary Flames", CAR: "Carolina Hurricanes", CHI: "Chicago Blackhawks",
+  COL: "Colorado Avalanche", CBJ: "Columbus Blue Jackets", DAL: "Dallas Stars", DET: "Detroit Red Wings", EDM: "Edmonton Oilers", FLA: "Florida Panthers",
+  LAK: "Los Angeles Kings", MIN: "Minnesota Wild", MTL: "Montreal Canadiens", NSH: "Nashville Predators", NJD: "New Jersey Devils", NYI: "New York Islanders",
+  NYR: "New York Rangers", OTT: "Ottawa Senators", PHI: "Philadelphia Flyers", PIT: "Pittsburgh Penguins", SJS: "San Jose Sharks", SEA: "Seattle Kraken",
+  STL: "St. Louis Blues", TBL: "Tampa Bay Lightning", TOR: "Toronto Maple Leafs", UTA: "Utah Mammoth", VAN: "Vancouver Canucks", VGK: "Vegas Golden Knights",
+  WSH: "Washington Capitals", WPG: "Winnipeg Jets" };
+const ALIASES = { "Montréal Canadiens": "MTL", "Utah Hockey Club": "UTA", "Utah": "UTA", "Utah Mammoth": "UTA", "St Louis Blues": "STL" };
+const abbrevOf = (name) => Object.entries(TEAMS).find(([, n]) => n === name)?.[0] || ALIASES[name] || null;
+const ROUNDS = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7 };
+const plain = (w) => w.replace(/<ref[^>]*\/>|<ref[^>]*>[\s\S]*?<\/ref>/g, "").replace(/\{\{efn[\s\S]*?\}\}/g, "").replace(/\{\{[^{}]*\}\}/g, "")
+  .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1").replace(/'''?/g, "").replace(/\s+/g, " ").trim();
+
+async function wikiDraft(year) {
+  const page = `${year}_NHL_entry_draft`, api = "https://en.wikipedia.org/w/api.php";
+  const secs = await fetch(`${api}?action=parse&page=${page}&prop=sections&format=json&formatversion=2`, { headers: UA }).then((r) => r.json()).catch(() => null);
+  if (!secs?.parse) return { page, traded: [] };
+  const want = secs.parse.sections.filter((s) => /^Traded picks$|^Unresolved conditional/i.test(s.line));
+  const traded = [];
+  for (const sec of want) {
+    await pause(1500);
+    const w = await fetch(`${api}?action=parse&page=${page}&prop=wikitext&section=${sec.index}&format=json&formatversion=2`, { headers: UA }).then((r) => r.json()).catch(() => null);
+    const text = w?.parse?.wikitext || "";
+    const unresolved = /Unresolved/i.test(sec.line);
+    for (const item of text.split(/\n(?=#)/)) {
+      const m = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]'s?\s+(first|second|third|fourth|fifth|sixth|seventh)-round pick (will|may) go to the \[\[([^\]|]+)/.exec(item);
+      if (!m) continue;
+      const original = abbrevOf(m[1].trim()), owner = abbrevOf(m[4].trim());
+      if (!original || !owner) continue;
+      const converted = /was converted|were converted|condition was met|became unconditional/i.test(item);
+      const conditional = unresolved || (m[3] === "may" && !converted) || (/condition/i.test(item) && !converted && /will be|would|if /i.test(item.split("The condition")[1] || ""));
+      const sentence = plain(item.replace(/^#\s*/, "")).split(/(?<=\.)\s/)[0];
+      traded.push({ year, round: ROUNDS[m[2]], original, owner, conditional, note: sentence.slice(0, 260) });
+    }
+  }
+  return { page, traded };
+}
+
+const league = JSON.parse(await readFile("public/hockey/league.json", "utf8"));
+const draft = JSON.parse(await readFile("model/draft.json", "utf8"));
+const values = JSON.parse(await readFile("model/playerValue.json", "utf8").catch(() => '{"players":[]}'));
+const season = String(league.season), firstDraft = Number(season.slice(4)); // 2026-27 season → 2027 draft
+const years = [firstDraft, firstDraft + 1, firstDraft + 2];
+
+// picks
+const picks = [];
+for (const y of years) for (const t of Object.keys(TEAMS)) for (let r = 1; r <= 7; r++) picks.push({ year: y, round: r, original: t, owner: t, conditional: false, note: null });
+const pages = [];
+for (const y of years) {
+  const { page, traded } = await wikiDraft(y);
+  pages.push({ year: y, page: `https://en.wikipedia.org/wiki/${page}`, traded: traded.length });
+  for (const tp of traded) {
+    const p = picks.find((x) => x.year === tp.year && x.round === tp.round && x.original === tp.original);
+    if (p) Object.assign(p, { owner: tp.owner, conditional: tp.conditional, note: tp.note });
+  }
+  await pause(1500);
+}
+
+// prospects
+const draftOf = new Map(draft.picks.filter((p) => p.id).map((p) => [Number(p.id), { year: p.year, overall: p.overall, round: p.round, by: p.team }]));
+const established = new Set(values.players.filter((p) => p.gp3 >= 60 || p.curGp > 0).map((p) => p.id)); // NHL regulars and anyone playing NHL games now
+const prospects = [];
+const empty = [];
+for (const t of Object.keys(TEAMS)) {
+  await pause(600);
+  const r = await fetch(`https://api-web.nhle.com/v1/prospects/${t}`, { headers: UA }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+  const list = r ? [...(r.forwards || []), ...(r.defensemen || []), ...(r.goalies || [])] : [];
+  if (!list.length) { empty.push(t); continue; }
+  for (const p of list) {
+    if (established.has(p.id)) continue;
+    const d = draftOf.get(p.id);
+    prospects.push({ id: p.id, name: `${p.firstName.default} ${p.lastName.default}`, team: t, pos: p.positionCode, born: Number(String(p.birthDate || "").slice(0, 4)) || null,
+      draftYear: d?.year ?? null, draftOverall: d?.overall ?? null, draftedBy: d?.by ?? null, source: "nhl" });
+  }
+}
+// fallback: a team's recent draftees who haven't become NHL regulars (rights assumed still held)
+const taken = new Set(prospects.map((p) => p.id));
+for (const t of empty) {
+  // recent draftees who haven't played in the NHL; unplayed picks have no NHL id yet, so they get a draft-based one
+  // (unsigned rights lapse after a few years, so only the last four drafts for those)
+  for (const p of draft.picks.filter((x) => x.team === t && x.year >= firstDraft - 5)) {
+    const id = p.id ? Number(p.id) : null;
+    if (id && (established.has(id) || taken.has(id))) continue;
+    if (!id && p.year < firstDraft - 4) continue;
+    prospects.push({ id: id ?? `d${p.year}-${p.overall}`, name: p.name, team: t, pos: null, born: null, draftYear: p.year, draftOverall: p.overall, draftedBy: t, source: "draft history (rights assumed)" });
+  }
+}
+
+const out = { builtAt: new Date().toISOString(), season, draftYears: years, picks, prospects, wikiPages: pages, prospectFallback: empty,
+  curve: draft.curve.map((c) => [c.overall, c.war]), curveWindow: draft.window,
+  sources: { picks: "Wikipedia NHL entry draft articles (CC BY-SA), traded picks", prospects: "NHL prospects (api-web.nhle.com) + Hockey Lab draft history" } };
+await writeFile("public/hockey/assets.json", JSON.stringify(out));
+console.log(`assets: ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects; fallback for ${empty.join(", ") || "none"}`);
