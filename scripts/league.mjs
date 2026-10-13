@@ -40,14 +40,15 @@ function scoreGame(pbp, model, shifts = null) {
     hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players, ev,
     ...(ix ? { fo, u5: ix.u5, toi: [0, 1].map((sd) => Object.fromEntries(Object.entries(ix.toi).filter(([id]) => players[id]?.[2] === sd))) } : {}),
     // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type,
-    //  flags (1 rebound, 2 rush, 4 crossed the middle within 5 s, 8 quick follow-up within 5 s)]
+    //  flags (1 rebound, 2 rush, 4 crossed the middle within 5 s, 8 quick follow-up within 5 s), on-ice [home, away],
+    //  seconds into the period, empty net (1/0)]
     shots: rows.map((r) => {
       const v = xg(r, model);
       const quick = (r.prevGap ?? 999) <= 5;
       const cross = quick && r.prevY != null && Math.sign(r.prevY) * Math.sign(r.y) < 0 && Math.abs(r.prevY - r.y) >= 15;
       return [Math.round(r.x), Math.round(r.y), KIND[r.type], r.home ? 0 : 1, v === null ? null : Math.round(v * 1000) / 1000,
         r.shooterId ?? null, r.goalieId ?? null, r.strength, r.period, STYPE[r.shotType] || "o", (r.rebound ? 1 : 0) | (r.rush ? 2 : 0) | (cross ? 4 : 0) | (quick ? 8 : 0),
-        ix ? [ix.onIce(r.period, r.t, 0, "shot"), ix.onIce(r.period, r.t, 1, "shot")] : null];
+        ix ? [ix.onIce(r.period, r.t, 0, "shot"), ix.onIce(r.period, r.t, 1, "shot")] : null, r.t, r.emptyNet ? 1 : 0];
     }),
   };
 }

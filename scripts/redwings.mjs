@@ -207,9 +207,11 @@ if (await access(MODEL).then(() => true, () => false)) {
   run.check(!r.missingShifts.length, "Shift charts (lines and on-ice data)", r.missingShifts.length ? `${r.missingShifts.length} game(s) without shift charts; their lines and on-ice numbers are left out and retried next run` : "every game");
 
   /* ---------- Team styles (offense / defense fingerprints, archetypes, matchups) ---------- */
+  var stylesDoc = null; // eslint-disable-line no-var -- also used by the projections block below
   const stylePrior = await (await import("node:fs/promises")).readFile("model/stylePrior.json", "utf8").then(JSON.parse, () => null);
   if (stylePrior) {
     const styles = buildStyles(r.list, stylePrior, season);
+    stylesDoc = styles;
     await writeFile("public/hockey/styles.json", JSON.stringify(styles));
     // The widget is public, so the next opponent's style goes into redwings.json as a short summary
     const nx = out.nextGames?.[0], us = styles.teams[TEAM], them = nx && styles.teams[nx.opponent.abbrev];
@@ -257,6 +259,20 @@ if (await access(MODEL).then(() => true, () => false)) {
       await writeFile("public/redwings.json", JSON.stringify(out));
       notes.nextGameWin = `${out.nextGameOdds.win}% vs ${opp}`;
     }
+    // Every game in the next three days: our chance the home team wins (same game model, style matchup at half weight).
+    // The scores job freezes these at puck drop, next to Polymarket's price, so the recap can say which was closer.
+    const styleAdj = (home, away) => {
+      const S = stylesDoc, h = S?.teams?.[home], a = S?.teams?.[away];
+      if (!h || !a) return { home: 1, away: 1 };
+      const find = (o, d) => S.matchups.find((m) => m.off === o && m.def === d);
+      return { home: 1 + 0.5 * (find(h.off, a.def)?.effect || 0), away: 1 + 0.5 * (find(a.off, h.def)?.effect || 0) };
+    };
+    const horizon = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
+    sim.upcoming = Object.fromEntries([...remaining.values()].filter((g) => g.date <= horizon && R.teams[g.home] && R.teams[g.away]).map((g) => {
+      const p = winProbability(R, g.home, g.away, styleAdj(g.home, g.away)), b = winProbability(R, g.home, g.away);
+      return [g.id, { date: g.date, home: g.home, away: g.away, pHome: Math.round(p.home * 1000) / 1000, pHomeNoStyle: Math.round(b.home * 1000) / 1000,
+        xgHome: Math.round(p.xgHome * 100) / 100, xgAway: Math.round(p.xgAway * 100) / 100 }];
+    }));
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
       standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim }));
     Object.assign(notes, { gamesLeftSimulated: sim.remaining, simulations: sim.sims });
