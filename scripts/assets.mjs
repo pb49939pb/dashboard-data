@@ -2,7 +2,8 @@
 // with conditions) and prospects. Values are computed on the site from these facts (draft model + each team's phase).
 //   picks: every team owns rounds 1-7 by default; traded picks come from Wikipedia's "{year} NHL entry draft" articles
 //          (CC BY-SA), which list each one as "The [[A]]' first-round pick will go to the [[B]] ..."
-//   hands: shoots L/R for every skater (stats API bios); prevStandings: last season's finish (seasons/{prev}/projections.json)
+//   hands: shoots L/R for every skater (stats API bios); prevStandings: last season's finish (seasons/{prev}/projections.json,
+//          from a local build or the site's published copy)
 //   prospects: the NHL's /v1/prospects/{team}; draft slot joined from our draft history (model/draft.json); teams whose
 //          list comes back empty fall back to their recent draftees who haven't become NHL regulars
 //   node scripts/assets.mjs     → public/hockey/assets.json
@@ -106,7 +107,9 @@ for (const s of [prevSeason, season]) {
   for (const p of r?.data || []) if (p.shootsCatches) hands[p.playerId] = p.shootsCatches;
 }
 // last season's finish (for team phases early in a season, when this season's projection is mostly a prior)
-const prev = JSON.parse(await readFile(`public/hockey/seasons/${prevSeason}/projections.json`, "utf8").catch(() => "null"));
+// (a local build, else the site's published copy of that frozen season)
+const prev = JSON.parse(await readFile(`public/hockey/seasons/${prevSeason}/projections.json`, "utf8").catch(() => "null"))
+  ?? await fetch(`https://patrickreidbaldwin.com/data/hockey/seasons/${prevSeason}/projections.json`, { headers: UA }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const prevStandings = prev ? Object.fromEntries(prev.teams.map((t) => [t.team, { pts: t.projPts, playoffs: t.playoffs, round: t.round ?? 0 }])) : null;
 
 const out = { builtAt: new Date().toISOString(), season, draftYears: years, picks, prospects, wikiPages: pages, prospectFallback: empty, hands, prevSeason, prevStandings,
