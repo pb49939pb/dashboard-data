@@ -1,0 +1,37 @@
+# Game night: live scores, Recent games and recaps every 5 minutes while games are on (scripts/live.mjs).
+# GitHub only runs frequent schedules when it has spare capacity (dispatch.yml's every 10 minutes can go hours
+# between runs), so this starts once before games and stays up until the last one is final, handing off to a fresh
+# run before GitHub's 6-hour limit. Three start times in case one is dropped; only one run at a time.
+# Free: this repo is public, so Actions minutes aren't billed.
+name: Game night (live scores)
+on:
+  schedule:
+    - cron: "0 15 * * *"   # 11 AM Eastern (summer) / 10 AM (winter): weekend matinees
+    - cron: "0 22 * * *"   # 6 PM / 5 PM Eastern
+    - cron: "0 1 * * *"    # 9 PM / 8 PM Eastern
+  workflow_dispatch:
+
+permissions:
+  actions: write   # to start the next run of itself
+  contents: read
+
+concurrency:
+  group: live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Scores every 5 minutes until the last game is final
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/live.mjs

@@ -1,5 +1,5 @@
 // Recent games for Hockey Lab's Overview: yesterday's and today's NHL games with scores, saved to Firestore
-// public/scores. Runs every 10 minutes with dispatch.yml (the NHL API can't be read from a browser on another site),
+// public/scores. Runs every 5 minutes on game nights (live.yml) and with dispatch.yml (the NHL API can't be read from a browser on another site),
 // but only calls the NHL when a game is live or about to start (see want()). Also:
 //   - pre-game win odds for today's games: Hockey Lab's model (nightly, hockey/projections.upcoming) and Polymarket's
 //     moneyline price (read-only public market data), frozen at puck drop so the recap can say which was closer
