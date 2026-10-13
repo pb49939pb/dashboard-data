@@ -73,7 +73,7 @@ export const CATALOG = {
         { doc: "hockey/gm", pages: ["Hockey Lab · Front office (GM eras)"] },
         { doc: "hockey/age", pages: ["Hockey Lab · Front office (age of scoring)"] },
         { doc: "hockey/coaches", pages: ["Hockey Lab · Coaches", "team cards (coach line)"] },
-        { doc: "hockey/teamCap", pages: ["Hockey Lab · Cap & trades (official team cap space; model/teamCap.json, entered by you)"] },
+        { doc: "hockey/teamCap", pages: ["Hockey Lab · Cap & trades (official team cap space from PuckPedia, entered by you on the site; owner-only, never in this public repo)"] },
         { doc: "hockey/heatPrior", pages: ["Hockey Lab · Shot maps (early-season blend)"] },
         { doc: "model/ratings.json", pages: ["Hockey Lab · Teams (projections prior)"] },
         { doc: "model/stylePrior.json", pages: ["Hockey Lab · Teams (style archetypes and matchup effects; scripts/stylePrior.mjs, yearly)"] },
