@@ -145,6 +145,12 @@ def deal_from_text(text: str) -> dict | None:
             return {"term": None, "aav": None, "ext": False, "elc": True, "start": None}
         return None
     term = NUM.get(m.group(1).lower()) or int(m.group(1))
+    # read the cap hit, "extension" and "entry-level" from the sentence that states this term only: a passage can cover
+    # two deals (Wikipedia: "signed a three-year entry-level contract ... On September 15, 2026, ... an eight-year,
+    # $84 million extension, carrying an average annual value of $10.5 million")
+    a0 = max(text.rfind(". ", 0, m.start()), text.rfind("\n", 0, m.start())) + 1
+    ends = [i for i in (text.find(". ", m.end()), text.find("\n", m.end())) if i >= 0]
+    text, m = text[a0:min(ends) + 1 if ends else len(text)], re.search(TERM, text[a0:min(ends) + 1 if ends else len(text)], re.I)
     aav = re.search(r"(?:average annual value|AAV|cap hit|annual average|per season|per year|annually)[^$]{0,30}" + MONEY, text, re.I) \
         or re.search(MONEY + r"[^.$]{0,20}(?:AAV|cap hit|per season|per year|annually|average annual value)", text, re.I)
     v = None
@@ -159,8 +165,12 @@ def deal_from_text(text: str) -> dict | None:
     if v is not None and not 500_000 <= v <= 20_000_000:
         v = None
     st = re.search(r"(?:begin|begins|began|beginning|start|starts|starting|kicks? in|effective|through)[^.]{0,30}?(20\d\d)[–-](?:20)?\d\d season", text, re.I)
+    # entry-level only when it's said of this deal ("a three-year, entry-level contract"), not anywhere in the passage
+    # (a Wikipedia paragraph often covers the entry-level deal and a later extension together)
+    near = text[max(0, m.start() - 40):m.end() + 60].lower()
+    elc = re.search(r"entry[- ]level", near) is not None and "extension" not in near and term <= 3
     return {"term": term, "aav": int(round(v, -3)) if v else None, "ext": "extension" in text.lower(),
-            "elc": "entry-level" in text.lower(), "start": int(st.group(1)) if st and "through" not in st.group(0).lower() else None}
+            "elc": elc, "start": int(st.group(1)) if st and "through" not in st.group(0).lower() else None}
 
 
 # ---------------- Source 5: Wikipedia team season pages ----------------
@@ -385,6 +395,9 @@ def start_season(d: dict) -> tuple[int, bool]:
     return start, day.month >= 9 or day.month <= 2
 
 
+ELC_MAX = 1_200_000  # entry-level cap hits top out near $1M (plus a little room for CBA changes)
+
+
 def elc_years(born: str | None, signed: str) -> int | None:
     """Entry-level contract length by age at signing (CBA): 18-21 -> 3, 22-23 -> 2, 24+ -> 1."""
     if not born:
@@ -414,7 +427,9 @@ def summarize(deals: list[dict], cur_start: int) -> dict | None:
         if prev_start + prev["term"] - 1 < day.year:
             start = day.year
     out = {"term": t["term"], "signed": latest["date"], "start": start, "end": start + t["term"] - 1, "startGuessed": guessed,
-           "elc": any(d.get("elc") for d in same), "aav": None, "src": {"term": {"source": t["source"], "url": t["url"], "date": t["date"]}}, "alts": []}
+           "elc": t["term"] <= 3 and any(d.get("elc") for d in same), "aav": None, "src": {"term": {"source": t["source"], "url": t["url"], "date": t["date"]}}, "alts": []}
+    if a and out["elc"] and a["aav"] > ELC_MAX:
+        a = None  # an extension's cap hit picked up by the entry-level deal: leave it to the ELC default
     if a:
         out["aav"] = a["aav"]
         out["src"]["aav"] = {"source": a["source"], "url": a["url"], "date": a["date"], "quote": a.get("quote")}
@@ -424,8 +439,11 @@ def summarize(deals: list[dict], cur_start: int) -> dict | None:
 
 
 def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
+    elc_dates = sorted(d["date"] for d in deals if d.get("elc") and d.get("date"))
     for d in deals:
-        if d.get("elc") and not d.get("term") and d.get("date"):
+        # an entry-level deal with no stated length gets the CBA length for his age; only the first one he signed
+        # (a later "entry-level" mention is a news recap, and an extension is never entry-level)
+        if d.get("elc") and not d.get("term") and d.get("date") and not d.get("ext") and d["date"] == elc_dates[0]:
             d["term"], d["termFromAge"] = elc_years(player.get("born"), d["date"]), True
     row = {**player, "term": None, "signed": None, "start": None, "end": None, "aav": None, "status": "unknown",
            "startGuessed": False, "elc": False, "src": {}, "alts": []}
@@ -563,7 +581,23 @@ def main() -> None:
     print(f"{len(signed)}/{len(players)} with a current deal; {sum(by_src.values())} with a cap hit {by_src}; pages: {fetched}")
 
 
+def clean(out: dict) -> dict:
+    """Rows a deal can't look like: entry-level is 3 years or less with a cap hit near $1M. (The nightly path starts
+    from the stored copy, which may still hold an extension's cap hit on the entry-level row from an older build.)"""
+    for r in out.get("players", []):
+        if r.get("elc") and (r.get("term") or 0) > 3:
+            r["elc"] = False
+        if r.get("elc") and (r.get("aav") or 0) > ELC_MAX:
+            r["aav"] = None
+            r.get("src", {}).pop("aav", None)
+            r["alts"] = []
+        if (r.get("next") or {}).get("elc") and (r["next"].get("term") or 0) > 3:
+            r["next"]["elc"] = False
+    return out
+
+
 def write(out: dict) -> None:
+    out = clean(out)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out))
 

@@ -64,12 +64,14 @@ const store = {
     const snap = await db.collection(path).get();
     return snap.docs.map((d) => JSON.parse(d.data().json));
   },
-  /** Merge `data` into the document at `path` (extra plain fields, e.g. for queries, go in `fields`). */
-  async put(path, data, fields = {}, { replace = false } = {}) {
+  /** Merge `data` into the document at `path` (extra plain fields, e.g. for queries, go in `fields`). `fix(merged)`
+      may clean the merged document before it's written. */
+  async put(path, data, fields = {}, { replace = false, fix = null } = {}) {
     const ref = db.doc(path);
     const snap = await ref.get();
     const prev = snap.exists ? JSON.parse(snap.data().json) : null;
-    const merged = prev && !replace ? merge(prev, data) : data; // replace: offline models are full rebuilds from kept history
+    let merged = prev && !replace ? merge(prev, data) : data; // replace: offline models are full rebuilds from kept history
+    if (fix) merged = fix(merged); // clear values the merge kept but that can't be right (merging never erases on its own)
     const json = JSON.stringify(merged);
     if (Buffer.byteLength(json) > 1_000_000) throw new Error(`${path} is over Firestore's 1 MB limit; split it`);
     const h = hash(json);

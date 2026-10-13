@@ -49,10 +49,23 @@ const publishLog = () => ({ job: "publish", ok: true, error: null, startedAt: ne
   seconds: Math.round((Date.now() - t0) / 100) / 10, sources: { firestore: { requests: store.writes, cached: 0, failed: 0 } }, notes: { documentsWritten: store.writes, only: only.join(",") || "all" },
   github: process.env.GITHUB_RUN_ID ? { run: process.env.GITHUB_RUN_ID, url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}` } : { local: true } });
 
+/** An entry-level deal is 3 years or less with a cap hit near $1M: a row flagged entry-level with a longer term isn't
+    one, and an entry-level row carrying a bigger cap hit picked it up from an extension in an earlier build. */
+const ELC_MAX = 1_200_000;
+export function cleanContracts(doc) {
+  for (const r of doc.players || []) {
+    if (r.elc && Number(r.term) > 3) r.elc = false;
+    if (r.elc && Number(r.aav) > ELC_MAX) { delete r.aav; if (r.src) delete r.src.aav; r.alts = []; }
+    if (r.next?.elc && Number(r.next.term) > 3) r.next.elc = false;
+  }
+  return doc;
+}
+
 // Contracts: merged like everything else, so a source that fails a week never wipes a known cap hit
+// (after merging, rows are checked for values no deal can have, which a merge would otherwise keep forever)
 if (want("contracts")) {
   const c = await load("public/hockey/contracts.json");
-  if (c) await store.put("hockey/contracts", c);
+  if (c) await store.put("hockey/contracts", c, {}, { fix: cleanContracts });
 }
 if (only.length && !only.some((n) => n !== "contracts")) {
   await publishAdmin([publishLog()]);
