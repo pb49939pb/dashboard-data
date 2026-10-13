@@ -1,12 +1,12 @@
-# Nightly at 11 PM Eastern: fetch NHL data, rebuild the Red Wings widget and Hockey Lab data, and merge it into
+# Nightly at 3 AM Eastern (after the last West Coast games end): fetch NHL data, rebuild the Red Wings widget and Hockey Lab data, and merge it into
 # Firestore (pat-dashboard-eb494). Writes only add or update; nothing already stored is dropped.
-# Cron is UTC, so both 03:00 and 04:00 UTC are scheduled (11 PM EDT / EST); the run that isn't
-# 11 PM in New York stops before fetching anything. Manual runs and pushes always fetch.
+# Cron is UTC, so both 07:00 and 08:00 UTC are scheduled (3 AM EDT / EST); the run that isn't
+# 3 AM in New York stops before fetching anything. Manual runs and pushes always fetch.
 name: Update dashboard data
 on:
   schedule:
-    - cron: "0 3 * * *"
-    - cron: "0 4 * * *"
+    - cron: "0 7 * * *"
+    - cron: "0 8 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -22,11 +22,11 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Only at 11 PM Eastern
+      - name: Only at 3 AM Eastern
         id: hour
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(TZ=America/New_York date +%H)" != "23" ]; then
-            echo "Not 11 PM in New York; skipping this scheduled run."
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(TZ=America/New_York date +%H)" != "03" ]; then
+            echo "Not 3 AM in New York; skipping this scheduled run."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4

@@ -3,7 +3,7 @@
 export const CATALOG = {
   jobs: [
     {
-      id: "nightly-build", name: "Nightly build", schedule: "Every night, 11 PM Eastern (GitHub Actions: update.yml)", script: "scripts/redwings.mjs",
+      id: "nightly-build", name: "Nightly build", schedule: "Every night, 3 AM Eastern, after the last West Coast games (GitHub Actions: update.yml)", script: "scripts/redwings.mjs",
       sources: [
         { name: "NHL web API", host: "api-web.nhle.com", what: "standings, schedules, rosters, club stats, play-by-play for every game" },
         { name: "NHL stats API", host: "api.nhle.com", what: "goalie game logs (quality starts), shift charts (who was on the ice: lines, pairs, on-ice results)" },
