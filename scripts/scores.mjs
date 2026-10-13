@@ -123,7 +123,8 @@ const regLeft = (g) => { // regulation minutes left, from the period and clock
   if (g.period == null) return 60;
   if (g.period > 3) return 0;
   const [mm, ss] = String(g.clock || "20:00").split(":").map(Number);
-  return Math.max(0, (3 - g.period) * 20 + (g.intermission ? (g.clock && g.clock !== "00:00" ? mm + ss / 60 : 0) : mm + (ss || 0) / 60));
+  // in an intermission the clock counts down the break, not the period: only the periods still to play are left
+  return Math.max(0, (3 - g.period) * 20 + (g.intermission ? 0 : mm + (ss || 0) / 60));
 };
 const inPlay = days.flatMap((d) => d.games).filter((g) => live(g) || (done(g) && g.live && g.live.final !== true));
 if (inPlay.length) {
