@@ -1,5 +1,6 @@
 // Recent games for Hockey Lab's Overview: yesterday's and today's NHL games with scores, saved to Firestore
-// public/scores. Runs every 10 minutes with dispatch.yml (the NHL API can't be read from a browser on another site).
+// public/scores. Runs every 10 minutes with dispatch.yml (the NHL API can't be read from a browser on another site),
+// but only calls the NHL when a game is live or about to start (see want()).
 //   node scripts/scores.mjs            (STORE_DRY_RUN=1 to print instead of saving)
 import { openStore } from "./store.mjs";
 
@@ -22,10 +23,25 @@ async function day(date) {
   }));
 }
 
-const days = [];
-for (const date of [yesterday, today]) days.push({ date, games: await day(date) });
-const doc = { updatedAt: new Date().toISOString(), days };
+// Game-aware: only ask the NHL when something can have changed. Yesterday: until every game is final. Today: every run
+// (10 minutes) while a game is live or starts within 30 minutes, otherwise once an hour for schedule changes.
 const store = await openStore();
+const prev = store ? await store.read("public/scores").catch(() => null) : null;
+const now = Date.now(), HOUR = 36e5;
+const done = (g) => ["FINAL", "OFF"].includes(g.state);
+const busy = (g) => ["LIVE", "CRIT"].includes(g.state) || (!done(g) && g.state !== "PPD" && new Date(g.start).getTime() - now < 30 * 60e3);
+let fetched = 0;
+async function want(date, isToday) {
+  const old = prev?.days?.find((d) => d.date === date);
+  const stale = !old?.checkedAt || now - new Date(old.checkedAt).getTime() > HOUR;
+  const need = !old || old.games.some(busy) || (isToday ? stale : old.games.some((g) => !done(g) && g.state !== "PPD"));
+  if (!need) return old;
+  fetched++;
+  return { date, checkedAt: new Date().toISOString(), games: await day(date) };
+}
+const days = [await want(yesterday, false), await want(today, true)];
+if (!fetched) { console.log("scores: nothing live or starting soon; no NHL call"); process.exit(0); }
+const doc = { updatedAt: new Date().toISOString(), days };
 if (!store) { console.log(JSON.stringify(doc, null, 1).slice(0, 1500)); process.exit(0); }
 await store.put("public/scores", doc, {}, { replace: true });
-console.log(`scores: ${days.map((d) => `${d.date} ${d.games.length} games`).join(", ")}`);
+console.log(`scores: fetched ${fetched} day(s); ${days.map((d) => `${d.date} ${d.games.length} games`).join(", ")}`);
