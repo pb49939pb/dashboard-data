@@ -1,7 +1,7 @@
 {
  "season": "20262027",
  "asOf": "2026-10-13",
- "source": "entered by you (from a cap-tracking site)",
+ "source": "PuckPedia (puckpedia.com), entered by you",
  "note": "Official team cap space. Current = space today; projected = space at season end with current commitments (accrues daily). Overrides the estimate built from player contracts.",
  "teams": {
   "SEA": {

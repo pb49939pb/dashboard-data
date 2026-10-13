@@ -58,7 +58,11 @@ MONTHS = {m: i for i, m in enumerate(["January", "February", "March", "April", "
 NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
 MONEY = r"\$\s?([\d.,]+)\s*(million|MM\b|M\b|K\b)?"
 TERM = r"\b(one|two|three|four|five|six|seven|eight|[1-8])[- ]year\b(?=(?:[^.]|\.(?=\d)){0,45}?\b(?:contract|extension|deal|pact|ELC)\b)"
-SPECULATION = re.compile(r"\b(comparable|could|would|might|may|projected|projection|expected to|asking|seeking|ask|rumou?r|reportedly looking|in line for|similar to|like\s+[A-Z])", re.I)
+SPECULATION = re.compile(r"\b(comparable|could|would|might|may|projected|projection|projects?|projecting|pegged|AFP Analytics|estimated?|estimates|predict\w*|will|likely|expected to|asking|seeking|ask|rumou?r|reportedly looking|in line for|similar to|like\s+[A-Z])", re.I)
+# Sentences that recall an older deal ("originally signed ... in 2019", "the final year of an eight-year contract"): dated by
+# what they say, not by the article's date; dropped when they don't say when
+HIST_REJECT = re.compile(r"\b(originally|at the time of signing|inaugural season|last contract|previous contract|prior contract|years ago)\b", re.I)
+ORDINAL = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8}
 NAME = re.compile(r"\b[A-Z][a-z]+(?:[- ][A-Z][a-z]+)*\s+[A-Z][a-zA-Z'’-]+")
 
 _last: dict[str, float] = {}
@@ -148,7 +152,7 @@ def deal_from_text(text: str) -> dict | None:
         v = money(aav.group(1), aav.group(2))
     else:
         tot = re.match(r",?\s+(?:[a-z-]+\s+)?" + MONEY, text[m.end():], re.I) \
-            or re.search(r"(?:worth|valued at|totaling|totalling)\s+(?:a total of\s+)?" + MONEY, text[m.end():m.end() + 120], re.I)  # "two-year, $1.55MM" / "worth $800,000"
+            or re.search(r"(?:worth|valued at|totaling|totalling|for)\s+(?:a total of\s+)?" + MONEY, text[m.end():m.end() + 120], re.I)  # "two-year, $1.55MM" / "worth $800,000"
         if tot:
             total = money(tot.group(1), tot.group(2).replace("MM", "M") if tot.group(2) else ("M" if "MM" in text[m.end():m.end() + 20] else None))
             v = total / term
@@ -314,6 +318,31 @@ OTHER_LAST: set[str] = set()  # and last names, for possessives ("Marchenko's")
 EUROPE = re.compile(r"\b(SHL|KHL|Liiga|DEL|Swiss|Switzerland|Sweden|Swedish|Finland|Finnish|Czech|Extraliga|Germany|German|National League|overseas|Europe|European)\b", re.I)
 
 
+def deal_date(text: str, item_date: str, d: dict) -> str | None:
+    """When a deal in a news sentence was signed: the article's date, unless the sentence says otherwise. Sets d["start"]
+    for 'the final year of an eight-year contract'. None when it recalls an older deal without saying when."""
+    day = date.fromisoformat(item_date)
+    season = day.year if day.month >= 7 else day.year - 1  # the season the article is about
+    m = re.search(r"\b(" + "|".join(MONTHS) + r")\s+(\d{1,2}),\s+(20\d\d)", text)
+    if m:
+        when = date(int(m.group(3)), MONTHS[m.group(1)], int(m.group(2)))
+        if when < day - timedelta(days=60):
+            return when.isoformat()
+    m = re.search(r"\b(?:in|back in|signed in|during|of)\s+(20\d\d)\b(?![–-])", text)
+    if m and int(m.group(1)) < day.year:
+        return f"{m.group(1)}-07-01"
+    if re.search(r"\blast (?:summer|offseason|off-season)\b", text, re.I):
+        return f"{day.year - 1}-07-01"
+    m = re.search(r"\b(final|last|" + "|".join(ORDINAL) + r") year of (?:an? |his )?", text, re.I)
+    if m and d.get("term"):
+        k = d["term"] if m.group(1).lower() in ("final", "last") else ORDINAL[m.group(1).lower()]
+        d["start"] = season - k + 1
+        return item_date
+    if HIST_REJECT.search(text):
+        return None
+    return item_date
+
+
 def phr_deals(name: str, items: list[dict]) -> list[dict]:
     """Deals in news posts, only from sentences that name the player (roundup posts cover many players)."""
     last = norm(name).split()[-1]
@@ -322,14 +351,21 @@ def phr_deals(name: str, items: list[dict]) -> list[dict]:
         for sent in re.split(r"(?<=[a-z0-9)])\.\s+(?=[A-Z])", it["text"]):
             if last not in norm(sent) or EUROPE.search(sent):
                 continue
-            d = deal_from_text(sent)
-            if d and re.search(r"\bsign|extension|agree|inked|deal|contract\b", sent, re.I) and not SPECULATION.search(sent):
+            sp = SPECULATION.search(sent)
+            part = sent[:sp.start()] if sp else sent  # "signed a one-year deal for $12MM, where he will exceed $15MM" -> the fact only
+            d = deal_from_text(part)
+            if d and re.search(r"\bsign|extension|agree|inked|deal|contract\b", part, re.I):
+                when = deal_date(part, it["date"], d)
+                if when is None:
+                    continue
+                if when != it["date"]:
+                    d = {**d, "ext": False} if "extension" not in part.lower() else d
                 # a sentence that also names another NHL player ("... like Tim Stützle and his eight-year deal",
                 # "Marchenko's six-year extension") is about someone else's deal, or comparing
                 ns = norm(sent)
                 if any(o in ns for o in OTHERS if o != norm(name)) or any(f"{l}s " in ns.replace("’", "").replace("'", "") for l in OTHER_LAST if l != last):
                     continue
-                out.append({"source": "ProHockeyRumors", "url": it["url"], "date": it["date"], "quote": sent[:240], **d})
+                out.append({"source": "ProHockeyRumors", "url": it["url"], "date": when, "quote": part[:240], **d})
                 break
     return out
 
@@ -354,15 +390,10 @@ def elc_years(born: str | None, signed: str) -> int | None:
     return 3 if age <= 21 else 2 if age <= 23 else 1
 
 
-def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
-    for d in deals:
-        if d.get("elc") and not d.get("term") and d.get("date"):
-            d["term"], d["termFromAge"] = elc_years(player.get("born"), d["date"]), True
-    row = {**player, "term": None, "signed": None, "start": None, "end": None, "aav": None, "status": "unknown",
-           "startGuessed": False, "elc": False, "src": {}, "alts": []}
-    deals = [d for d in deals if d.get("date") and d.get("term")]
+def summarize(deals: list[dict], cur_start: int) -> dict | None:
+    """The newest deal in `deals`, its fields filled from the highest-priority source that reported it."""
     if not deals:
-        return row
+        return None
     latest = max(deals, key=lambda d: (d["date"], -PRIORITY[d["source"]]))
     day = date.fromisoformat(latest["date"])
     same = [d for d in deals if abs((date.fromisoformat(d["date"]) - day).days) <= 150 and d["term"] == latest["term"]]
@@ -378,13 +409,38 @@ def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
         prev_start, _ = start_season(prev)
         if prev_start + prev["term"] - 1 < day.year:
             start = day.year
-    row.update(term=t["term"], signed=latest["date"], start=start, end=start + t["term"] - 1, startGuessed=guessed,
-               elc=any(d.get("elc") for d in same), status="signed" if start + t["term"] - 1 >= cur_start else "expired?")
-    row["src"]["term"] = {"source": t["source"], "url": t["url"], "date": t["date"]}
+    out = {"term": t["term"], "signed": latest["date"], "start": start, "end": start + t["term"] - 1, "startGuessed": guessed,
+           "elc": any(d.get("elc") for d in same), "aav": None, "src": {"term": {"source": t["source"], "url": t["url"], "date": t["date"]}}, "alts": []}
     if a:
-        row["aav"] = a["aav"]
-        row["src"]["aav"] = {"source": a["source"], "url": a["url"], "date": a["date"], "quote": a.get("quote")}
-        row["alts"] = [{"source": d["source"], "aav": d["aav"], "url": d["url"]} for d in same if d.get("aav") and d is not a and abs(d["aav"] - a["aav"]) > 25_000]
+        out["aav"] = a["aav"]
+        out["src"]["aav"] = {"source": a["source"], "url": a["url"], "date": a["date"], "quote": a.get("quote")}
+        out["alts"] = [{"source": d["source"], "aav": d["aav"], "url": d["url"]} for d in same if d.get("aav") and d is not a and abs(d["aav"] - a["aav"]) > 25_000]
+    out["_day"] = day
+    return out
+
+
+def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
+    for d in deals:
+        if d.get("elc") and not d.get("term") and d.get("date"):
+            d["term"], d["termFromAge"] = elc_years(player.get("born"), d["date"]), True
+    row = {**player, "term": None, "signed": None, "start": None, "end": None, "aav": None, "status": "unknown",
+           "startGuessed": False, "elc": False, "src": {}, "alts": []}
+    deals = [d for d in deals if d.get("date") and d.get("term")]
+    main = summarize(deals, cur_start)
+    if not main:
+        return row
+    nxt = None
+    if main["start"] > cur_start:
+        # an extension that hasn't started: this season is still played on the deal before it
+        before = [d for d in deals if date.fromisoformat(d["date"]) < main["_day"] - timedelta(days=30)]
+        cur = summarize(before, cur_start)
+        if cur and cur["start"] <= cur_start <= cur["end"]:
+            main, nxt = cur, main
+    main.pop("_day", None)
+    row.update(main, status="signed" if main["end"] >= cur_start else "expired?")
+    if nxt:
+        nxt.pop("_day", None)
+        row["next"] = {k: nxt[k] for k in ("term", "signed", "start", "end", "aav", "elc", "src")}
     return row
 
 
@@ -421,7 +477,12 @@ def main() -> None:
             ds = phr_deals(p["name"], [it for it in items if norm(p["name"]).split()[-1] in norm(it["title"])])
             old = by_id.get(pid)
             if ds and (not old or not old.get("signed") or ds[0]["date"] > old["signed"]):
-                by_id[pid] = resolve(p, ds, cur_start); n += 1
+                new = resolve(p, ds, cur_start); n += 1
+                if old and old.get("status") == "signed" and (new.get("start") or 0) > cur_start and (old.get("start") or 0) <= cur_start:
+                    # an extension in the news: this season's deal stays, the extension goes alongside it
+                    old.update(team=p["team"], next={k: new.get(k) for k in ("term", "signed", "start", "end", "aav", "elc", "src")})
+                else:
+                    by_id[pid] = new
             elif old:
                 old.update(team=p["team"])  # trades: keep the deal, update the team
         for pid in set(by_id) - set(rosters):
