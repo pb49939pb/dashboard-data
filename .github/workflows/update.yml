@@ -1,7 +1,7 @@
 # Nightly at 3 AM Eastern (after the last West Coast games end): fetch NHL data, rebuild the Red Wings widget and Hockey Lab data, and merge it into
 # Firestore (pat-dashboard-eb494). Writes only add or update; nothing already stored is dropped.
 # Cron is UTC, so both 07:00 and 08:00 UTC are scheduled (3 AM EDT / EST); the run that isn't
-# 3 AM in New York stops before fetching anything. Manual runs and pushes always fetch.
+# 3 AM in New York (by daylight saving, so a late start still runs) stops before fetching anything. Manual runs and pushes always fetch.
 name: Update dashboard data
 on:
   schedule:
@@ -24,10 +24,16 @@ jobs:
     steps:
       - name: Only at 3 AM Eastern
         id: hour
+        # 07:00 UTC is 3 AM in summer (EDT, UTC-4) and 08:00 UTC is 3 AM in winter (EST, UTC-5): each cron runs only in
+        # its half of the year. Keyed to the offset, not the clock hour, so a run GitHub starts late still happens.
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(TZ=America/New_York date +%H)" != "03" ]; then
-            echo "Not 3 AM in New York; skipping this scheduled run."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            offset=$(TZ=America/New_York date +%z)
+            if { [ "${{ github.event.schedule }}" = "0 7 * * *" ] && [ "$offset" != "-0400" ]; } || \
+               { [ "${{ github.event.schedule }}" = "0 8 * * *" ] && [ "$offset" != "-0500" ]; }; then
+              echo "This cron is for the other half of the year (New York is UTC$offset); skipping."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            fi
           fi
       - uses: actions/checkout@v4
         if: steps.hour.outputs.skip != 'true'
