@@ -60,6 +60,9 @@ jobs:
         run: python scripts/block.py || echo "trade block scan failed; last night's list is kept"
       - name: Team assets (draft picks and prospects)
         run: node scripts/assets.mjs || echo "assets build failed; last night's assets are kept"
+      - name: Man-games lost to injury
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/injuries.mjs || echo "injury build failed; last night's numbers are kept"
       # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'
