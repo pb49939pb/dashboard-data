@@ -1,0 +1,136 @@
+{
+ "season": "20262027",
+ "asOf": "2026-10-13",
+ "source": "entered by you (from a cap-tracking site)",
+ "note": "Official team cap space. Current = space today; projected = space at season end with current commitments (accrues daily). Overrides the estimate built from player contracts.",
+ "teams": {
+  "SEA": {
+   "current": 18220000,
+   "projected": 17000000
+  },
+  "DET": {
+   "current": 17070000,
+   "projected": 15920000
+  },
+  "VAN": {
+   "current": 17070000,
+   "projected": 15930000
+  },
+  "CGY": {
+   "current": 15350000,
+   "projected": 14320000
+  },
+  "WPG": {
+   "current": 13820000,
+   "projected": 12890000
+  },
+  "PHI": {
+   "current": 12810000,
+   "projected": 11950000
+  },
+  "CAR": {
+   "current": 10030000,
+   "projected": 9360000
+  },
+  "NSH": {
+   "current": 8940000,
+   "projected": 8340000
+  },
+  "PIT": {
+   "current": 8680000,
+   "projected": 8100000
+  },
+  "BOS": {
+   "current": 6900000,
+   "projected": 6440000
+  },
+  "UTA": {
+   "current": 5120000,
+   "projected": 4780000
+  },
+  "TOR": {
+   "current": 4930000,
+   "projected": -6650000
+  },
+  "NYR": {
+   "current": 4610000,
+   "projected": -440000
+  },
+  "TBL": {
+   "current": 3830000,
+   "projected": 3580000
+  },
+  "SJS": {
+   "current": 3810000,
+   "projected": 3560000
+  },
+  "ANA": {
+   "current": 3520000,
+   "projected": -450000
+  },
+  "FLA": {
+   "current": 3120000,
+   "projected": -1730000
+  },
+  "WSH": {
+   "current": 3070000,
+   "projected": -710000
+  },
+  "NYI": {
+   "current": 2950000,
+   "projected": 2750000
+  },
+  "BUF": {
+   "current": 2600000,
+   "projected": 2420000
+  },
+  "MTL": {
+   "current": 2490000,
+   "projected": 2320000
+  },
+  "MIN": {
+   "current": 2270000,
+   "projected": -1420000
+  },
+  "DAL": {
+   "current": 2250000,
+   "projected": -1400000
+  },
+  "LAK": {
+   "current": 1910000,
+   "projected": 1790000
+  },
+  "EDM": {
+   "current": 1440000,
+   "projected": -10000
+  },
+  "VGK": {
+   "current": 790000,
+   "projected": -9620000
+  },
+  "CHI": {
+   "current": 680000,
+   "projected": 640000
+  },
+  "OTT": {
+   "current": 620000,
+   "projected": 580000
+  },
+  "COL": {
+   "current": 330000,
+   "projected": 310000
+  },
+  "CBJ": {
+   "current": 210000,
+   "projected": -1000000
+  },
+  "STL": {
+   "current": 100000,
+   "projected": 90000
+  },
+  "NJD": {
+   "current": 70000,
+   "projected": 70000
+  }
+ }
+}
