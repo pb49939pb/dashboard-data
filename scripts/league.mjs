@@ -277,7 +277,7 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   const { heat, ...aggLean } = agg;
   await writeFile(`${outDir}/heat.json`, JSON.stringify({ updatedAt: stamp, season, grid: GRID,
     gp: Object.fromEntries(agg.teams.map((t) => [t.team, t.gp])), teams: heat, throughDate: games.map((g) => g.date).sort().pop() || null }));
-  const league = { format: FORMAT, updatedAt: stamp, season, games: games.length, model: { trained_on: model.trained_on, test: model.test },
+  const league = { format: FORMAT, updatedAt: stamp, season, games: games.length, gameIds: games.map((g) => g.id).sort((a, b) => a - b), model: { trained_on: model.trained_on, test: model.test },
     saModel: saModel ? { k: saModel.k, c: saModel.c, test: saModel.test } : null, leagueSv: qs?.leagueSv ?? null, qsFetchedAt: qs ? new Date().toISOString() : null,
     throughDate: games.map((g) => g.date).sort().pop() || null, ...aggLean };
   await writeFile(`${outDir}/league.json`, JSON.stringify(league));
