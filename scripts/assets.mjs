@@ -2,6 +2,7 @@
 // with conditions) and prospects. Values are computed on the site from these facts (draft model + each team's phase).
 //   picks: every team owns rounds 1-7 by default; traded picks come from Wikipedia's "{year} NHL entry draft" articles
 //          (CC BY-SA), which list each one as "The [[A]]' first-round pick will go to the [[B]] ..."
+//   hands: shoots L/R for every skater (stats API bios); prevStandings: last season's finish (seasons/{prev}/projections.json)
 //   prospects: the NHL's /v1/prospects/{team}; draft slot joined from our draft history (model/draft.json); teams whose
 //          list comes back empty fall back to their recent draftees who haven't become NHL regulars
 //   node scripts/assets.mjs     → public/hockey/assets.json
@@ -96,8 +97,20 @@ for (const t of empty) {
   }
 }
 
-const out = { builtAt: new Date().toISOString(), season, draftYears: years, picks, prospects, wikiPages: pages, prospectFallback: empty,
+// handedness (left / right D for positional depth) from the NHL stats API's skater bios, this season and last
+const hands = {};
+const prevSeason = `${Number(season.slice(0, 4)) - 1}${season.slice(0, 4)}`;
+for (const s of [prevSeason, season]) {
+  await pause(600);
+  const r = await fetch(`https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&limit=-1&cayenneExp=seasonId=${s}`, { headers: UA }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+  for (const p of r?.data || []) if (p.shootsCatches) hands[p.playerId] = p.shootsCatches;
+}
+// last season's finish (for team phases early in a season, when this season's projection is mostly a prior)
+const prev = JSON.parse(await readFile(`public/hockey/seasons/${prevSeason}/projections.json`, "utf8").catch(() => "null"));
+const prevStandings = prev ? Object.fromEntries(prev.teams.map((t) => [t.team, { pts: t.projPts, playoffs: t.playoffs, round: t.round ?? 0 }])) : null;
+
+const out = { builtAt: new Date().toISOString(), season, draftYears: years, picks, prospects, wikiPages: pages, prospectFallback: empty, hands, prevSeason, prevStandings,
   curve: draft.curve.map((c) => [c.overall, c.war]), curveWindow: draft.window,
   sources: { picks: "Wikipedia NHL entry draft articles (CC BY-SA), traded picks", prospects: "NHL prospects (api-web.nhle.com) + Hockey Lab draft history" } };
 await writeFile("public/hockey/assets.json", JSON.stringify(out));
-console.log(`assets: ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects; fallback for ${empty.join(", ") || "none"}`);
+console.log(`assets: ${Object.keys(hands).length} skater hands, last season ${prevStandings ? "found" : "missing"}; ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects; fallback for ${empty.join(", ") || "none"}`);
