@@ -7,7 +7,7 @@
 //   node scripts/scores.mjs            (STORE_DRY_RUN=1 to run without saving)
 import { readFile } from "node:fs/promises";
 import { openStore } from "./store.mjs";
-import { buildRecap } from "./recap.mjs";
+import { buildRecap, RECAP_VERSION } from "./recap.mjs";
 
 const UA = { "User-Agent": "hockey-lab/1.0 (personal, non-commercial)" };
 // The NHL's day runs on Eastern time: a 10 PM Pacific game is still "today" there
@@ -75,7 +75,7 @@ async function want(date, isToday) {
   fetched++;
   const games = await day(date);
   // keep what we knew: predictions (frozen at puck drop) and recap status
-  for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal"]) if (o[k] !== undefined) g[k] = o[k]; }
+  for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal", "recapV"]) if (o[k] !== undefined) g[k] = o[k]; }
   return { date, checkedAt: new Date().toISOString(), games };
 }
 const days = [await want(yesterday, false), await want(today, true)];
@@ -128,25 +128,26 @@ async function makeRecap(id, season, preds) {
 }
 let recaps = 0;
 for (const d of days) for (const g of d.games) {
-  const needs = (live(g) && fetched) || (done(g) && !g.recapFinal);
+  const needs = (live(g) && fetched) || (done(g) && (!g.recapFinal || g.recapV !== RECAP_VERSION));
   if (!needs) continue;
   try {
     const r = await makeRecap(g.id, g.season || "20262027", g.pred || null);
-    g.recapAt = r.updatedAt; g.recapFinal = r.final; recaps++;
+    g.recapAt = r.updatedAt; g.recapFinal = r.final; g.recapV = RECAP_VERSION; recaps++;
   } catch (e) { console.log(`recap ${g.id} failed: ${e.message}`); }
 }
 // backfill: this season's earlier games, oldest first, a few per run (season context needs them in order)
 let backfilled = 0;
 if (store) {
-  const metaDoc = (await store.read("hockey/recapMeta").catch(() => null)) || { done: [] };
-  const doneIds = new Set([...metaDoc.done, ...days.flatMap((d) => d.games).filter((g) => g.recapFinal).map((g) => g.id)]);
+  let metaDoc = (await store.read("hockey/recapMeta").catch(() => null)) || { done: [] };
+  if (metaDoc.version !== RECAP_VERSION) metaDoc = { done: [], version: RECAP_VERSION }; // the recap changed: rebuild every game, oldest first
+  const doneIds = new Set([...metaDoc.done, ...days.flatMap((d) => d.games).filter((g) => g.recapFinal && g.recapV === RECAP_VERSION).map((g) => g.id)]);
   const league = await store.read("hockey/league").catch(() => null);
   const todo = (league?.gameIds || []).filter((id) => !doneIds.has(id)).sort((a, b) => a - b).slice(0, BACKFILL_PER_RUN);
   for (const id of todo) {
     try { const r = await makeRecap(id, String(league.season), null); if (r.final) { doneIds.add(id); backfilled++; } }
     catch (e) { console.log(`backfill ${id} failed: ${e.message}`); }
   }
-  if (backfilled || recaps) await store.put("hockey/recapMeta", { done: [...doneIds].sort((a, b) => a - b), updatedAt: new Date().toISOString() }, {}, { replace: true });
+  if (backfilled || recaps || metaDoc.done.length === 0) await store.put("hockey/recapMeta", { done: [...doneIds].sort((a, b) => a - b), version: RECAP_VERSION, updatedAt: new Date().toISOString() }, {}, { replace: true });
 }
 
 if (!fetched && !recaps && !backfilled && !predsFilled) { console.log("scores: nothing live or starting soon; no NHL call"); process.exit(0); }

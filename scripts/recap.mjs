@@ -35,7 +35,9 @@ const clock = (period, t) => (period - 1) * 1200 + t;
  * with expected goals and on-ice chance share in place of shot attempts, plus the puck-management stats fans watch.
  */
 export const GS = { g: 0.75, a1: 0.7, a2: 0.55, ixg: 0.2, sog: 0.075, blk: 0.05, hit: 0.03, tk: 0.08, gv: -0.08, pd: 0.15, pt: -0.15,
-  fow: 0.01, fol: -0.01, oiXgDiff: 0.3, oiGoalDiffEV: 0.15, goalieGsax: 1, goalieSave: 0.02 };
+  fow: 0.01, fol: -0.01, xpm: 0.3, oiGoalDiffEV: 0.15, goalieGsax: 1, goalieSave: 0.02 };
+// Bump when the recap's numbers change; scores.mjs then rebuilds every recap with the new version.
+export const RECAP_VERSION = 2; // 2: expected plus/minus (even strength) replaces all-situations on-ice xG in game score
 
 /** Home team's chance to win from here: score difference and seconds left (Poisson scoring, ties go to overtime). */
 function winProb(diff, left, rate = 3.05 / 3600, homeEdge = 1.04) {
@@ -227,15 +229,17 @@ export async function buildRecap(id, ctx) {
       const ixg = unb.filter((s) => s.shooter === id).reduce((a, s) => a + s.xg, 0);
       const oiF = unb.filter((s) => on(s) && s.side === sd).reduce((a, s) => a + s.xg, 0), oiA = unb.filter((s) => on(s) && s.side !== sd).reduce((a, s) => a + s.xg, 0);
       const oiF5 = unb.filter((s) => on(s) && s.side === sd && ev5(s)).reduce((a, s) => a + s.xg, 0), oiA5 = unb.filter((s) => on(s) && s.side !== sd && ev5(s)).reduce((a, s) => a + s.xg, 0);
+      // expected plus/minus: on-ice expected goals for minus against at even strength (5v5, 4v4, 3v3), like plus/minus
+      const xpm = unb.filter((s) => on(s) && isEV(s.strength)).reduce((a, s) => a + (s.side === sd ? s.xg : -s.xg), 0);
       const gEV = shots.filter((s) => s.kind === "g" && on(s) && isEV(s.strength));
       const gf = gEV.filter((s) => s.side === sd).length, ga = gEV.length - gf;
       const toi = g.toi?.[sd]?.[id] || null;
       const row = { id, name: name[id] || b.name?.default, pos: b.position, side: sd, num: b.sweaterNumber, g: b.goals, a: b.assists, a1: a1[id] || 0, a2: a2[id] || 0, pts: b.points,
         pm: b.plusMinus, pim: b.pim, hits: b.hits, sog: b.sog, blk: b.blockedShots, gv: b.giveaways, tk: b.takeaways, toi: b.toi, shifts: b.shifts,
-        fow: fo[id]?.[0] || 0, fol: fo[id]?.[1] || 0, ixg: r2(ixg), oiXgf: r2(oiF), oiXga: r2(oiA), oiXgf5: r2(oiF5), oiXga5: r2(oiA5), oiGf: gf, oiGa: ga,
+        fow: fo[id]?.[0] || 0, fol: fo[id]?.[1] || 0, ixg: r2(ixg), xpm: r2(xpm), oiXgf: r2(oiF), oiXga: r2(oiA), oiXgf5: r2(oiF5), oiXga5: r2(oiA5), oiGf: gf, oiGa: ga,
         pd: pd[id] || 0, pt: pt[id] || 0, toi5: toi ? Math.round(toi[0] / 6) / 10 : null, toiPP: toi ? Math.round(toi[1] / 6) / 10 : null, toiPK: toi ? Math.round(toi[2] / 6) / 10 : null };
       row.gs = r2(GS.g * row.g + GS.a1 * row.a1 + GS.a2 * row.a2 + GS.ixg * ixg + GS.sog * row.sog + GS.blk * row.blk + GS.hit * row.hits + GS.tk * row.tk + GS.gv * row.gv
-        + GS.pd * row.pd + GS.pt * row.pt + GS.fow * row.fow + GS.fol * row.fol + GS.oiXgDiff * (oiF - oiA) + GS.oiGoalDiffEV * (gf - ga));
+        + GS.pd * row.pd + GS.pt * row.pt + GS.fow * row.fow + GS.fol * row.fol + GS.xpm * xpm + GS.oiGoalDiffEV * (gf - ga));
       players.push(row);
     }
     for (const b of pb.goalies || []) {
@@ -255,7 +259,7 @@ export async function buildRecap(id, ctx) {
   const why = (p) => p.kind === "goalie"
     ? `${p.sv} saves on ${p.sa} shots, ${p.gsax >= 0 ? `${p.gsax.toFixed(1)} goals saved above expected` : `${Math.abs(p.gsax).toFixed(1)} goals allowed above expected`}${p.hd ? `, ${p.hd - p.hdGa} of ${p.hd} high-danger chances stopped` : ""}`
     : [p.g ? `${p.g} goal${p.g > 1 ? "s" : ""}` : "", p.a ? `${p.a} assist${p.a > 1 ? "s" : ""}` : "", `${p.ixg.toFixed(1)} xG`, p.toi ? `${p.toi} TOI` : "",
-      `on-ice chances ${p.oiXgf.toFixed(1)}–${p.oiXga.toFixed(1)}`, p.hits >= 3 ? `${p.hits} hits` : "", p.blk >= 3 ? `${p.blk} blocks` : "", p.tk >= 2 ? `${p.tk} takeaways` : ""].filter(Boolean).join(", ");
+      `expected ± ${p.xpm >= 0 ? "+" : ""}${p.xpm.toFixed(1)}`, p.hits >= 3 ? `${p.hits} hits` : "", p.blk >= 3 ? `${p.blk} blocks` : "", p.tk >= 2 ? `${p.tk} takeaways` : ""].filter(Boolean).join(", ");
   const stars = everyone.slice(0, 3).map((p, i) => ({ star: i + 1, id: p.id, side: p.side, gs: p.gs, why: why(p) }));
   const official = (land?.summary?.threeStars || []).map((s) => ({ star: s.star, id: s.playerId, team: s.teamAbbrev }));
 
@@ -270,7 +274,7 @@ export async function buildRecap(id, ctx) {
     for (const p of worst) {
       if (p.gs > 0.15) continue;
       const bits = p.kind === "goalie" ? [`${p.ga} goals on ${p.sa} shots`, `${Math.abs(p.gsax).toFixed(1)} more than expected`] :
-        [p.pm <= -2 ? `${p.pm} on the night` : "", p.gv >= 2 ? `${p.gv} giveaways` : "", p.pt ? `${p.pt} penalt${p.pt > 1 ? "ies" : "y"} taken` : "", p.oiXga > p.oiXgf + 0.5 ? `chances ${p.oiXgf.toFixed(1)}–${p.oiXga.toFixed(1)} against with him on` : "", !p.sog && p.pos !== "D" ? "no shots on goal" : ""].filter(Boolean);
+        [p.xpm <= -0.5 ? `expected ± ${p.xpm.toFixed(1)}${p.pm ? ` (actual ${p.pm > 0 ? "+" : ""}${p.pm})` : ""}` : p.pm <= -2 ? `${p.pm} on the night, though the chances were closer (expected ± ${p.xpm >= 0 ? "+" : ""}${p.xpm.toFixed(1)})` : "", p.gv >= 2 ? `${p.gv} giveaways` : "", p.pt ? `${p.pt} penalt${p.pt > 1 ? "ies" : "y"} taken` : "", !p.sog && p.pos !== "D" ? "no shots on goal" : ""].filter(Boolean);
       if (bits.length) story.struggled.push({ id: p.id, side: sd, gs: p.gs, text: bits.join(", ") });
     }
   }
@@ -320,7 +324,7 @@ export async function buildRecap(id, ctx) {
     home: { team: H.abbrev, name: H.commonName?.default || H.abbrev, score: H.score, sog: H.sog }, away: { team: A.abbrev, name: A.commonName?.default || A.abbrev, score: A.score, sog: A.sog },
     periods, totals, pp, teamStats, deserved: unb.length ? deserved(unb) : null, goals, turning: turning ? goals.indexOf(turning) : null, swing,
     players: players.sort((a, b) => b.gs - a.gs), goalies, stars, official, story, context, pred,
-    matchups: shifts ? matchups(shifts, pbp, unb, pos) : null, shots: shotList, names: name, gsWeights: GS,
+    matchups: shifts ? matchups(shifts, pbp, unb, pos) : null, shots: shotList, names: name, gsWeights: GS, version: RECAP_VERSION,
     hasShifts: !!shifts,
   };
   return { recap, lines };
