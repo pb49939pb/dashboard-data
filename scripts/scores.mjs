@@ -90,7 +90,9 @@ if (store && upcoming.length && (fetched || upcoming.some((g) => g.pred?.model =
     const m = proj?.upcoming?.[g.id], mk = marketFor(markets, g);
     if ((m && g.pred?.model == null) || (mk && g.pred?.market == null)) predsFilled++;
     g.pred = { model: m?.pHome ?? g.pred?.model ?? null, market: mk?.pHome ?? g.pred?.market ?? null, at: new Date().toISOString(),
-      modelAt: proj?.updatedAt || null, slug: mk?.slug || g.pred?.slug || null };
+      modelAt: proj?.updatedAt || null, slug: mk?.slug || g.pred?.slug || null,
+      // both season simulations' game odds, whichever is primary (projections.simModel), so each is scored prospectively
+      roster: m?.pHomeRoster ?? g.pred?.roster ?? null, team: (proj?.simModel === "roster" ? m?.pHomeTeam : m?.pHome) ?? g.pred?.team ?? null, simModel: m ? proj?.simModel ?? "team" : g.pred?.simModel ?? "team" };
   }
 }
 
@@ -162,7 +164,7 @@ if (store && toLog.length) {
     const have = new Set(doc.rows.map((r) => r.id));
     for (const g of gs) {
       if (!have.has(g.id)) doc.rows.push({ id: g.id, date: g.start?.slice(0, 10) || null, home: g.home.team, away: g.away.team, model: g.pred.model ?? null,
-        market: g.pred.market ?? null, modelAt: g.pred.modelAt || null, marketAt: g.pred.at || null, homeWon: (g.home.score ?? 0) > (g.away.score ?? 0) ? 1 : 0, ended: g.ended || "REG" });
+        market: g.pred.market ?? null, team: g.pred.team ?? null, roster: g.pred.roster ?? null, simModel: g.pred.simModel || "team", modelAt: g.pred.modelAt || null, marketAt: g.pred.at || null, homeWon: (g.home.score ?? 0) > (g.away.score ?? 0) ? 1 : 0, ended: g.ended || "REG" });
       g.logged = true;
     }
     doc.updatedAt = new Date().toISOString();
