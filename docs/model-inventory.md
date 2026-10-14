@@ -28,6 +28,8 @@ methods dossier (generated from `INFO`, `MODELS` and the live constants).
 | Goalie GSAx / SA-GSAx, ratings, shot-type ratings | observed | goals saved vs expected (unblocked attempts) | league.mjs + shooter-aware xG | nightly | league.json | Goalies tab | INFO.goalieRatings, howGoalies |
 | WAR-lite (season) | estimate (descriptive) | wins above replacement; 0 = replacement, not average | NHL season totals + MoneyPuck on/off (value.py, defense.py) | monthly / by hand | hockey-models `value.py` | Front office, coaches, draft, trades | INFO.war |
 | Player value `war82` | estimate | WAR per 82 games, 3 seasons 1/0.7/0.45 + 25 replacement games; ice-time lift (up only) | WAR-lite + MoneyPuck TOI (player_value.py) | monthly / by hand | `model/playerValue.json` | trade engine, position strength, core players, injuries weights, phases | INFO.war, tradeValue |
+| Recap card stats (Corsi/Fenwick on ice, D activations, own-zone TK/GV, goalie rebounds, xSV%, danger splits) | observed | counts / % per game; activations = own attempts from x ≥ 54 (proxy: no pass data) | play-by-play + shift charts (recap.mjs) | every 5 min live | `RECAP_VERSION` 3 | recap player cards | card tooltips |
+| Matchup difficulty | observed (context) | mean war82 of opposing 5v5 skaters, 0-100 rank within the game; minutes vs 3+ of opponent's top 10 | shift charts second by second + playerValue (unknown = 0) | every 5 min live | `RECAP_VERSION` 3 | recap player cards | card tooltip |
 | Game score | observed | goals-equivalent for one game | box score + play-by-play + xG (recap.mjs) | every 5 min live | `RECAP_VERSION` | recaps, three stars | INFO.gameScore |
 
 ## Teams, games and seasons
@@ -52,6 +54,7 @@ methods dossier (generated from `INFO`, `MODELS` and the live constants).
 | Season rules | config | games, cap ceiling/floor, minimum salary, ELC max, max term (7/6 under the CBA from 2026-09-16) | NHL schedule, NHL/NHLPA payroll release, NHL CBA summary | by hand | lab.js `SEASON_RULES` | games left, cap checks, contract-term data check | — |
 | Trade value to a team | counterfactual (heuristic) | wins above replacement, phase-weighted, discounted 0.9/yr | war82, roster fit (marginal lineup wins; year 1 value = marginal, not WAR + marginal), contract bonus, re-sign odds | in the browser | lab.js `valueTo()` | trade explorer, How? sheet | INFO.tradeValue + dossier |
 | Market value | market (modelled, not observed) | 75th percentile of value to the other 31 teams | valueTo across teams | in the browser | lab.js `marketValue()` | prices, packages | INFO.tradeValue |
+| Recommended GM moves | decision heuristic | top 3 of the trade search for a team, with tradeNarrative() English | same as trade value + playoff odds shift | in the browser | lab.js `gmMovesCard()` | Teams page (owner) | card text |
 | Acceptance verdict | decision heuristic | "meets the model's asking price" (not a calibrated probability) | price × premium vs package; 65% headliner | in the browser | lab.js `evaluateTrade()` | explorer, How? | verdict text |
 | Cap compliance | decision check | ok / over / **unverified** (missing team cap space or estimated cap hits) | owner's cap table + contracts | in the browser | lab.js `capStatus()` | explorer, suggestions, How? | verdict text |
 
