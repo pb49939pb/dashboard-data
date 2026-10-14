@@ -72,7 +72,7 @@ const sd = (a) => Math.sqrt(mean(a.map((v) => (v - mean(a)) ** 2))) || 1;
 
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 /** k-means with k-means++ starts, several restarts; returns centroids. */
-function kmeans(X, k, seed = 7, restarts = 30) {
+export function kmeans(X, k, seed = 7, restarts = 30) {
   const rand = rng(seed), d2 = (a, b) => a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0);
   let best = null;
   for (let r = 0; r < restarts; r++) {

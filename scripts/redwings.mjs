@@ -244,7 +244,8 @@ if (await access(MODEL).then(() => true, () => false)) {
     const R = teamRatings(r.list, ratings, r.sa);
     const sim = simulate({ R, standings: rows, remaining: [...remaining.values()] });
     Object.assign(sim, schedulesAndDivisions({ R, standings: rows, played: r.list, remaining: [...remaining.values()] }));
-    // Next game: Detroit's chance to win (team ratings, finishing, goaltending, home ice, style matchup at half weight)
+    // Next game: Detroit's chance to win (team ratings, finishing, goaltending, home ice). The style matchup is kept
+    // beside it only: out of season it made predictions worse (scripts/styleStability.mjs, model/styleStability.json).
     const nx = out.nextGames?.[0];
     if (nx && R.teams[TEAM] && R.teams[nx.opponent.abbrev]) {
       const opp = nx.opponent.abbrev, [home, away] = nx.home ? [TEAM, opp] : [opp, TEAM];
@@ -252,14 +253,15 @@ if (await access(MODEL).then(() => true, () => false)) {
       const ours = 1 + 0.5 * (st?.ourOffense?.effect || 0), theirs = 1 + 0.5 * (st?.theirOffense?.effect || 0);
       const base = winProbability(R, home, away), withStyle = winProbability(R, home, away, nx.home ? { home: ours, away: theirs } : { home: theirs, away: ours });
       const us = (p) => (nx.home ? p.home : 1 - p.home);
-      out.nextGameOdds = { gameId: nx.id, opponent: opp, home: nx.home, win: Math.round(us(withStyle) * 1000) / 10, withoutStyle: Math.round(us(base) * 1000) / 10,
-        xgFor: Math.round((nx.home ? withStyle.xgHome : withStyle.xgAway) * 100) / 100, xgAgainst: Math.round((nx.home ? withStyle.xgAway : withStyle.xgHome) * 100) / 100,
-        overtimeChance: Math.round(withStyle.overtime * 1000) / 10, model: "team ratings (opponent/score/venue-adjusted xG, blended with last season), finishing and goaltending (shrunk), home ice, style matchup at half weight; 10,000-season simulation's game model",
+      out.nextGameOdds = { gameId: nx.id, opponent: opp, home: nx.home, win: Math.round(us(base) * 1000) / 10, withStyle: Math.round(us(withStyle) * 1000) / 10, withoutStyle: Math.round(us(base) * 1000) / 10,
+        xgFor: Math.round((nx.home ? base.xgHome : base.xgAway) * 100) / 100, xgAgainst: Math.round((nx.home ? base.xgAway : base.xgHome) * 100) / 100,
+        overtimeChance: Math.round(base.overtime * 1000) / 10, model: "team ratings (opponent/score/venue-adjusted xG, blended with last season), finishing and goaltending (shrunk), home ice; 10,000-season simulation's game model (style matchups shown separately: they didn't help out of season)",
         updatedAt: new Date().toISOString() };
       await writeFile("public/redwings.json", JSON.stringify(out));
       notes.nextGameWin = `${out.nextGameOdds.win}% vs ${opp}`;
     }
-    // Every game in the next three days: our chance the home team wins (same game model, style matchup at half weight).
+    // Every game in the next three days: our chance the home team wins (same game model; the style-matchup version is
+    // kept as pHomeStyle for comparison only).
     // The scores job freezes these at puck drop, next to Polymarket's price, so the recap can say which was closer.
     const styleAdj = (home, away) => {
       const S = stylesDoc, h = S?.teams?.[home], a = S?.teams?.[away];
@@ -270,8 +272,8 @@ if (await access(MODEL).then(() => true, () => false)) {
     const horizon = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
     sim.upcoming = Object.fromEntries([...remaining.values()].filter((g) => g.date <= horizon && R.teams[g.home] && R.teams[g.away]).map((g) => {
       const p = winProbability(R, g.home, g.away, styleAdj(g.home, g.away)), b = winProbability(R, g.home, g.away);
-      return [g.id, { date: g.date, home: g.home, away: g.away, pHome: Math.round(p.home * 1000) / 1000, pHomeNoStyle: Math.round(b.home * 1000) / 1000,
-        xgHome: Math.round(p.xgHome * 100) / 100, xgAway: Math.round(p.xgAway * 100) / 100 }];
+      return [g.id, { date: g.date, home: g.home, away: g.away, pHome: Math.round(b.home * 1000) / 1000, pHomeStyle: Math.round(p.home * 1000) / 1000, pHomeNoStyle: Math.round(b.home * 1000) / 1000,
+        xgHome: Math.round(b.xgHome * 100) / 100, xgAway: Math.round(b.xgAway * 100) / 100 }];
     }));
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
       standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim,
