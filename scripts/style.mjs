@@ -13,7 +13,7 @@ export const OFF = [
   ["o_rebound", "Rebounds", "share of 5v5 shots that are rebounds"],
   ["o_cross", "East-west passing", "share of 5v5 shots right after the puck crossed the middle"],
   ["o_dshare", "Defense joining", "share of 5v5 shots by defensemen"],
-  ["o_forecheck", "Forecheck", "hits + takeaways in the offensive zone per road game"],
+  ["o_forecheck", "Forecheck", "hits + takeaways in the offensive zone per game (home games arena-adjusted)"],
 ];
 export const DEF = [
   ["d_volume", "Shots allowed", "unblocked 5v5 shot attempts allowed per game"],
@@ -22,22 +22,29 @@ export const DEF = [
   ["d_rush", "Rush chances allowed", "share of shots allowed off the rush"],
   ["d_rebound", "Rebounds allowed", "share of shots allowed that are rebounds"],
   ["d_block", "Shot blocking", "share of opponents' 5v5 attempts blocked"],
-  ["d_pressure", "Pressure", "hits + takeaways in the neutral and defensive zones per road game"],
-  ["d_give", "Own-zone giveaways", "giveaways in the defensive zone per road game"],
+  ["d_pressure", "Pressure", "hits + takeaways in the neutral and defensive zones per game (home games arena-adjusted)"],
+  ["d_give", "Own-zone giveaways", "giveaways in the defensive zone per game (home games arena-adjusted)"],
 ];
 const CATS = ["close", "mid", "long", "sharp", "wrist", "snap", "slap", "backhand", "tip", "wrap", "rebound", "rush"];
 
 /** Raw fingerprint per team from compact game records. */
 export function fingerprints(games) {
+  // hits / takeaways / giveaways depend on each arena's scorekeepers: home games count too, divided by the arena's
+  // events-per-game factor vs the league, shrunk with 20 games of prior (scripts/styleContinuous.mjs: these all-games
+  // rates repeat better year to year than road games alone: forecheck r 0.71 -> 0.76, pressure 0.45 -> 0.48,
+  // own-zone giveaways 0.39 -> 0.47)
+  const ar = {};
+  for (const g of games) if (g.ev) { const a = (ar[g.home] ??= { e: 0, n: 0 }); a.e += g.ev[0].reduce((x, y) => x + y, 0) + g.ev[1].reduce((x, y) => x + y, 0); a.n++; }
+  const lgE = Object.values(ar).reduce((s, a) => s + a.e / a.n, 0) / Math.max(1, Object.keys(ar).length);
+  const arenaF = (t) => { const a = ar[t]; return a && lgE ? 1 + (a.e / a.n / lgE - 1) * (a.n / (a.n + 20)) : 1; };
   const T = {};
   const t = (a) => (T[a] ??= { gp: 0, road: 0, f: { n: 0, att: 0, x: 0, inner: 0, point: 0, rush: 0, reb: 0, cross: 0, d: 0 },
     a: { n: 0, att: 0, x: 0, inner: 0, rush: 0, reb: 0, blocked: 0 }, ev: new Array(9).fill(0), mix: Object.fromEntries(CATS.map((c) => [c, 0])), mixN: 0,
     mixF: Object.fromEntries(CATS.map((c) => [c, 0])), mixFN: 0 });
   for (const g of games) {
     const sides = [g.home, g.away];
-    // hits / takeaways / giveaways are counted by the home arena's scorekeepers, whose habits differ a lot,
-    // so each team's event rates use its road games only (many different scorekeepers average out)
-    sides.forEach((s, i) => { const x = t(s); x.gp++; if (g.ev && i === 1) { x.road++; g.ev[i].forEach((v, k) => (x.ev[k] += v)); } });
+    // event rates: every game, home games corrected by the arena factor above
+    sides.forEach((s, i) => { const x = t(s); x.gp++; if (g.ev) { x.road++; const f = i === 0 ? arenaF(g.home) : 1; g.ev[i].forEach((v, k) => (x.ev[k] += v / f)); } });
     for (const s of g.shots) {
       const [x, y, kind, side, v, shooter, , strength, , , flags = 0] = s;
       if (strength !== "5v5" || v === 0.9) continue;
