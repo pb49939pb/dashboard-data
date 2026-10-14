@@ -11,6 +11,24 @@ import { readFile, writeFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
 import { openStore } from "./store.mjs";
 
+// Field-level metadata (audit section 10): what each key published number is. class = observed | estimate | forecast |
+// counterfactual | market | decision; interval = the field holding its uncertainty (or why there isn't one); flags =
+// known quality limits. as_of / data_version / model_version are filled from the artifact each night.
+const FIELDS = [
+  { artifact: "playerValue", field: "players[].war82", class: "estimate", units: "wins above replacement per 82 games (goalies: per 82 team games at their start share)", interval: "none (point estimate; see playerProjections p10/p90)", flags: ["WAR-lite: production + on/off, not teammate-adjusted", "goalie saves above average shrunk by shots/(shots+14,000)"] },
+  { artifact: "playerValue", field: "players[].war82Rapm", class: "estimate", units: "wins per 82 on WAR-lite's scale (RAPM order, quantile-mapped)", interval: "none", flags: ["challenger model, not used unless the Admin switch says so", "raw scale in war82RapmRaw"] },
+  { artifact: "playerProjections", field: "players[].years[].p50", class: "forecast", units: "wins per 82 in that season", interval: "p10 / p90 (80% range, coverage 0.76-0.82 in tests)", flags: ["goalies excluded in the trade engine (projections predate the goalie shrinkage)"] },
+  { artifact: "playerProjections", field: "players[].years[].pActive", class: "forecast", units: "probability of 20+ NHL games that season", interval: "none", flags: [] },
+  { artifact: "projections", field: "teams[].playoffs", class: "forecast", units: "% of 10,000 simulated seasons", interval: "playoffsSe (Monte Carlo SE, pp); model uncertainty larger", flags: ["season-long team risk off (not significant in backtest)", "regulation ties under-predicted (23% vs 17%)"] },
+  { artifact: "projections", field: "teams[].projPts", class: "forecast", units: "standings points", interval: "lo / hi (10th-90th percentile)", flags: [] },
+  { artifact: "projections", field: "upcoming[].pHome", class: "forecast", units: "P(home team wins, incl. OT/SO)", interval: "none", flags: ["frozen at puck drop in the prediction log", "pHomeRoster: shadow roster-aware version"] },
+  { artifact: "projections", field: "roster.teams[].playoffs", class: "forecast", units: "% of simulated seasons (roster-aware)", interval: "playoffsSe", flags: ["shadow model unless simModel = roster"] },
+  { artifact: "injuries", field: "current.teams[].players[].missed", class: "observed", units: "games missed while with the team (absence proxy)", interval: "n/a", flags: ["not confirmed injuries; status = off-roster / not-dressing / unknown"] },
+  { artifact: "tradePricing", field: "summary.sellerReturnRatio", class: "market", units: "seller's return ÷ face value given (ex-ante WAR-lite)", interval: "percentiles p10-p90", flags: ["no contracts in historical values", "not an acceptance probability"] },
+  { artifact: "scorecards", field: "*", class: "observed", units: "out-of-sample test results", interval: "95% bootstrap intervals in each test", flags: ["each test states its leakage notes"] },
+  { artifact: "assets", field: "market.*", class: "market", units: "Polymarket prices as probabilities", interval: "none", flags: ["comparator only; not mixed into our odds"] },
+  { artifact: "browser", field: "trade value / market value / How? sheet", class: "counterfactual + decision", units: "wins, phase-weighted, discounted", interval: "none (pricing heuristic)", flags: ["computed in the browser from the versioned artifacts above; stamped with their hashes", "feasibility checks list what isn't verified"] },
+];
 const NAMES = ["playerValue", "playerProjections", "tradePricing", "scorecards", "projections", "injuries", "assets"];
 const commit = process.env.GITHUB_SHA || (() => { try { return execSync("git rev-parse HEAD").toString().trim(); } catch { return null; } })();
 const store = await openStore().catch(() => null);
@@ -27,5 +45,6 @@ for (const name of NAMES) {
     asOf: d.throughDate || d.through || d.season || null, firstPublishedAt: seen?.firstPublishedAt || out.builtAt, commit: seen?.commit || commit, path };
   if (store && text.length < 900000 && !(await store.read(path).catch(() => null))) { await store.put(path, d, { name, hash }, { replace: true }); stored++; }
 }
+out.fields = FIELDS.map((f) => { const a = out.artifacts[f.artifact]; return { ...f, as_of: a?.asOf ?? null, data_version: a?.hash ?? null, model_version: a ? [a.model, a.version].filter(Boolean).join(" ") || null : null, built: a?.builtAt ?? null }; });
 await writeFile("public/hockey/artifacts.json", JSON.stringify(out));
 console.log(`artifacts: ${Object.keys(out.artifacts).length} in the manifest, ${stored} new versions stored${store ? "" : " (no Firestore credentials: manifest only)"}`);
