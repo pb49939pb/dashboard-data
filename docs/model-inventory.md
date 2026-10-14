@@ -55,8 +55,18 @@ methods dossier (generated from `INFO`, `MODELS` and the live constants).
 | Acceptance verdict | decision heuristic | "meets the model's asking price" (not a calibrated probability) | price × premium vs package; 65% headliner | in the browser | lab.js `evaluateTrade()` | explorer, How? | verdict text |
 | Cap compliance | decision check | ok / over / **unverified** (missing team cap space or estimated cap hits) | owner's cap table + contracts | in the browser | lab.js `capStatus()` | explorer, suggestions, How? | verdict text |
 
+## Evaluation
+
+| Artifact | What it tests | Where | Schedule |
+|---|---|---|---|
+| xG scorecard | chronological folds (train 2024-25 → test 2025-26; train both → test 2026-27) vs league-average, distance+angle, logistic; log loss, Brier, AUC, calibration, game-bootstrap CIs | hockey-models `scorecard.py` → `model/xgScorecard.json` | by hand after xG changes |
+| Game-odds backtest | walk-forward 2025-26 with the production rating code (neutral priors) vs coin, home-rate, log5; leaks flagged | dashboard-data `scripts/backtest.mjs` → `model/scorecards.json` | by hand after rating changes |
+| Prediction log | every finished game's frozen pre-game odds (ours, Polymarket) and result, prospective | `hockey/predLog/seasons/{season}` (scores.mjs) | every game |
+
+Shown on the Model tab ("How good are the forecasts?") and in the Admin methods dossier (Appendix F).
+
 ## Known gaps (tracked against the audit)
-- No point-in-time snapshots or chronological scorecards yet (A4, A5): no metric above is promoted as a calibrated forecast.
+- Scorecards exist for xG and pre-game odds (A5); point-in-time snapshots with first-observed timestamps (A4) are not built yet. xG calibration slope 0.90 on the clean fold (0.82 on the power play): probabilities somewhat too extreme.
 - WAR-lite on/off parts are not teammate/opponent adjusted (B2: RAPM pilot).
 - `war82` uses an upward-only ice-time lift (audit P0-C): kept as `legacy_v1` until a symmetric, holdout-tested usage effect exists.
 - Retained salary, LTIR, bonuses and buried contracts aren't modelled; cap checks say "unverified" instead of "ok".
