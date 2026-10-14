@@ -64,6 +64,7 @@ methods dossier (generated from `INFO`, `MODELS` and the live constants).
 |---|---|---|---|
 | xG scorecard | chronological folds (train 2024-25 → test 2025-26; train both → test 2026-27) vs league-average, distance+angle, logistic; log loss, Brier, AUC, calibration, game-bootstrap CIs | hockey-models `scorecard.py` → `model/xgScorecard.json` | by hand after xG changes |
 | Game-odds backtest | walk-forward 2025-26 with the production rating code (neutral priors) vs coin, home-rate, log5; leaks flagged | dashboard-data `scripts/backtest.mjs` → `model/scorecards.json` | by hand after rating changes |
+| RAPM pilot | 5v5 xG RAPM from shift-chart stints vs raw on/off and on/off + context; first half -> second half of 2025-26 | hockey-models `rapm.py` → `models/rapm.json` (test copied into `model/scorecards.json`) | by hand |
 | Prediction log | every finished game's frozen pre-game odds (ours, Polymarket) and result, prospective | `hockey/predLog/seasons/{season}` (scores.mjs) | every game |
 
 Shown on the Model tab ("How good are the forecasts?") and in the Admin methods dossier (Appendix F).
@@ -81,6 +82,6 @@ Backtests before 2026-10-14 are reconstructed (no archive of what was known then
 
 ## Known gaps (tracked against the audit)
 - Scorecards exist for xG and pre-game odds (A5); point-in-time records start 2026-10-14 (A4): earlier history is reconstructed. xG recalibration (B1) tested 2026-10-14: Platt scaling fit on out-of-fold predictions helps a model trained on one season (slope 0.90 -> 1.02, log loss CI excludes 0) but not the production two-season model (slope 0.985; CI spans 0), so it is not promoted; re-test at each retrain.
-- WAR-lite on/off parts are not teammate/opponent adjusted (B2: RAPM pilot).
+- WAR-lite on/off parts are not teammate/opponent adjusted. RAPM pilot (B2) tested 2026-10-14: ties on/off with the same context controls, so not promoted; context adjustment (score state, zone starts, home) is the validated gain and the next WAR-lite change to test.
 - `war82` uses an upward-only ice-time lift (audit P0-C): kept as `legacy_v1` until a symmetric, holdout-tested usage effect exists.
 - Retained salary, LTIR, bonuses and buried contracts aren't modelled; cap checks say "unverified" instead of "ok".
