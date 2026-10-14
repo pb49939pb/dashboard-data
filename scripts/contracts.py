@@ -57,7 +57,8 @@ MONTHS = {m: i for i, m in enumerate(["January", "February", "March", "April", "
                                       "September", "October", "November", "December"], 1)}
 NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
 MONEY = r"\$\s?([\d.,]+)\s*(million|MM\b|M\b|K\b)?"
-TERM = r"\b(one|two|three|four|five|six|seven|eight|[1-8])[- ]year\b(?=(?:[^.]|\.(?=\d)){0,45}?\b(?:contract|extension|deal|pact|ELC)\b)"
+# a term ("three-year contract"), not a span of time ("one year later", "less than one year", "within two years")
+TERM = r"(?<!than )(?<!within )(?<!over )(?<!about )\b(one|two|three|four|five|six|seven|eight|[1-8])[- ]year\b(?![- ]?s?\s+(?:later|earlier|ago|after|before|prior|removed|since))(?=(?:[^.]|\.(?=\d)){0,45}?\b(?:contract|extension|deal|pact|ELC)\b)"
 SPECULATION = re.compile(r"\b(comparable|could|would|might|may|projected|projection|projects?|projecting|pegged|AFP Analytics|estimated?|estimates|predict\w*|will|likely|expected to|asking|seeking|ask|rumou?r|reportedly looking|in line for|similar to|like\s+[A-Z])", re.I)
 # Sentences that recall an older deal ("originally signed ... in 2019", "the final year of an eight-year contract"): dated by
 # what they say, not by the article's date; dropped when they don't say when
@@ -150,7 +151,12 @@ def deal_from_text(text: str) -> dict | None:
     # $84 million extension, carrying an average annual value of $10.5 million")
     a0 = max(text.rfind(". ", 0, m.start()), text.rfind("\n", 0, m.start())) + 1
     ends = [i for i in (text.find(". ", m.end()), text.find("\n", m.end())) if i >= 0]
-    text, m = text[a0:min(ends) + 1 if ends else len(text)], re.search(TERM, text[a0:min(ends) + 1 if ends else len(text)], re.I)
+    full, cut = text, (min(ends) + 1 if ends else len(text))
+    # what follows the sentence, up to the next contract length (a later "six years worth $12.9MM" is someone's projection)
+    after = full[cut:cut + 500]
+    nxt = re.search(TERM, after, re.I) or re.search(r"\b(?:one|two|three|four|five|six|seven|eight|[1-8])[- ]years?\b", after, re.I)
+    after = after[: nxt.start()] if nxt else after
+    text, m = full[a0:cut], re.search(TERM, full[a0:cut], re.I)
     aav = re.search(r"(?:average annual value|AAV|cap hit|annual average|per season|per year|annually)[^$]{0,30}" + MONEY, text, re.I) \
         or re.search(MONEY + r"[^.$]{0,20}(?:AAV|cap hit|per season|per year|annually|average annual value)", text, re.I)
     v = None
@@ -162,14 +168,19 @@ def deal_from_text(text: str) -> dict | None:
         if tot:
             total = money(tot.group(1), tot.group(2).replace("MM", "M") if tot.group(2) else ("M" if "MM" in text[m.end():m.end() + 20] else None))
             v = total / term
-    if v is not None and not 500_000 <= v <= 20_000_000:
+    if v is None:  # the cap hit is often its own sentence ("Not yet official, it will carry an AAV worth $13MM")
+        later = re.search(r"(?:average annual value|AAV|cap hit|annual average)[^$.]{0,30}" + MONEY, after, re.I)
+        if later:
+            v = money(later.group(1), later.group(2))
+    if v is not None and not 500_000 <= v <= 21_000_000:
         v = None
     st = re.search(r"(?:begin|begins|began|beginning|start|starts|starting|kicks? in|effective|through)[^.]{0,30}?(20\d\d)[–-](?:20)?\d\d season", text, re.I)
     # entry-level only when it's said of this deal ("a three-year, entry-level contract"), not anywhere in the passage
     # (a Wikipedia paragraph often covers the entry-level deal and a later extension together)
     near = text[max(0, m.start() - 40):m.end() + 60].lower()
     elc = re.search(r"entry[- ]level", near) is not None and "extension" not in near and term <= 3
-    return {"term": term, "aav": int(round(v, -3)) if v else None, "ext": "extension" in text.lower(),
+    reported = re.search(r"expected to (?:sign|agree)|not yet official|reportedly|agreed to terms|is set to sign|nearing (?:a|an) ", full, re.I) is not None
+    return {"term": term, "aav": int(round(v, -3)) if v else None, "ext": "extension" in text.lower(), "reported": reported,
             "elc": elc, "start": int(st.group(1)) if st and "through" not in st.group(0).lower() else None}
 
 
@@ -427,7 +438,7 @@ def summarize(deals: list[dict], cur_start: int) -> dict | None:
         if prev_start + prev["term"] - 1 < day.year:
             start = day.year
     out = {"term": t["term"], "signed": latest["date"], "start": start, "end": start + t["term"] - 1, "startGuessed": guessed,
-           "elc": t["term"] <= 3 and any(d.get("elc") for d in same), "aav": None, "src": {"term": {"source": t["source"], "url": t["url"], "date": t["date"]}}, "alts": []}
+           "elc": t["term"] <= 3 and any(d.get("elc") for d in same), "reported": all(d.get("reported") for d in same), "aav": None, "src": {"term": {"source": t["source"], "url": t["url"], "date": t["date"]}}, "alts": []}
     if a and out["elc"] and a["aav"] > ELC_MAX:
         a = None  # an extension's cap hit picked up by the entry-level deal: leave it to the ELC default
     if a:
@@ -462,7 +473,7 @@ def resolve(player: dict, deals: list[dict], cur_start: int) -> dict:
     row.update(main, status="signed" if main["end"] >= cur_start else "expired?")
     if nxt:
         nxt.pop("_day", None)
-        row["next"] = {k: nxt[k] for k in ("term", "signed", "start", "end", "aav", "elc", "src")}
+        row["next"] = {k: nxt.get(k) for k in ("term", "signed", "start", "end", "aav", "elc", "reported", "src")}
     return row
 
 
@@ -502,7 +513,7 @@ def main() -> None:
                 new = resolve(p, ds, cur_start); n += 1
                 if old and old.get("status") == "signed" and (new.get("start") or 0) > cur_start and (old.get("start") or 0) <= cur_start:
                     # an extension in the news: this season's deal stays, the extension goes alongside it
-                    old.update(team=p["team"], next={k: new.get(k) for k in ("term", "signed", "start", "end", "aav", "elc", "src")})
+                    old.update(team=p["team"], next={k: new.get(k) for k in ("term", "signed", "start", "end", "aav", "elc", "reported", "src")})
                 else:
                     by_id[pid] = new
             elif old:
