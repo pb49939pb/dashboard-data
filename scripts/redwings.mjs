@@ -279,7 +279,7 @@ if (await access(MODEL).then(() => true, () => false)) {
     console.log(`hockey/projections.json: ${sim.remaining} games left, top: ${sim.teams.slice(0, 3).map((t) => `${t.team} ${t.projPts}`).join(", ")}, DET ${sim.teams.find((t) => t.team === "DET")?.projPts} (${sim.teams.find((t) => t.team === "DET")?.playoffs}% playoffs)`);
   }
   // Front-office models and the starter contract list, built offline by hockey-models
-  for (const f of ["age", "trades", "gm", "draft", "scouting", "heatPrior", "coaches", "playerValue"]) { // contracts come from scripts/contracts.py
+  for (const f of ["age", "trades", "gm", "draft", "scouting", "heatPrior", "coaches", "playerValue", "scorecards"]) { // contracts come from scripts/contracts.py
     // stamp when the offline model was built (file time), for the "source · updated" lines in the app
     const [text, st] = await Promise.all([fs.readFile(`model/${f}.json`, "utf8"), fs.stat(`model/${f}.json`)]).catch(() => [null, null]);
     if (!text) continue;

@@ -75,7 +75,7 @@ async function want(date, isToday) {
   fetched++;
   const games = await day(date);
   // keep what we knew: predictions (frozen at puck drop) and recap status
-  for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal", "recapV", "live", "trail"]) if (o[k] !== undefined) g[k] = o[k]; }
+  for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal", "recapV", "live", "trail", "logged"]) if (o[k] !== undefined) g[k] = o[k]; }
   return { date, checkedAt: new Date().toISOString(), games };
 }
 const days = [await want(yesterday, false), await want(today, true)];
@@ -146,6 +146,26 @@ if (inPlay.length) {
     const point = [minute, g.live.model, market, g.home.score ?? 0, g.away.score ?? 0];
     if (!last || last[0] !== minute || last[1] !== point[1] || last[2] !== point[2]) trail.push(point);
     g.trail = trail.slice(-120);
+  }
+}
+
+/* ---------- prediction log (audit A5): every finished game's frozen pre-game odds and result, kept for scorecards ----------
+   Prospective, so it can't leak: the odds were saved before puck drop and the row is written once the game is final. */
+const toLog = days.flatMap((d) => d.games).filter((g) => done(g) && g.pred && (g.pred.model != null || g.pred.market != null) && !g.logged);
+if (store && toLog.length) {
+  const bySeason = {};
+  for (const g of toLog) (bySeason[g.season || "20262027"] ??= []).push(g);
+  for (const [season, gs] of Object.entries(bySeason)) {
+    const path = `hockey/predLog/seasons/${season}`;
+    const doc = (await store.read(path).catch(() => null)) || { season, rows: [] };
+    const have = new Set(doc.rows.map((r) => r.id));
+    for (const g of gs) {
+      if (!have.has(g.id)) doc.rows.push({ id: g.id, date: g.start?.slice(0, 10) || null, home: g.home.team, away: g.away.team, model: g.pred.model ?? null,
+        market: g.pred.market ?? null, modelAt: g.pred.modelAt || null, marketAt: g.pred.at || null, homeWon: (g.home.score ?? 0) > (g.away.score ?? 0) ? 1 : 0, ended: g.ended || "REG" });
+      g.logged = true;
+    }
+    doc.updatedAt = new Date().toISOString();
+    await store.put(path, doc, {}, { replace: true });
   }
 }
 
