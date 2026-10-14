@@ -77,6 +77,20 @@ if (proj && !proj.final) {
   check("Playoff odds add up to 16 teams", Math.abs(po - 1600) < 5, `${(po / 100).toFixed(2)} teams`);
 } else skip("Projections", "no projections (or a finished season)");
 
+// 12. the season simulation is reproducible: same seed, ratings and schedule -> identical results; another seed differs
+if (proj?.teams?.every((t) => t.rating)) {
+  const { simulate } = await import("./sim.mjs");
+  const R = { mu: proj.mu || 3, home: 1.04, teams: Object.fromEntries(proj.teams.map((t) => [t.team, { off: t.rating.off, def: t.rating.def, fin: t.rating.fin, gk: t.rating.gk, gf: t.rating.gf, ga: t.rating.ga, gp: t.rating.gp }])) };
+  const standings = proj.teams.map((t) => ({ teamAbbrev: { default: t.team }, teamCommonName: { default: t.name }, conferenceAbbrev: t.conf, divisionAbbrev: t.div, divisionName: t.divName,
+    points: t.pts, gamesPlayed: t.gp, wins: t.w, regulationWins: t.rw ?? 0, teamLogo: t.logo }));
+  const T = proj.teams.map((t) => t.team), remaining = [];
+  for (let i = 0; i < 400; i++) { const h = T[(i * 7) % T.length], a = T[(i * 11 + 3) % T.length]; if (h !== a) remaining.push({ id: i, home: h, away: a }); }
+  const run = (seed) => JSON.stringify(simulate({ R, standings, remaining, seed }).teams.map((t) => [t.team, t.projPts, t.playoffs, t.cup]));
+  const a = run(20261012), b = run(20261012), c = run(7);
+  check("Season simulation is reproducible (same seed -> same results)", a === b, "400 synthetic games, real ratings");
+  check("A different seed gives different simulated results", a !== c, "guards against an unseeded or constant generator");
+} else skip("Simulation reproducibility", "no team ratings in projections");
+
 const failed = checks.filter((c) => c.status === "fail");
 const out = { builtAt: new Date().toISOString(), passed: checks.filter((c) => c.status === "pass").length, failed: failed.length, skipped: checks.filter((c) => c.status === "skip").length, checks };
 await writeFile("public/hockey/invariants.json", JSON.stringify(out));
