@@ -1,6 +1,7 @@
 // League-wide data for Hockey Lab: every regular-season game of the current season scored with our xG model.
 // Publishes public/hockey/league.json (leaderboards) and public/hockey/teams/{TEAM}.json (shots for shot maps).
 // Incremental: last night's games (restored from Firestore) are the cache; only newly finished games are fetched from the NHL.
+import { htmlShifts } from "./htmlShifts.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 import { gameShots, xg } from "./shots.mjs";
@@ -260,6 +261,7 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
       await new Promise((r) => setTimeout(r, 500));
       shifts = (await get(`https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`).catch(() => null))?.data || null;
       if (shifts && !shifts.length) shifts = null; // not published yet: treat as missing (and don't cache the empty list)
+      if (!shifts) shifts = await htmlShifts(id, pbp).catch(() => null); // the official HTML shift report instead
       if (shifts && shiftCache) { const { gzipSync } = await import("node:zlib"); await (await import("node:fs/promises")).mkdir(shiftCache, { recursive: true }); await writeFile(`${shiftCache}/${id}.json.gz`, gzipSync(JSON.stringify(shifts))); }
       if (!shifts) missingShifts.push(id);
     }
