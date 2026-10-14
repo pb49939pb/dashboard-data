@@ -111,7 +111,9 @@ for (const s of [prevSeason, season]) {
 // (a local build, else the site's published copy of that frozen season)
 const prev = JSON.parse(await readFile(`public/hockey/seasons/${prevSeason}/projections.json`, "utf8").catch(() => "null"))
   ?? await fetch(`https://patrickreidbaldwin.com/data/hockey/seasons/${prevSeason}/projections.json`, { headers: UA }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-const prevStandings = prev ? Object.fromEntries(prev.teams.map((t) => [t.team, { pts: t.projPts, playoffs: t.playoffs, round: t.round ?? 0 }])) : null;
+// round = the furthest round a team REACHED (buildSeason.mjs); rounds won = one less, or 4 for the champion
+const prevStandings = prev ? Object.fromEntries(prev.teams.map((t) => [t.team, { pts: t.projPts, playoffs: t.playoffs, round: t.round ?? 0,
+  roundsWon: t.cup >= 100 ? 4 : Math.max(0, (t.round ?? 0) - 1), result: t.result || null }])) : null;
 
 // the betting market's view of every team (Polymarket's public Gamma API): odds to make the playoffs and to win the Cup.
 // It knows what our models don't (who's healthy, offseason moves), so team phases lean on it.
