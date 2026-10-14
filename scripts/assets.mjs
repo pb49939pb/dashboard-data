@@ -43,7 +43,7 @@ async function wikiDraft(year) {
       const converted = /was converted|were converted|condition was met|became unconditional/i.test(item);
       const conditional = unresolved || (m[3] === "may" && !converted) || (/condition/i.test(item) && !converted && /will be|would|if /i.test(item.split("The condition")[1] || ""));
       const sentence = plain(item.replace(/^#\s*/, "")).split(/(?<=\.)\s/)[0];
-      traded.push({ year, round: ROUNDS[m[2]], original, owner, conditional, note: sentence.slice(0, 260) });
+      traded.push({ year, round: ROUNDS[m[2]], original, owner, conditional, note: sentence.replace(/\b(\w+s)'s\b/g, "$1'").slice(0, 260) }); // "Panthers's" -> "Panthers'"
     }
   }
   return { page, traded };
