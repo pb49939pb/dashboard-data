@@ -60,11 +60,11 @@ async function rosters() { // who's on each NHL roster right now (injured player
     if (onAny.has(p.id) || !out[p.team] || p.lastGp + p.curGp < (p.group === "G" ? 20 : 40)) continue;
     await pause(400);
     const l = await fetch(`https://api-web.nhle.com/v1/player/${p.id}/landing`, { headers: UA }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
-    if (l?.isActive && l.currentTeamAbbrev === p.team) { out[p.team].add(p.id); rosterPos[p.team].push([p.id, l.position || p.pos]); offRoster.push(`${p.name} (${p.team})`); }
+    if (l?.isActive && l.currentTeamAbbrev === p.team) { out[p.team].add(p.id); rosterPos[p.team].push([p.id, l.position || p.pos]); offRoster.push(`${p.name} (${p.team})`); offRosterIds.add(p.id); }
   }
   return out;
 }
-const offRoster = []; // signed players missing from the roster feed (injured reserve)
+const offRoster = [], offRosterIds = new Set(); // signed players missing from the roster feed (injured reserve or the minors)
 
 async function build(s) {
   const live = s === current, roster = live ? await rosters() : {};
@@ -108,7 +108,10 @@ async function build(s) {
       if (!missed) continue;
       const ppg = ppgOf(p), wpg = Math.max(0, p.war82) / 82;
       rows.push({ id, name: p.name, pos: p.pos, group: p.group, missed, of: end - start + 1, ppg: +ppg.toFixed(3), wpg: +wpg.toFixed(4),
-        pts: +(missed * ppg).toFixed(1), wins: +(missed * wpg).toFixed(2), out: counted.some((r) => r.ongoing), stretches: counted, ppgEstimated: !ppgSeen.has(id) && p.group !== "G" });
+        pts: +(missed * ppg).toFixed(1), wins: +(missed * wpg).toFixed(2), out: counted.some((r) => r.ongoing), stretches: counted, ppgEstimated: !ppgSeen.has(id) && p.group !== "G",
+        // why he's out now, as far as rosters can tell (no confirmed-injury source): off the NHL roster but still signed
+        // = injured reserve or the minors; on the roster but not dressing = scratch, day-to-day or illness
+        ...(counted.some((r) => r.ongoing) ? { status: offRosterIds.has(id) ? "off-roster" : roster[t]?.has(id) ? "not-dressing" : "unknown" } : {}) });
     }
     rows.sort((a, b) => b.wins - a.wins || b.pts - a.pts);
     out[t] = { gp: n, mgl: rows.reduce((a, r) => a + r.missed, 0), ptsLost: +rows.reduce((a, r) => a + r.pts, 0).toFixed(1), winsLost: +rows.reduce((a, r) => a + r.wins, 0).toFixed(2), players: rows };
