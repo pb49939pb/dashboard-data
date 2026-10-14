@@ -82,6 +82,7 @@ let out = {};
 try { out = JSON.parse(await readFile("model/scorecards.json", "utf8")); } catch {}
 out.games = result;
 try { out.xg = JSON.parse(await readFile("model/xgScorecard.json", "utf8")); } catch {}
+// out.rapm (the RAPM pilot's test, from hockey-models rapm.py) is kept as written
 out.builtAt = new Date().toISOString();
 await writeFile("model/scorecards.json", JSON.stringify(out));
 for (const [k, v] of Object.entries(result.models)) console.log(`${k}: LL ${v.all.log_loss} Brier ${v.all.brier} acc ${v.all.accuracy} (n ${v.all.n}; after 10 GP: LL ${v.after.log_loss})`);
