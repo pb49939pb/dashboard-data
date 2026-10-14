@@ -183,13 +183,20 @@ async function loadModel() {
   }
   return (model = m);
 }
+// player values (wins above replacement per 82) for matchup difficulty on the recap's player cards
+let values = null;
+async function loadValues() {
+  if (values) return values;
+  const pv = store ? await store.read("hockey/playerValue").catch(() => null) : null;
+  return (values = new Map((pv?.players || []).map((p) => [p.id, p.war82])));
+}
 const recapPath = (season, id) => `hockey/recaps/${season}/${id}`;
 const indexPath = (season, team) => `hockey/recapIndex/${season}/${team}`;
 async function makeRecap(id, season, preds) {
   const meta = await fetch(`https://api-web.nhle.com/v1/gamecenter/${id}/boxscore`, { headers: UA }).then((r) => r.json()).catch(() => null);
   const teams = meta ? [meta.homeTeam.abbrev, meta.awayTeam.abbrev] : null;
   const index = teams && store ? await Promise.all(teams.map((t) => store.read(indexPath(season, t)).catch(() => null))) : [{}, {}];
-  const { recap, lines } = await buildRecap(id, { model: await loadModel(), preds, index: index.map((x) => x || {}) });
+  const { recap, lines } = await buildRecap(id, { model: await loadModel(), preds, index: index.map((x) => x || {}), values: await loadValues() });
   if (!store) { console.log(`recap ${id}: ${recap.home.team} ${recap.home.score}-${recap.away.score} ${recap.away.team}, ${JSON.stringify(recap).length} bytes`); return recap; }
   await store.put(recapPath(season, id), recap, { date: recap.date, home: recap.home.team, away: recap.away.team, final: recap.final }, { replace: true });
   if (recap.final && teams) { // season context for later games: each player's line from this game

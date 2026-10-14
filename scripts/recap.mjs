@@ -37,7 +37,8 @@ const clock = (period, t) => (period - 1) * 1200 + t;
 export const GS = { g: 0.75, a1: 0.7, a2: 0.55, ixg: 0.2, sog: 0.075, blk: 0.05, hit: 0.03, tk: 0.08, gv: -0.08, pd: 0.15, pt: -0.15,
   fow: 0.01, fol: -0.01, xpm: 0.3, oiGoalDiffEV: 0.15, goalieGsax: 1, goalieSave: 0.02 };
 // Bump when the recap's numbers change; scores.mjs then rebuilds every recap with the new version.
-export const RECAP_VERSION = 2; // 2: expected plus/minus (even strength) replaces all-situations on-ice xG in game score
+export const RECAP_VERSION = 3; // 3: player cards (Corsi/Fenwick on ice, D activations and own-zone puck play, goalie rebounds, matchup difficulty)
+// 2: expected plus/minus (even strength) replaces all-situations on-ice xG in game score
 
 /** Home team's chance to win from here: score difference and seconds left (Poisson scoring, ties go to overtime). */
 function winProb(diff, left, rate = 3.05 / 3600, homeEdge = 1.04) {
@@ -136,6 +137,45 @@ function matchups(shifts, pbp, shots, pos) {
 }
 
 /**
+ * Matchup difficulty at 5-on-5, from the shift charts second by second: for each skater, the average quality of the
+ * opposing skaters on the ice with him (their player value, wins above replacement per 82), and the minutes he spent
+ * against the other team's top players (its 6 best forwards and 4 best defensemen by that value who dressed).
+ * values: Map playerId -> war82. Returns { [id]: { secs, opp, vsTop } } or {} without shifts.
+ */
+function matchupDifficulty(shifts, pbp, pos, values) {
+  if (!shifts || !values) return {};
+  const side = {};
+  for (const p of pbp.rosterSpots || []) side[p.playerId] = p.teamId === pbp.homeTeam.id ? 0 : 1;
+  const per = {};
+  for (const s of shifts) {
+    if (s.typeCode !== 517 || side[s.playerId] === undefined) continue;
+    const a = secs(s.startTime), b = secs(s.endTime);
+    if (b <= a) continue;
+    const P = (per[s.period] ??= [[], []]);
+    for (let t = a; t < b; t++) (P[side[s.playerId]][t] ??= []).push(s.playerId);
+  }
+  const v = (id) => values.get(id) ?? 0; // unknown (call-ups without NHL history): replacement level
+  const top = [0, 1].map((sd) => {
+    const dressed = Object.keys(side).map(Number).filter((id) => side[id] === sd && pos[id] && pos[id] !== "G");
+    const F = dressed.filter((id) => pos[id] !== "D").sort((a, b) => v(b) - v(a)).slice(0, 6), D = dressed.filter((id) => pos[id] === "D").sort((a, b) => v(b) - v(a)).slice(0, 4);
+    return new Set([...F, ...D]);
+  });
+  const out = {};
+  for (const P of Object.values(per)) {
+    const len = Math.max(P[0].length, P[1].length);
+    for (let t = 0; t < len; t++) {
+      const on = [0, 1].map((sd) => (P[sd][t] || []).filter((i) => pos[i] !== "G"));
+      if (on[0].length !== 5 || on[1].length !== 5) continue;
+      for (const sd of [0, 1]) {
+        const opp = on[1 - sd], q = opp.reduce((a, i) => a + v(i), 0) / 5, tops = opp.filter((i) => top[1 - sd].has(i)).length;
+        for (const id of on[sd]) { const o = (out[id] ??= { secs: 0, q: 0, vsTop: 0 }); o.secs++; o.q += q; if (tops >= 3) o.vsTop++; }
+      }
+    }
+  }
+  return Object.fromEntries(Object.entries(out).map(([id, o]) => [id, { secs: o.secs, opp: r2(o.q / o.secs), vsTop: Math.round(o.vsTop / 6) / 10 }]));
+}
+
+/**
  * Build one recap. ctx: { model, preds: {model, market}, index: { home: {...}, away: {...} } } where index holds
  * earlier recaps' per-player lines for season context. Returns { recap, lines } (lines = this game's rows for the index).
  */
@@ -220,6 +260,14 @@ export async function buildRecap(id, ctx) {
   const players = [], goalies = [];
   const a1 = {}, a2 = {};
   for (const x of goals) { if (x.a1) a1[x.a1] = (a1[x.a1] || 0) + 1; if (x.a2) a2[x.a2] = (a2[x.a2] || 0) + 1; }
+  // own-zone puck play (play-by-play zone codes are from the acting team's side): giveaways and takeaways in his own end
+  const dz = {};
+  for (const p of pbp.plays || []) {
+    const d = p.details || {};
+    if (!["giveaway", "takeaway"].includes(p.typeDescKey) || !d.playerId || d.zoneCode !== "D") continue;
+    const k = (dz[d.playerId] ??= { gv: 0, tk: 0 }); k[p.typeDescKey === "giveaway" ? "gv" : "tk"]++;
+  }
+  const md = matchupDifficulty(shifts, pbp, pos, ctx.values);
   const fo = {};
   for (const p of pbp.plays || []) if (p.typeDescKey === "faceoff") { const d = p.details || {}; if (d.winningPlayerId) (fo[d.winningPlayerId] ??= [0, 0])[0]++; if (d.losingPlayerId) (fo[d.losingPlayerId] ??= [0, 0])[1]++; }
   for (const [sd, key] of [[0, "homeTeam"], [1, "awayTeam"]]) {
@@ -234,10 +282,18 @@ export async function buildRecap(id, ctx) {
       const gEV = shots.filter((s) => s.kind === "g" && on(s) && isEV(s.strength));
       const gf = gEV.filter((s) => s.side === sd).length, ga = gEV.length - gf;
       const toi = g.toi?.[sd]?.[id] || null;
+      // shot attempts with him on the ice: Corsi (all, blocked included) and Fenwick (unblocked), 5-on-5 and all situations
+      const att = shots.filter((s) => on(s) && !s.en), att5 = att.filter(ev5);
+      const cf = att.filter((s) => s.side === sd).length, ca = att.length - cf, cf5 = att5.filter((s) => s.side === sd).length, ca5 = att5.length - cf5;
+      const fen = att.filter((s) => s.kind !== "b"), ff = fen.filter((s) => s.side === sd).length, fa = fen.length - ff;
+      const iCF = shots.filter((s) => s.shooter === id && s.side === sd).length;
+      // defensemen: offensive-zone activations (his own shot attempts from below the top of the circles, x >= 54)
+      const act = b.position === "D" ? shots.filter((s) => s.shooter === id && s.side === sd && s.x >= 54).length : null;
       const row = { id, name: name[id] || b.name?.default, pos: b.position, side: sd, num: b.sweaterNumber, g: b.goals, a: b.assists, a1: a1[id] || 0, a2: a2[id] || 0, pts: b.points,
         pm: b.plusMinus, pim: b.pim, hits: b.hits, sog: b.sog, blk: b.blockedShots, gv: b.giveaways, tk: b.takeaways, toi: b.toi, shifts: b.shifts,
         fow: fo[id]?.[0] || 0, fol: fo[id]?.[1] || 0, ixg: r2(ixg), xpm: r2(xpm), oiXgf: r2(oiF), oiXga: r2(oiA), oiXgf5: r2(oiF5), oiXga5: r2(oiA5), oiGf: gf, oiGa: ga,
-        pd: pd[id] || 0, pt: pt[id] || 0, toi5: toi ? Math.round(toi[0] / 6) / 10 : null, toiPP: toi ? Math.round(toi[1] / 6) / 10 : null, toiPK: toi ? Math.round(toi[2] / 6) / 10 : null };
+        pd: pd[id] || 0, pt: pt[id] || 0, toi5: toi ? Math.round(toi[0] / 6) / 10 : null, toiPP: toi ? Math.round(toi[1] / 6) / 10 : null, toiPK: toi ? Math.round(toi[2] / 6) / 10 : null,
+        cf, ca, cf5, ca5, ff, fa, iCF, act, dzGv: dz[id]?.gv || 0, dzTk: dz[id]?.tk || 0, md: md[id] || null };
       row.gs = r2(GS.g * row.g + GS.a1 * row.a1 + GS.a2 * row.a2 + GS.ixg * ixg + GS.sog * row.sog + GS.blk * row.blk + GS.hit * row.hits + GS.tk * row.tk + GS.gv * row.gv
         + GS.pd * row.pd + GS.pt * row.pt + GS.fow * row.fow + GS.fol * row.fol + GS.xpm * xpm + GS.oiGoalDiffEV * (gf - ga));
       players.push(row);
@@ -247,7 +303,12 @@ export async function buildRecap(id, ctx) {
       const id = b.playerId, faced = unb.filter((s) => s.goalie === id && s.side !== sd);
       const xga = faced.reduce((a, s) => a + s.xg, 0), hd = faced.filter((s) => s.xg >= 0.15);
       const ga = b.goalsAgainst ?? faced.filter((s) => s.kind === "g").length, sv = b.saves ?? 0;
+      // rebounds allowed: shots against him that were rebounds (a shot within 3 s of an earlier one by the same team)
+      const reb = faced.filter((s) => (s.flags & 1) === 1).length, onNet = faced.filter((s) => s.kind === "s" || s.kind === "g");
+      const xsv = onNet.length ? 1 - onNet.reduce((a, s) => a + s.xg, 0) / onNet.length : null;
+      const danger = (lo, hi) => { const f = faced.filter((s) => s.xg >= lo && s.xg < hi && (s.kind === "s" || s.kind === "g")); return [f.length - f.filter((s) => s.kind === "g").length, f.length]; };
       const row = { id, name: name[id] || b.name?.default, side: sd, num: b.sweaterNumber, toi: b.toi, sa: b.shotsAgainst, sv, ga, xga: r2(xga), gsax: r2(xga - ga),
+        reb, xsv: xsv == null ? null : r3(xsv), low: danger(0, 0.05), mid: danger(0.05, 0.15), high: danger(0.15, 1.01),
         hd: hd.length, hdGa: hd.filter((s) => s.kind === "g").length, decision: b.decision || null, starter: !!b.starter };
       row.gs = r2(GS.goalieGsax * row.gsax + GS.goalieSave * sv);
       goalies.push(row);
