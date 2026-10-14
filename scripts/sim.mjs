@@ -102,7 +102,10 @@ export function winProbability(R, home, away, adj = { home: 1, away: 1 }) {
 // head and goal differential aren't simulated). otShare: tied games settled in overtime rather than a shootout
 // (measured, 2025-26: 0.635). roster: optional lineup model (rosterSim.mjs) that moves each game's expected goals by
 // who is healthy and who starts in goal, drawn fresh in every simulated season.
-export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0.635, roster = null }) {
+// teamSd: shared season risk: in each simulated season every team's true strength is off by a normal draw with this
+// SD (goals of margin per game), the same for all its games (independent per-game Poisson draws understate how far a
+// season can go; audit 7.4). 0 = off. Monte Carlo standard errors of every probability are reported (…Se fields).
+export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0.635, roster = null, teamSd = 0 }) {
   const rand = rng(seed);
   const info = {};
   for (const s of standings) {
@@ -113,7 +116,7 @@ export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0
   const games = remaining.filter((g) => info[g.home] && info[g.away] && R.teams[g.home] && R.teams[g.away]).map((g) => {
     const [lh, la] = lambdas(R, g.home, g.away);
     // with a lineup model: win/tie chances on a grid of goal margins (−1.2 to +1.2, step 0.04), looked up per game
-    const tab = roster ? Array.from({ length: 61 }, (_, i) => { const m = -1.2 + 0.04 * i; return gameProbs(Math.max(0.5, lh + m / 2), Math.max(0.5, la - m / 2)); }) : null;
+    const tab = roster || teamSd ? Array.from({ length: 61 }, (_, i) => { const m = -1.2 + 0.04 * i; return gameProbs(Math.max(0.5, lh + m / 2), Math.max(0.5, la - m / 2)); }) : null;
     return { ...g, ...gameProbs(lh, la), tab };
   });
   const teams = Object.keys(info);
@@ -162,9 +165,11 @@ export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0
     const pts = {}, rw = {}, row = {}, w = {};
     for (const t of teams) { pts[t] = info[t].pts; rw[t] = info[t].rw; row[t] = info[t].row; w[t] = info[t].w; }
     const st = roster?.start(rand);
+    let z = null;
+    if (teamSd) { z = {}; for (const t of teams) { const u1 = Math.max(1e-12, rand()), u2 = rand(); z[t] = teamSd * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2); } }
     for (const g of games) {
       let p = g;
-      if (st) { const m = st.margin(g, rand); p = g.tab[Math.max(0, Math.min(60, Math.round((m + 1.2) / 0.04)))]; }
+      if (st || z) { const m = (st ? st.margin(g, rand) : 0) + (z ? z[g.home] - z[g.away] : 0); p = g.tab[Math.max(0, Math.min(60, Math.round((m + 1.2) / 0.04)))]; }
       const r = rand();
       if (r < p.h) { pts[g.home] += 2; rw[g.home]++; row[g.home]++; w[g.home]++; }
       else if (r < p.h + p.a) { pts[g.away] += 2; rw[g.away]++; row[g.away]++; w[g.away]++; }
@@ -191,12 +196,12 @@ export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0
     }
     acc[playSeries(confChamps[0], confChamps[1], rank)].cup++;
   }
-  const pct = (x) => Math.round((x / SIMS) * 1000) / 10;
+  const pct = (x) => Math.round((x / SIMS) * 1000) / 10, se = (x) => Math.round(Math.sqrt((x / SIMS) * (1 - x / SIMS) / SIMS) * 1000) / 10;
   const proj = teams.map((t) => {
     const p = acc[t].pts.sort((a, b) => a - b);
     const R0 = R.teams[t];
     return { ...info[t], projPts: Math.round(p.reduce((a, b) => a + b, 0) / SIMS * 10) / 10, lo: p[Math.floor(SIMS * 0.1)], hi: p[Math.floor(SIMS * 0.9)],
-      playoffs: pct(acc[t].playoffs), division: pct(acc[t].div), presidents: pct(acc[t].pres), r2: pct(acc[t].r2), r3: pct(acc[t].r3), final: pct(acc[t].final), cup: pct(acc[t].cup),
+      playoffs: pct(acc[t].playoffs), playoffsSe: se(acc[t].playoffs), cupSe: se(acc[t].cup), division: pct(acc[t].div), presidents: pct(acc[t].pres), r2: pct(acc[t].r2), r3: pct(acc[t].r3), final: pct(acc[t].final), cup: pct(acc[t].cup),
       rating: { off: +R0.off.toFixed(3), def: +R0.def.toFixed(3), gf: +R0.gf.toFixed(2), ga: +R0.ga.toFixed(2), fin: +R0.fin.toFixed(3), gk: +R0.gk.toFixed(3), gp: R0.gp } };
   }).sort((a, b) => b.projPts - a.projPts);
   // Most likely bracket: seed from projected points, show each series' win probability
@@ -214,7 +219,7 @@ export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0
   }
   const confs = Object.keys(bracket);
   bracket.final = series(bracket[confs[0]].cf.fav, bracket[confs[1]].cf.fav);
-  return { sims: SIMS, mu: R.mu, remaining: games.length, teams: proj, bracket };
+  return { sims: SIMS, teamSd, mu: R.mu, remaining: games.length, teams: proj, bracket };
 }
 
 /**
