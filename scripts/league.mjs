@@ -36,7 +36,7 @@ function scoreGame(pbp, model, shifts = null) {
     ev[d.eventOwnerTeamId === pbp.homeTeam.id ? 0 : 1][base + ZI[d.zoneCode]]++;
   }
   return {
-    id: pbp.id, date: pbp.gameDate, home: pbp.homeTeam.abbrev, away: pbp.awayTeam.abbrev,
+    id: pbp.id, format: FORMAT, date: pbp.gameDate, home: pbp.homeTeam.abbrev, away: pbp.awayTeam.abbrev,
     hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players, ev,
     ...(ix ? { fo, u5: ix.u5, toi: [0, 1].map((sd) => Object.fromEntries(Object.entries(ix.toi).filter(([id]) => players[id]?.[2] === sd))) } : {}),
     // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type,
@@ -204,13 +204,16 @@ async function qualityStarts(season, get) {
 export { scoreGame };
 export async function buildLeague({ season, get, nhl, model, loadPrevious, cacheDir, teams, saModel, outDir = "public/hockey" }) {
   // 1) Reuse last night's games (only if scored with the same model)
-  const known = new Map();
+  const known = new Map(), stale = new Set();
+  // a stored game is reused only if it was scored in the current record format: each game carries its own format
+  // (games stored before that stamp existed count as current only if every shot row has all 14 fields)
+  const current = (g) => (g.format ? g.format === FORMAT : g.shots?.length > 0 && g.shots.every((s) => s.length >= 14));
   if (loadPrevious) {
     const prevLeague = await loadPrevious("league.json");
     if (prevLeague && prevLeague.model?.trained_on === model.trained_on && prevLeague.season === season && prevLeague.format === FORMAT) {
       for (const t of teams) {
         const f = await loadPrevious(`teams/${t}.json`);
-        for (const g of f?.games || []) known.set(g.id, g);
+        for (const g of f?.games || []) { if (current(g)) known.set(g.id, g); else stale.add(g.id); }
       }
     }
   }
@@ -224,6 +227,7 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
       for (const g of sb?.games || []) if (g.gameType === 2 && ["FINAL", "OFF"].includes(g.gameState)) finished.set(g.id, day);
     }
     for (const [id] of known) finished.set(id, true);
+    for (const id of stale) finished.set(id, true); // rescored below in the current format
   } else {
     for (const t of teams) {
       const sched = await get(`${nhl}/club-schedule-season/${t}/${season}`);
