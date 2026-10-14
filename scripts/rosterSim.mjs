@@ -3,8 +3,9 @@
 // Each simulated season draws:
 //   injuries: every player out now gets a return game, drawn from how long absences that had already lasted as long
 //     ran in 2025-26 (model/rosterModel.json survival); until then the next-best player on the roster takes his slot
-//   starting goalie: the healthy main goalie starts 63% of games and 37% of second nights of back-to-backs (measured),
-//     the backup the rest
+//   starting goalie: a context model (model/starterModel.json, scripts/starterTest.mjs: rest, back-to-backs, his starts
+//     in the last week, whether he started the last game, home, his share so far) tracked game by game in each simulated
+//     season; without the model file, the fixed rule (main goalie 63%, 37% on back-to-backs)
 // and moves each game's expected goals by how far the expected lineup (best 12 forwards + 6 defensemen on the roster,
 // by WAR-lite per 82, plus the starter's WAR per 82 starts) sits from the lineups behind the team's ratings (this
 // season's dressed lineups, plus last season's counted like the ratings' 12-game prior), with the league-wide gap
@@ -38,17 +39,27 @@ const teams = Object.keys(inj.current.rosters).filter((t) => R.teams[t]);
 async function thisSeason(t) {
   const d = await read(`public/hockey/teams/${t}.json`);
   const gs = (d?.games || []).filter((g) => g.players && g.shots && String(g.id).slice(4, 6) === "02");
-  const dressed = {}, starts = {};
-  for (const g of gs) {
+  const dressed = {}, starts = {}, log = [];
+  for (const g of [...gs].sort((a, b) => a.date.localeCompare(b.date))) {
     const side = g.home === t ? 0 : 1;
     for (const [id, p] of Object.entries(g.players)) if (p[2] === side && p[1] !== "G") dressed[id] = (dressed[id] || 0) + 1;
     const s = g.shots.find((x) => x[3] === 1 - side && x[6]);
-    if (s) starts[s[6]] = (starts[s[6]] || 0) + 1;
+    if (s) { starts[s[6]] = (starts[s[6]] || 0) + 1; log.push({ date: g.date, st: String(s[6]) }); }
   }
-  return { games: gs.length, dressed, starts };
+  return { games: gs.length, dressed, starts, log };
 }
 const perGame = (counts, games, f) => (games ? Object.entries(counts).reduce((a, [id, n]) => a + f(id) * n, 0) / games : 0);
 const pStart = (b2b) => (b2b ? M.starts.primaryBackToBack : M.starts.primary);
+// context starter model (scripts/starterTest.mjs: beat the fixed rule out of sample), else the fixed rule
+const SM = await read("model/starterModel.json");
+const dayN = (d) => new Date(d + "T12:00:00Z").getTime() / 864e5;
+function pMain(st, x, i) {
+  if (!SM) return pStart(x.b2b[i]);
+  const d = dayN(x.dates[i]), last = st.primDates.length ? st.primDates[st.primDates.length - 1] : null;
+  const f = { b2b: x.b2b[i] ? 1 : 0, rest: last == null ? 7 : Math.min(7, d - last), wk: st.primDates.filter((q) => d - q <= 7 && d > q).length, lastStarted: st.lastWasPrim ? 1 : 0, home: x.home[i] ? 1 : 0, share: x.mainShare };
+  const z = SM.coef[0] + SM.features.reduce((a, k, j) => a + SM.coef[j + 1] * f[k], 0);
+  return 1 / (1 + Math.exp(-z));
+}
 
 const T = {};
 for (const t of teams) {
@@ -69,7 +80,10 @@ for (const t of teams) {
   // remaining schedule: this team's game index and back-to-back flag per game
   const mine = proj.schedule.filter((g) => g.home === t || g.away === t).sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
   const idx = new Map(mine.map((g, i) => [g.id, i])), b2b = mine.map((g, i) => i > 0 && new Date(g.date) - new Date(mine[i - 1].date) === 864e5);
-  T[t] = { baseSk: blend(skVal), baseG, sk, gk, out, idx, b2b, curGames: cur.games, lastGames: last.games };
+  const dates = mine.map((g) => g.date), home = mine.map((g) => g.home === t);
+  const mainId = gk[0]?.id, nStarts = Object.values(cur.starts).reduce((a, b) => a + b, 0);
+  const mainShare = nStarts >= 5 ? (cur.starts[mainId] || 0) / nStarts : gk[0]?.share || 0.6; // his share of starts so far
+  T[t] = { baseSk: blend(skVal), baseG, sk, gk, out, idx, b2b, dates, home, log: cur.log, mainShare, curGames: cur.games, lastGames: last.games };
 }
 /** Best 12 forwards + 6 defensemen among skaters not out (mask = bits of players still out). */
 function lineupValue(x, mask) {
@@ -82,11 +96,11 @@ function lineupValue(x, mask) {
   return v;
 }
 /** Expected starter value: main goalie pStart, the next one the rest (a third goalie gets a tenth of that). */
-function goalieChoices(x, mask, b2b) {
+function goalieChoices(x, mask, b2b, pMainStart = null) {
   const ok = x.gk.filter((p) => !(p.bit && mask & p.bit));
   if (!ok.length) return [[0, 1]];
   if (ok.length === 1) return [[ok[0].v, 1]];
-  const p = pStart(b2b), rest = 1 - p;
+  const p = pMainStart ?? pStart(b2b), rest = 1 - p;
   return ok.length === 2 ? [[ok[0].v, p], [ok[1].v, rest]] : [[ok[0].v, p], [ok[1].v, rest * 0.9], [ok[2].v, rest * 0.1]];
 }
 const fullMask = (x) => x.out.reduce((a, p) => a | p.bit, 0);
@@ -106,7 +120,8 @@ const roster = {
   start(rand) {
     const back = {}; // team -> [return index per out player]
     for (const t of teams) back[t] = T[t].out.map((p) => drawOut(p.missed, rand));
-    const cache = {};
+    const cache = {}, gst = {}; // per team: the main goalie's start dates and whether he started the last game (this sim)
+    for (const t of teams) { const x = T[t], main = x.gk[0]?.id; gst[t] = { primDates: x.log.filter((l) => l.st === main).map((l) => dayN(l.date)), lastWasPrim: x.log.length ? x.log[x.log.length - 1].st === main : true }; }
     const gap = (t, gid, rand) => {
       const x = T[t], i = x.idx.get(gid);
       if (i == null) return 0;
@@ -114,9 +129,13 @@ const roster = {
       x.out.forEach((p, j) => { if (i < back[t][j]) mask |= p.bit; });
       const key = `${t}|${mask}`;
       const sk = cache[key] ??= lineupValue(x, mask) - x.baseSk - cSk;
-      const ch = goalieChoices(x, mask, x.b2b[i]);
-      let u = rand(), v = ch[ch.length - 1][0];
-      for (const [gv, p] of ch) { if (u < p) { v = gv; break; } u -= p; }
+      const mainOut = x.gk[0]?.bit && mask & x.gk[0].bit;
+      const ch = goalieChoices(x, mask, x.b2b[i], mainOut ? null : pMain(gst[t], x, i));
+      let u = rand(), v = ch[ch.length - 1][0], pick = ch.length - 1;
+      for (let j = 0; j < ch.length; j++) { if (u < ch[j][1]) { v = ch[j][0]; pick = j; break; } u -= ch[j][1]; }
+      const wasMain = !mainOut && pick === 0;
+      if (wasMain) gst[t].primDates.push(dayN(x.dates[i]));
+      gst[t].lastWasPrim = wasMain;
       return sk + v - x.baseG - cG;
     };
     return { margin: (g, rand) => M.k * (gap(g.home, g.id, rand) - gap(g.away, g.id, rand)) * GPW / 82 };
@@ -124,7 +143,7 @@ const roster = {
 };
 
 const otShare = M.otShare;
-const sim = simulate({ R, standings: proj.standingsRows, remaining: proj.schedule, otShare, roster });
+const sim = simulate({ R, standings: proj.standingsRows, remaining: [...proj.schedule].sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id), otShare, roster }); // date order: goalie usage state advances game by game
 // pre-game odds for the next three days: expected over who's back and who starts (2,000 draws)
 let seed = 20261014; const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 const upcoming = {};
