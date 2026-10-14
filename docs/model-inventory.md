@@ -95,6 +95,10 @@ Shown on the Model tab ("How good are the forecasts?") and in the Admin methods 
 
 Backtests before 2026-10-14 are reconstructed (no archive of what was known then) and say so.
 
+## Drift alarms and champion/challenger (D5)
+
+Nightly `scripts/drift.mjs` → `hockey/drift`: live pre-game log loss and calibration-in-the-large from the prediction log vs the 2025-26 walk-forward backtest; this season's goals vs xG (Poisson z); unblocked shots per game, xG per shot and home win rate vs last season (`model/driftReference.json`, game-to-game spreads measured). ok |z| < 2, warn 2–3, alarm ≥ 3, waiting below 50–100 games. Champion/challenger: season simulation (team-only vs roster-aware, scored on the same logged games) and player value (WAR-lite vs RAPM WAR head-to-head), each with its switching rule. Shown on Admin.
+
 ## Versioned artifacts
 
 Every night `scripts/artifacts.mjs` writes `hockey/artifacts`: for each model output the site reads (player values, player projections, trade pricing, scorecards, projections, injuries, assets) its sha256 content hash (16 hex), model/version, build time, as-of season and the build's code commit, and stores a write-once copy of every new version at `hockey/artifactVersions/versions/{name}_{hash}`. The site stamps each trade valuation (How? sheet) with the hashes it used; trade values are still computed in the browser from those versioned inputs (plus the owner's private contracts, versioned by the nightly snapshot), so a number can be reproduced from the exact artifacts.

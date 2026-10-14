@@ -77,6 +77,12 @@ jobs:
       - name: Roster-aware simulation
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/rosterSim.mjs || echo "roster simulation failed; team-only projections are published"
+      # Drift alarms (live calibration and input distributions vs the scorecards) and the champion/challenger record
+      - name: Drift alarms
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/drift.mjs || echo "drift checks failed; see the Admin page"
       # Versioned model artifacts: manifest with content hashes + write-once copies of each new version
       - name: Model artifacts
         if: steps.hour.outputs.skip != 'true'
