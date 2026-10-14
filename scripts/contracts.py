@@ -596,8 +596,42 @@ def clean(out: dict) -> dict:
     return out
 
 
+TRACKED = ("team", "status", "term", "start", "end", "aav", "elc")
+TRACKING_FROM = "2026-10-14"  # first day first-observed dates were recorded; anything older is reconstructed
+
+
+def provenance(out: dict) -> dict:
+    """Point-in-time history for every contract row (audit A4), against the copy we're about to replace:
+    firstObservedAt (when this pipeline first saw the deal; rows older than tracking are marked reconstructed),
+    lastSeenAt (this run), and history: the previous values, with when they stopped being current, whenever a
+    tracked field changes. A correction never erases what we believed before."""
+    today = date.today().isoformat()
+    try:
+        prev = {r["id"]: r for r in json.loads(OUT.read_text()).get("players", [])}
+    except Exception:
+        prev = {}
+    for r in out.get("players", []):
+        p = prev.get(r["id"])
+        key = lambda x: {k: x.get(k) for k in TRACKED} | {"next": {k: (x.get("next") or {}).get(k) for k in ("start", "end", "aav", "term")} if x.get("next") else None}
+        r["firstObservedAt"] = (p or {}).get("firstObservedAt") or (TRACKING_FROM if p else today)
+        if p and not p.get("firstObservedAt"):
+            r["provenance"] = "reconstructed: seen before first-observed dates were tracked"
+        elif p and p.get("provenance"):
+            r["provenance"] = p["provenance"]
+        r["lastSeenAt"] = today
+        hist = list((p or {}).get("history") or [])
+        if p and key(p) != key(r):
+            hist.append({**key(p), "currentFrom": p.get("lastChangedAt") or p.get("firstObservedAt") or TRACKING_FROM, "replacedOn": today})
+            r["lastChangedAt"] = today
+        elif p and p.get("lastChangedAt"):
+            r["lastChangedAt"] = p["lastChangedAt"]
+        if hist:
+            r["history"] = hist[-10:]
+    return out
+
+
 def write(out: dict) -> None:
-    out = clean(out)
+    out = provenance(clean(out))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out))
 

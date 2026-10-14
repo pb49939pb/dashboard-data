@@ -78,6 +78,12 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/publish.mjs
+      # What the models could see tonight, kept once per day for point-in-time backtests (owner only)
+      - name: Point-in-time snapshot
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/snapshot.mjs || echo "snapshot failed; tomorrow's run tries again"
       - name: Record a failed run for the admin panel
         if: failure() && steps.hour.outputs.skip != 'true'
         env:
