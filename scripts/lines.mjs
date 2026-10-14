@@ -52,9 +52,10 @@ export function shiftIndex(shifts, pbp) {
 }
 
 /** Greedy line building: the trio (or pair) with the most time together, then the next one with none of those players. */
-function pickUnits(counts, n) {
+function pickUnits(counts, n, minSecs = 0) {
   const used = new Set(), out = [];
   for (const [k, s] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+    if (s < minSecs) break; // a combination that barely played (a one-game trio) isn't a "line"
     const ids = k.split("-").map(Number);
     if (ids.some((i) => used.has(i))) continue;
     ids.forEach((i) => used.add(i)); out.push({ ids, key: k, secs: s });
@@ -119,7 +120,8 @@ export function buildLines(games, teams) {
     });
     const build = (list) => {
       const t5 = team5Of(list);
-      const F = pickUnits(agg("F", list), 4).map((u) => describe(u, list, t5)), D = pickUnits(agg("D", list), 3).map((u) => describe(u, list, t5));
+      // a unit needs 4% of the team's 5v5 time (about 10 minutes after five games) to count as one of its lines
+      const F = pickUnits(agg("F", list), 4, 0.04 * t5).map((u) => describe(u, list, t5)), D = pickUnits(agg("D", list), 3, 0.04 * t5).map((u) => describe(u, list, t5));
       label(F, "F"); label(D, "D");
       return { F, D };
     };
