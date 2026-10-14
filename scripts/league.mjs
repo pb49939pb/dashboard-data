@@ -266,6 +266,7 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     let shifts = null;
     const shiftCache = process.env.SHIFT_CACHE;
     if (shiftCache) shifts = await readFile(`${shiftCache}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b)), () => null);
+    if (shifts && !Array.isArray(shifts)) shifts = shifts.data || null; // caches hold the API's {data: [...]} or the bare list
     if (!shifts) {
       await new Promise((r) => setTimeout(r, 500));
       shifts = (await get(`https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`).catch(() => null))?.data || null;
