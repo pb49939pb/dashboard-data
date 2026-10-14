@@ -71,6 +71,10 @@ for (const y of years) {
 
 // prospects
 const draftOf = new Map(draft.picks.filter((p) => p.id).map((p) => [Number(p.id), { year: p.year, overall: p.overall, round: p.round, by: p.team }]));
+// draftees without an NHL id in our draft history yet: match by name (latest draft wins)
+const normName = (n) => String(n || "").normalize("NFD").replace(/[^a-zA-Z ]/g, "").toLowerCase().trim();
+const draftByName = new Map(draft.picks.filter((p) => p.name).sort((a, b) => a.year - b.year).map((p) => [normName(p.name), { year: p.year, overall: p.overall, round: p.round, by: p.team }]));
+const thisYear = Number(String(values.season || new Date().getFullYear()).slice(0, 4)) || new Date().getFullYear();
 const established = new Set(values.players.filter((p) => p.gp3 >= 60 || p.curGp > 0).map((p) => p.id)); // NHL regulars and anyone playing NHL games now
 const prospects = [];
 const empty = [];
@@ -81,7 +85,9 @@ for (const t of Object.keys(TEAMS)) {
   if (!list.length) { empty.push(t); continue; }
   for (const p of list) {
     if (established.has(p.id)) continue;
-    const d = draftOf.get(p.id);
+    const born = Number(String(p.birthDate || "").slice(0, 4)) || null;
+    if (born && thisYear - born >= 25) continue; // 25+ and not an NHL regular: a minor-league veteran, not a prospect
+    const d = draftOf.get(p.id) || draftByName.get(normName(`${p.firstName.default} ${p.lastName.default}`));
     prospects.push({ id: p.id, name: `${p.firstName.default} ${p.lastName.default}`, team: t, pos: p.positionCode, born: Number(String(p.birthDate || "").slice(0, 4)) || null,
       draftYear: d?.year ?? null, draftOverall: d?.overall ?? null, draftedBy: d?.by ?? null, source: "nhl" });
   }

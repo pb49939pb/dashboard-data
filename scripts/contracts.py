@@ -174,7 +174,7 @@ def deal_from_text(text: str, following: str = "") -> dict | None:
             v = money(later.group(1), later.group(2))
     if v is not None and not 500_000 <= v <= 21_000_000:
         v = None
-    st = re.search(r"(?:begin|begins|began|beginning|start|starts|starting|kicks? in|effective|through)[^.]{0,30}?(20\d\d)[–-](?:20)?\d\d season", text, re.I)
+    st = re.search(r"(?:begin|begins|began|beginning|start|starts|starting|kicks? in|effective|through)[^.]{0,30}?(20\d\d)[–-](?:20)?\d\d(?:\s+season)?\b", text, re.I)  # "season" optional: "which will begin in 2026–27."
     # an explicit range: "(2026-27 to 2033-34)", "2026-27 through 2033-34"
     rng = re.search(r"\b(20\d\d)[–-](?:20)?\d\d\s+(?:to|through|thru|–|-)\s+(20\d\d)[–-](?:20)?\d\d\b", full)
     # entry-level only when it's said of this deal ("a three-year, entry-level contract"), not anywhere in the passage
