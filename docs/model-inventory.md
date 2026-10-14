@@ -50,7 +50,7 @@ methods dossier (generated from `INFO`, `MODELS` and the live constants).
 
 | Metric | Class | Units / sign | Inputs and source | Horizon / available | Version / schedule | Consumers | Explainer |
 |---|---|---|---|---|---|---|---|
-| Contracts | observed | AAV $, term, start/end, `next` extension | NHL.com, PHR, Wikipedia, owner's PuckPedia table; post-merge sanity clean | weekly + nightly news | contracts.py | Cap tab, trade engine | INFO.contracts |
+| Contracts | observed | AAV $, term, start/end, `next` extension (`reported` when insiders report it before it's official) | NHL.com, PHR, Wikipedia, owner's PuckPedia table; post-merge sanity clean | weekly + nightly news (same job queue; publish skips a list built on an older base) | contracts.py | Cap tab, trade engine | INFO.contracts |
 | Season rules | config | games, cap ceiling/floor, minimum salary, ELC max, max term (7/6 under the CBA from 2026-09-16) | NHL schedule, NHL/NHLPA payroll release, NHL CBA summary | by hand | lab.js `SEASON_RULES` | games left, cap checks, contract-term data check | — |
 | Trade value to a team | counterfactual (heuristic) | wins above replacement, phase-weighted, discounted 0.9/yr | war82, roster fit (marginal lineup wins; year 1 value = marginal, not WAR + marginal), contract bonus, re-sign odds | in the browser | lab.js `valueTo()` | trade explorer, How? sheet | INFO.tradeValue + dossier |
 | Market value | market (modelled, not observed) | 75th percentile of value to the other 31 teams | valueTo across teams | in the browser | lab.js `marketValue()` | prices, packages | INFO.tradeValue |
