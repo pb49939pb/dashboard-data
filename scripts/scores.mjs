@@ -104,9 +104,10 @@ const pois = (l) => { const out = [Math.exp(-l)]; for (let k = 1; k <= 15; k++) 
 function winProb(lh, la, diff, frac, playoff, inOT) {
   const share = lh / (lh + la), pOT = playoff ? share : 0.5; // regular-season OT/shootout: a coin flip (see sim.mjs gameProbs)
   if (inOT) return diff > 0 ? 1 : diff < 0 ? 0 : pOT;
-  // pulled goalie: in the last 3 minutes of a 1-2 goal game the trailing team scores ~2.5× as often and the leading
-  // team ~3.5× (into the empty net)
-  if (frac <= 3 / 60 && Math.abs(diff) >= 1 && Math.abs(diff) <= 2) { const lead = diff > 0; lh *= lead ? 3.5 : 2.5; la *= lead ? 2.5 : 3.5; }
+  // pulled goalie: in the last 3 minutes of a 1-2 goal game, measured on 2025-26 (107,505 seconds in that state, about
+  // 600 game-equivalents; 161 goals by trailing teams, 436 by leading teams, mostly into empty nets), the trailing team
+  // scores 1.79x its normal rate and the leading team 4.86x
+  if (frac <= 3 / 60 && Math.abs(diff) >= 1 && Math.abs(diff) <= 2) { const lead = diff > 0; lh *= lead ? 4.86 : 1.79; la *= lead ? 1.79 : 4.86; }
   const ph = pois(lh * frac), pa = pois(la * frac);
   let win = 0, tie = 0;
   for (let x = 0; x < ph.length; x++) for (let y = 0; y < pa.length; y++) { const d = diff + x - y, p = ph[x] * pa[y]; if (d > 0) win += p; else if (d === 0) tie += p; }
