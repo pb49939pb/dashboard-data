@@ -239,7 +239,10 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   const missing = [], missingShifts = [];
   const reused = known.size;
   for (const id of [...finished.keys()].sort()) {
-    if (known.has(id) && known.get(id).ev && known.get(id).u5) continue;
+    const k0 = known.get(id);
+    // shift charts often publish hours after the final horn: a game stored without ice time is fetched again for 30 days
+    const hasToi = k0?.toi && k0.toi.every((side) => Object.keys(side).length);
+    if (k0 && k0.ev && k0.u5 && (hasToi || Date.now() - new Date(k0.date).getTime() > 30 * 864e5)) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
     if (pbp) fromDisk++;
@@ -256,6 +259,7 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
     if (!shifts) {
       await new Promise((r) => setTimeout(r, 500));
       shifts = (await get(`https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`).catch(() => null))?.data || null;
+      if (shifts && !shifts.length) shifts = null; // not published yet: treat as missing (and don't cache the empty list)
       if (shifts && shiftCache) { const { gzipSync } = await import("node:zlib"); await (await import("node:fs/promises")).mkdir(shiftCache, { recursive: true }); await writeFile(`${shiftCache}/${id}.json.gz`, gzipSync(JSON.stringify(shifts))); }
       if (!shifts) missingShifts.push(id);
     }

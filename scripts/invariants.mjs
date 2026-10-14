@@ -35,6 +35,31 @@ if (!G.length) skip("games", "no team game files"); else {
   // 8. shot times and periods are possible
   const badTime = G.flatMap((g) => g.shots.filter((s) => s[12] < 0 || s[12] > 1200 || s[8] < 1).map((s) => `${g.id}: period ${s[8]} t=${s[12]}`));
   check("Shot times are inside their period", !badTime.length, "0-1200 s, period >= 1", badTime);
+  // 8. coordinates and strength states: on the rink, unblocked shots normalized toward the attacking net (blocked
+  // attempts sit where they were blocked), and only known strength states
+  const offRink = G.flatMap((g) => g.shots.filter((s) => Math.abs(s[0]) > 100 || Math.abs(s[1]) > 42.5).map((s) => `${g.id}: (${s[0]}, ${s[1]})`));
+  check("Shot coordinates are on the rink", !offRink.length, "|x| <= 100 ft, |y| <= 42.5 ft", offRink);
+  const flipped = [];
+  for (const g of G) for (const side of [0, 1]) {
+    const u = g.shots.filter((s) => s[3] === side && s[2] !== "b" && s[13] !== 1);
+    if (u.length >= 10 && u.filter((s) => s[0] > 0).length / u.length < 0.85) flipped.push(`${g.id} ${side ? g.away : g.home}: ${Math.round((100 * u.filter((s) => s[0] > 0).length) / u.length)}% toward its net`);
+  }
+  check("Shots are oriented toward the attacking net", !flipped.length, "85%+ of each team's unblocked shots at x > 0 in every game", flipped);
+  const STATES = new Set(["5v5", "PP", "SH", "4v4", "3v3"]);
+  const badState = G.flatMap((g) => g.shots.filter((s) => !STATES.has(s[7])).map((s) => `${g.id}: ${s[7]}`));
+  check("Strength states are possible", !badState.length, [...STATES].join(", "), [...new Set(badState)].slice(0, 20));
+  // 7. ice time: no skater over the game's length; a team's skater time between 4.2 and 6 skaters' worth of the game
+  // (penalty kills go down to 4 and 3; a pulled goalie adds a sixth); measured range 2025-26: 4.5-5.1
+  const toiBad = [], toiMissing = [];
+  for (const g of G) {
+    if (!g.toi || g.toi.some((side) => !Object.keys(side).length)) { toiMissing.push(g.id); continue; } // no shift data: missing, not wrong
+    const len = g.end === "REG" ? 3600 : 3900;
+    g.toi.forEach((side, i) => {
+      const v = Object.values(side), tot = v.reduce((a, x) => a + x[3], 0), maxP = Math.max(...v.map((x) => x[3]));
+      if (tot < 4.2 * len || tot > 6 * len || maxP > len + 60) toiBad.push(`${g.id} ${i ? g.away : g.home}: ${(tot / len).toFixed(2)} skaters' worth, longest ${Math.round(maxP / 60)} min`);
+    });
+  }
+  check("Ice time fits the game", !toiBad.length, `each skater <= game length; team total 4.2-6 skaters x game length${toiMissing.length ? ` (${toiMissing.length} games without ice-time data skipped)` : ""}`, toiBad);
 }
 
 if (league) {

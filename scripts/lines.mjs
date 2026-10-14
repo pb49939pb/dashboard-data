@@ -9,9 +9,12 @@ const sec = (t) => { if (!t) return null; const [m, s] = t.split(":").map(Number
 export function shiftIndex(shifts, pbp) {
   const pos = {}, side = {};
   for (const p of pbp.rosterSpots || []) { pos[p.playerId] = p.positionCode; side[p.playerId] = p.teamId === pbp.homeTeam.id ? 0 : 1; }
-  const periods = {};
+  const periods = {}, seen = new Set();
   for (const s of shifts || []) {
     if (s.typeCode !== 517 || side[s.playerId] === undefined) continue;
+    const key = `${s.playerId}|${s.period}|${s.startTime}|${s.endTime}`; // the feed sometimes lists a shift twice (doubled ice time)
+    if (seen.has(key)) continue;
+    seen.add(key);
     const a = sec(s.startTime), b = sec(s.endTime);
     if (a === null || b === null || b <= a) continue;
     const P = (periods[s.period] ??= { len: 0, secs: [[], []] });
