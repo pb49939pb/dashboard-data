@@ -82,6 +82,6 @@ Backtests before 2026-10-14 are reconstructed (no archive of what was known then
 
 ## Known gaps (tracked against the audit)
 - Scorecards exist for xG and pre-game odds (A5); point-in-time records start 2026-10-14 (A4): earlier history is reconstructed. xG recalibration (B1) tested 2026-10-14: Platt scaling fit on out-of-fold predictions helps a model trained on one season (slope 0.90 -> 1.02, log loss CI excludes 0) but not the production two-season model (slope 0.985; CI spans 0), so it is not promoted; re-test at each retrain.
-- WAR-lite on/off parts are not teammate/opponent adjusted. RAPM pilot (B2) tested 2026-10-14: ties on/off with the same context controls, so not promoted; context adjustment (score state, zone starts, home) is the validated gain and the next WAR-lite change to test.
+- WAR-lite on/off parts are not teammate/opponent adjusted. RAPM pilot (B2) tested 2026-10-14: ties on/off with the same context controls, so not promoted; context adjustment (score state, zone starts, home) helps within a season at the stint level; the season-level version from MoneyPuck's score-and-venue-adjusted aggregates was tested 2026-10-14 and is less stable year to year (r 0.32-0.36 vs 0.37-0.42), so WAR-lite is unchanged.
 - `war82` uses an upward-only ice-time lift (audit P0-C): kept as `legacy_v1` until a symmetric, holdout-tested usage effect exists.
 - Retained salary, LTIR, bonuses and buried contracts aren't modelled; cap checks say "unverified" instead of "ok".
