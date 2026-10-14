@@ -77,6 +77,12 @@ jobs:
       - name: Roster-aware simulation
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/rosterSim.mjs || echo "roster simulation failed; team-only projections are published"
+      # Versioned model artifacts: manifest with content hashes + write-once copies of each new version
+      - name: Model artifacts
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/artifacts.mjs || echo "artifact manifest failed; last night's is kept"
       # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'

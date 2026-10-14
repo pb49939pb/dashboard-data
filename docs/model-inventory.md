@@ -94,6 +94,10 @@ Shown on the Model tab ("How good are the forecasts?") and in the Admin methods 
 
 Backtests before 2026-10-14 are reconstructed (no archive of what was known then) and say so.
 
+## Versioned artifacts
+
+Every night `scripts/artifacts.mjs` writes `hockey/artifacts`: for each model output the site reads (player values, player projections, trade pricing, scorecards, projections, injuries, assets) its sha256 content hash (16 hex), model/version, build time, as-of season and the build's code commit, and stores a write-once copy of every new version at `hockey/artifactVersions/versions/{name}_{hash}`. The site stamps each trade valuation (How? sheet) with the hashes it used; trade values are still computed in the browser from those versioned inputs (plus the owner's private contracts, versioned by the nightly snapshot), so a number can be reproduced from the exact artifacts.
+
 ## Known gaps (tracked against the audit)
 - Scorecards exist for xG and pre-game odds (A5); point-in-time records start 2026-10-14 (A4): earlier history is reconstructed. xG recalibration (B1) tested 2026-10-14: Platt scaling fit on out-of-fold predictions helps a model trained on one season (slope 0.90 -> 1.02, log loss CI excludes 0) but not the production two-season model (slope 0.985; CI spans 0), so it is not promoted; re-test at each retrain.
 - WAR-lite on/off parts are not teammate/opponent adjusted. RAPM pilot (B2) tested 2026-10-14: ties on/off with the same context controls, so not promoted; context adjustment (score state, zone starts, home) helps within a season at the stint level; the season-level version from MoneyPuck's score-and-venue-adjusted aggregates was tested 2026-10-14 and is less stable year to year (r 0.32-0.36 vs 0.37-0.42), so WAR-lite is unchanged.
