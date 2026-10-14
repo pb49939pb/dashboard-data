@@ -203,6 +203,14 @@ async function qualityStarts(season, get) {
 }
 
 export { scoreGame };
+/** Both teams' skater shift time is at least 4.2 skaters' worth of regulation (partial charts fall short). */
+function completeShifts(shifts, pbp) {
+  const side = {}, pos = {};
+  for (const p of pbp.rosterSpots || []) { side[p.playerId] = p.teamId === pbp.homeTeam.id ? 0 : 1; pos[p.playerId] = p.positionCode; }
+  const sec = (t) => { const [m, s] = String(t || "").split(":").map(Number); return m * 60 + s; }, tot = [0, 0];
+  for (const s of shifts) if (s.typeCode === 517 && side[s.playerId] !== undefined && pos[s.playerId] !== "G") tot[side[s.playerId]] += Math.max(0, sec(s.endTime) - sec(s.startTime));
+  return tot.every((x) => x >= 4.2 * 3600 * 0.97);
+}
 export async function buildLeague({ season, get, nhl, model, loadPrevious, cacheDir, teams, saModel, outDir = "public/hockey" }) {
   // 1) Reuse last night's games (only if scored with the same model)
   const known = new Map(), stale = new Set();
@@ -242,7 +250,8 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   for (const id of [...finished.keys()].sort()) {
     const k0 = known.get(id);
     // shift charts often publish hours after the final horn: a game stored without ice time is fetched again for 30 days
-    const hasToi = k0?.toi && k0.toi.every((side) => Object.keys(side).length);
+    const len0 = k0?.end === "REG" ? 3600 : 3900;
+    const hasToi = k0?.toi && k0.toi.every((side) => Object.values(side).reduce((a, x) => a + x[3], 0) >= 4.2 * len0); // complete, not partial
     if (k0 && k0.ev && k0.u5 && (hasToi || Date.now() - new Date(k0.date).getTime() > 30 * 864e5)) continue;
     let pbp = null;
     if (cacheDir) pbp = await readFile(`${cacheDir}/${id}.json.gz`).then((b) => JSON.parse(gunzipSync(b))).catch(() => null);
@@ -261,6 +270,8 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
       await new Promise((r) => setTimeout(r, 500));
       shifts = (await get(`https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`).catch(() => null))?.data || null;
       if (shifts && !shifts.length) shifts = null; // not published yet: treat as missing (and don't cache the empty list)
+      // the API sometimes has only part of a game's shifts for a day or two: check that both teams' skater time adds up
+      if (shifts && !completeShifts(shifts, pbp)) { const h = await htmlShifts(id, pbp).catch(() => null); shifts = h && completeShifts(h, pbp) ? h : shifts; }
       if (!shifts) shifts = await htmlShifts(id, pbp).catch(() => null); // the official HTML shift report instead
       if (shifts && shiftCache) { const { gzipSync } = await import("node:zlib"); await (await import("node:fs/promises")).mkdir(shiftCache, { recursive: true }); await writeFile(`${shiftCache}/${id}.json.gz`, gzipSync(JSON.stringify(shifts))); }
       if (!shifts) missingShifts.push(id);
