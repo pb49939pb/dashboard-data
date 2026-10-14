@@ -11,13 +11,17 @@
 // between "best 18 on the roster" and "who actually dressed" taken out:
 //   goal margin = k × (home gap − away gap) × goals per win / 82, k = 0.5 (walk-forward fit, scripts/rosterTest.mjs)
 // Shadow mode by default: published as projections.roster next to the team-only numbers, and its pre-game odds are
-// logged for every game. model/config.json { "simModel": "roster" } makes it the primary projection.
+// logged for every game. The Admin switch (hockey/config simModel, default model/config.json) makes it primary.
 //   node scripts/rosterSim.mjs
 import { readFile, writeFile } from "node:fs/promises";
 import { simulate, winProbability } from "./sim.mjs";
+import { openStore } from "./store.mjs";
 
 const read = (p) => readFile(p, "utf8").then(JSON.parse, () => null);
-const [proj, inj, pv, M, cfg] = await Promise.all(["public/hockey/projections.json", "public/hockey/injuries.json", "model/playerValue.json", "model/rosterModel.json", "model/config.json"].map(read));
+const [proj, inj, pv, M, fileCfg] = await Promise.all(["public/hockey/projections.json", "public/hockey/injuries.json", "model/playerValue.json", "model/rosterModel.json", "model/config.json"].map(read));
+// the Admin switch (hockey/config in the database) wins over the repo default
+const store = await openStore().catch(() => null);
+const cfg = { ...(fileCfg || {}), ...((await store?.read("hockey/config").catch(() => null)) || {}) };
 if (!proj?.ratings || !proj.schedule || !proj.standingsRows || !inj?.current?.rosters || !pv || !M) {
   console.log("roster sim: inputs missing (ratings, schedule, rosters, player values or roster model); skipped");
   process.exit(0);
