@@ -97,12 +97,12 @@ if (store && upcoming.length && (fetched || upcoming.some((g) => g.pred?.model =
 /* ---------- live win odds ----------
    Our model: each team's scoring rate is worked back from our pre-game win odds (league goals per team-game, split so
    that a full game reproduces those odds); then the goals still to come are random arrivals at those rates over the
-   regulation time left, on top of the current score. A tie after regulation goes to overtime (3-on-3, then a near
-   coin-flip shootout; playoffs: sudden death until someone scores), with the goalie pulled late in 1-2 goal games. Polymarket: its moneyline's current price, which
+   regulation time left, on top of the current score. A tie after regulation is a coin flip in the regular season (3-on-3 OT and the
+   shootout; backtested) and the better team's scoring share in playoff sudden death, with the goalie pulled late in 1-2 goal games. Polymarket: its moneyline's current price, which
    keeps trading during the game. A trail of both through the game feeds the recap's chart. */
 const pois = (l) => { const out = [Math.exp(-l)]; for (let k = 1; k <= 15; k++) out.push(out[k - 1] * l / k); return out; };
 function winProb(lh, la, diff, frac, playoff, inOT) {
-  const share = lh / (lh + la), pOT = playoff ? share : 0.6 * share + 0.4 * 0.5;
+  const share = lh / (lh + la), pOT = playoff ? share : 0.5; // regular-season OT/shootout: a coin flip (see sim.mjs gameProbs)
   if (inOT) return diff > 0 ? 1 : diff < 0 ? 0 : pOT;
   // pulled goalie: in the last 3 minutes of a 1-2 goal game the trailing team scores ~2.5× as often and the leading
   // team ~3.5× (into the empty net)

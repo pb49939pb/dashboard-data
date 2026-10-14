@@ -66,14 +66,17 @@ export function teamRatings(games, ratings, saLookup) {
 
 function poisson(lambda, k) { let p = Math.exp(-lambda); for (let i = 1; i <= k; i++) p *= lambda / i; return p; }
 /** Regulation win / tie probabilities from expected goals (Poisson, capped at 12 goals). */
-function gameProbs(lh, la) {
+// Tied after regulation: regular-season 3-on-3 OT and shootouts are a coin flip in the data (2025-26 walk-forward
+// backtest, 317 games: home 49.5%; 0.5 beat the old 0.6 × share + 0.2 and the raw share), so 0.5. Playoff overtime is
+// 5-on-5 sudden death, so the better team's share of scoring applies there.
+function gameProbs(lh, la, playoff = false) {
   let ph = 0, pa = 0, pt = 0;
   for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) {
     const p = poisson(lh, i) * poisson(la, j);
     if (i > j) ph += p; else if (j > i) pa += p; else pt += p;
   }
   const s = ph + pa + pt;
-  return { h: ph / s, a: pa / s, t: pt / s, otH: lh / (lh + la) * 0.6 + 0.2 }; // OT/shootout: closer to a coin flip
+  return { h: ph / s, a: pa / s, t: pt / s, otH: playoff ? lh / (lh + la) : 0.5 };
 }
 function lambdas(R, home, away) {
   const a = R.teams[home], b = R.teams[away];
@@ -110,7 +113,7 @@ export function simulate({ R, standings, remaining, seed = 20261012 }) {
   const teams = Object.keys(info);
   const acc = Object.fromEntries(teams.map((t) => [t, { pts: [], playoffs: 0, div: 0, pres: 0, r2: 0, r3: 0, final: 0, cup: 0 }]));
   const seriesProb = (hi, lo) => { // best-of-7, higher seed has home ice in games 1,2,5,7
-    const ph = (x, y) => { const p = gameProbs(...lambdas(R, x, y)); return p.h + p.t * p.otH; };
+    const ph = (x, y) => { const p = gameProbs(...lambdas(R, x, y), true); return p.h + p.t * p.otH; };
     const pHomeHi = ph(hi, lo), pAwayHi = 1 - ph(lo, hi);
     const order = [1, 1, 0, 0, 1, 0, 1];
     const memo = new Map();

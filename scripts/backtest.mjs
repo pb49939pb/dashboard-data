@@ -27,6 +27,8 @@ const goalsOnly = (g) => ({ ...g, shots: g.shots.map((s) => { const r = [...s]; 
 const clip = (p) => Math.min(1 - 1e-6, Math.max(1e-6, p));
 const ll = (p, y) => -(y ? Math.log(clip(p)) : Math.log(1 - clip(p)));
 const preds = { coin: [], home: [], log5: [], goals: [], xg: [] }, ys = [], meta = [];
+// overtime / shootout games: who won once it was tied after regulation, vs three rules for the home side's chance
+const ot = { coin: [], rule: [], share: [], y: [], so: [] };
 const dates = [...new Set(games.map((g) => g.date))];
 let before = [];
 for (const d of dates) {
@@ -49,6 +51,10 @@ for (const d of dates) {
       const hOdds = homeWins / (1 - homeWins), l5h = (l5 * hOdds) / (l5 * hOdds + (1 - l5));
       const px = winProbability(Rx, g.home, g.away)?.home, pg = winProbability(Rg, g.home, g.away)?.home;
       if (px == null || pg == null) continue;
+      if (g.end && g.end !== "REG") {
+        const r = winProbability(Rx, g.home, g.away), share = r.xgHome / (r.xgHome + r.xgAway);
+        ot.coin.push(0.5); ot.rule.push(0.6 * share + 0.2); ot.share.push(share); ot.y.push(y); ot.so.push(g.end === "SO" ? 1 : 0);
+      }
       preds.coin.push(0.5); preds.home.push(homeWins); preds.log5.push(l5h); preds.goals.push(pg); preds.xg.push(px);
       ys.push(y); meta.push({ id: g.id, date: d, n: before.length });
     }
@@ -78,6 +84,12 @@ const result = {
   reliability: Object.fromEntries(["goals", "xg", "log5"].map((k) => [names[k], bins(preds[k])])),
 };
 // one committed file, model/scorecards.json, holds every scorecard (the nightly build copies it out and publishes it)
+const otScore = (k, idx = ot.y.map((_, i) => i)) => { const L = idx.reduce((a, i) => a + ll(ot[k][i], ot.y[i]), 0) / idx.length; return { n: idx.length, log_loss: +L.toFixed(5) }; };
+const otOnly = ot.y.map((_, i) => i).filter((i) => !ot.so[i]), soOnly = ot.y.map((_, i) => i).filter((i) => ot.so[i]);
+result.overtime = { note: "Games tied after regulation: the home side's chance under each rule, scored on who won (3-on-3 OT and shootout together and apart).",
+  homeWinRate: +(ot.y.reduce((a, b) => a + b, 0) / Math.max(1, ot.y.length)).toFixed(3),
+  rules: Object.fromEntries([["coin", "Coin flip (0.5)"], ["rule", "Current rule: 0.6 × scoring share + 0.2"], ["share", "Scoring share"]].map(([k, l]) => [l, { all: otScore(k), ot: otScore(k, otOnly), shootout: otScore(k, soOnly) }])) };
+console.log("overtime/shootout:", JSON.stringify(result.overtime));
 let out = {};
 try { out = JSON.parse(await readFile("model/scorecards.json", "utf8")); } catch {}
 out.games = result;
