@@ -98,17 +98,23 @@ export function winProbability(R, home, away, adj = { home: 1, away: 1 }) {
  * standings: current NHL standings rows; remaining: [{id, home, away}] future games.
  * Returns projected table + playoff odds + most likely bracket.
  */
-export function simulate({ R, standings, remaining, seed = 20261012 }) {
+// Tiebreakers (NHL): points, then regulation wins, regulation + overtime wins, total wins, then a coin flip (head to
+// head and goal differential aren't simulated). otShare: tied games settled in overtime rather than a shootout
+// (measured, 2025-26: 0.635). roster: optional lineup model (rosterSim.mjs) that moves each game's expected goals by
+// who is healthy and who starts in goal, drawn fresh in every simulated season.
+export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0.635, roster = null }) {
   const rand = rng(seed);
   const info = {};
   for (const s of standings) {
     const t = s.teamAbbrev.default;
     info[t] = { team: t, name: s.teamCommonName?.default || t, conf: s.conferenceAbbrev, div: s.divisionAbbrev, divName: s.divisionName,
-      pts: s.points, gp: s.gamesPlayed, w: s.wins, rw: s.regulationWins ?? 0, logo: s.teamLogo };
+      pts: s.points, gp: s.gamesPlayed, w: s.wins, rw: s.regulationWins ?? 0, row: s.regulationPlusOtWins ?? s.regulationWins ?? 0, logo: s.teamLogo };
   }
   const games = remaining.filter((g) => info[g.home] && info[g.away] && R.teams[g.home] && R.teams[g.away]).map((g) => {
     const [lh, la] = lambdas(R, g.home, g.away);
-    return { ...g, ...gameProbs(lh, la) };
+    // with a lineup model: win/tie chances on a grid of goal margins (−1.2 to +1.2, step 0.04), looked up per game
+    const tab = roster ? Array.from({ length: 61 }, (_, i) => { const m = -1.2 + 0.04 * i; return gameProbs(Math.max(0.5, lh + m / 2), Math.max(0.5, la - m / 2)); }) : null;
+    return { ...g, ...gameProbs(lh, la), tab };
   });
   const teams = Object.keys(info);
   const acc = Object.fromEntries(teams.map((t) => [t, { pts: [], playoffs: 0, div: 0, pres: 0, r2: 0, r3: 0, final: 0, cup: 0 }]));
@@ -153,18 +159,21 @@ export function simulate({ R, standings, remaining, seed = 20261012 }) {
   };
 
   for (let n = 0; n < SIMS; n++) {
-    const pts = {}, rw = {};
-    for (const t of teams) { pts[t] = info[t].pts; rw[t] = info[t].rw; }
+    const pts = {}, rw = {}, row = {}, w = {};
+    for (const t of teams) { pts[t] = info[t].pts; rw[t] = info[t].rw; row[t] = info[t].row; w[t] = info[t].w; }
+    const st = roster?.start(rand);
     for (const g of games) {
+      let p = g;
+      if (st) { const m = st.margin(g, rand); p = g.tab[Math.max(0, Math.min(60, Math.round((m + 1.2) / 0.04)))]; }
       const r = rand();
-      if (r < g.h) { pts[g.home] += 2; rw[g.home]++; }
-      else if (r < g.h + g.a) { pts[g.away] += 2; rw[g.away]++; }
-      else { const ot = rand() < g.otH ? g.home : g.away; pts[ot] += 2; pts[ot === g.home ? g.away : g.home] += 1; }
+      if (r < p.h) { pts[g.home] += 2; rw[g.home]++; row[g.home]++; w[g.home]++; }
+      else if (r < p.h + p.a) { pts[g.away] += 2; rw[g.away]++; row[g.away]++; w[g.away]++; }
+      else { const ot = rand() < p.otH ? g.home : g.away; pts[ot] += 2; w[ot]++; if (rand() < otShare) row[ot]++; pts[ot === g.home ? g.away : g.home] += 1; }
     }
-    const table = teams.map((t) => ({ team: t, pts: pts[t], rw: rw[t] + rand() * 0.01 })).sort((a, b) => b.pts - a.pts || b.rw - a.rw);
+    const table = teams.map((t) => ({ team: t, pts: pts[t], rw: rw[t], row: row[t], w: w[t], coin: rand() })).sort((a, b) => b.pts - a.pts || b.rw - a.rw || b.row - a.row || b.w - a.w || b.coin - a.coin);
     table.forEach((r) => acc[r.team].pts.push(r.pts));
     acc[table[0].team].pres++;
-    const rank = Object.fromEntries(table.map((r) => [r.team, r.pts + r.rw / 1000]));
+    const rank = Object.fromEntries(table.map((r, i) => [r.team, table.length - i])); // seeding order, tiebreakers included
     const br = bracketFrom(table);
     const confChamps = [];
     for (const conf of Object.keys(br)) {

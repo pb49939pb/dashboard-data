@@ -72,6 +72,11 @@ jobs:
       - name: Man-games lost to injury
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/injuries.mjs || echo "injury build failed; last night's numbers are kept"
+      # Roster-aware season simulation (lineups, starting goalies, injuries): shadow next to the team-only one unless
+      # model/config.json says "simModel": "roster"
+      - name: Roster-aware simulation
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/rosterSim.mjs || echo "roster simulation failed; team-only projections are published"
       # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'

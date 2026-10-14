@@ -274,7 +274,11 @@ if (await access(MODEL).then(() => true, () => false)) {
         xgHome: Math.round(p.xgHome * 100) / 100, xgAway: Math.round(p.xgAway * 100) / 100 }];
     }));
     await writeFile("public/hockey/projections.json", JSON.stringify({ updatedAt: new Date().toISOString(), season, throughDate: r.list.map((g) => g.date).sort().pop() || null,
-      standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim }));
+      standingsAsOf: standings.standingsDateTimeUtc || new Date().toISOString(), prior: { season: ratings.season, notes: ratings.notes }, ...sim,
+      // inputs for the roster-aware simulation (rosterSim.mjs runs after the injury build)
+      ratings: R, schedule: [...remaining.values()], standingsRows: rows.map((x) => ({ teamAbbrev: x.teamAbbrev, teamCommonName: x.teamCommonName, conferenceAbbrev: x.conferenceAbbrev,
+        divisionAbbrev: x.divisionAbbrev, divisionName: x.divisionName, points: x.points, gamesPlayed: x.gamesPlayed, wins: x.wins, regulationWins: x.regulationWins,
+        regulationPlusOtWins: x.regulationPlusOtWins, teamLogo: x.teamLogo })) }));
     Object.assign(notes, { gamesLeftSimulated: sim.remaining, simulations: sim.sims });
     console.log(`hockey/projections.json: ${sim.remaining} games left, top: ${sim.teams.slice(0, 3).map((t) => `${t.team} ${t.projPts}`).join(", ")}, DET ${sim.teams.find((t) => t.team === "DET")?.projPts} (${sim.teams.find((t) => t.team === "DET")?.playoffs}% playoffs)`);
   }
