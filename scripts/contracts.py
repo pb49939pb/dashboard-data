@@ -137,7 +137,7 @@ def money(num: str, unit: str | None) -> float:
     return v * 1e6 if unit and unit.lower().startswith("m") else v * 1e3 if unit and unit.lower() == "k" else v
 
 
-def deal_from_text(text: str) -> dict | None:
+def deal_from_text(text: str, following: str = "") -> dict | None:
     """Term and cap hit from one passage: 'a three-year contract extension with an average annual value of $3.2 million',
     'signed a two-year, $1.55MM deal'. Returns {term, aav, ext, elc, start} or None."""
     m = re.search(TERM, text, re.I)
@@ -153,7 +153,7 @@ def deal_from_text(text: str) -> dict | None:
     ends = [i for i in (text.find(". ", m.end()), text.find("\n", m.end())) if i >= 0]
     full, cut = text, (min(ends) + 1 if ends else len(text))
     # what follows the sentence, up to the next contract length (a later "six years worth $12.9MM" is someone's projection)
-    after = full[cut:cut + 500]
+    after = (full[cut:cut + 500] + " " + following[:500]).strip()  # following: the article text after this sentence (news posts)
     nxt = re.search(TERM, after, re.I) or re.search(r"\b(?:one|two|three|four|five|six|seven|eight|[1-8])[- ]years?\b", after, re.I)
     after = after[: nxt.start()] if nxt else after
     text, m = full[a0:cut], re.search(TERM, full[a0:cut], re.I)
@@ -179,7 +179,7 @@ def deal_from_text(text: str) -> dict | None:
     # (a Wikipedia paragraph often covers the entry-level deal and a later extension together)
     near = text[max(0, m.start() - 40):m.end() + 60].lower()
     elc = re.search(r"entry[- ]level", near) is not None and "extension" not in near and term <= 3
-    reported = re.search(r"expected to (?:sign|agree)|not yet official|reportedly|agreed to terms|is set to sign|nearing (?:a|an) ", full, re.I) is not None
+    reported = re.search(r"expected to (?:sign|agree)|not yet official|reportedly|agreed to terms|is set to sign|nearing (?:a|an) ", full + " " + after, re.I) is not None
     return {"term": term, "aav": int(round(v, -3)) if v else None, "ext": "extension" in text.lower(), "reported": reported,
             "elc": elc, "start": int(st.group(1)) if st and "through" not in st.group(0).lower() else None}
 
@@ -373,12 +373,16 @@ def phr_deals(name: str, items: list[dict]) -> list[dict]:
     last = norm(name).split()[-1]
     out = []
     for it in items:
-        for sent in re.split(r"(?<=[a-z0-9)])\.\s+(?=[A-Z])", it["text"]):
+        sents = re.split(r"(?<=[a-z0-9)])\.\s+(?=[A-Z])", it["text"])
+        for si, sent in enumerate(sents):
             if last not in norm(sent) or EUROPE.search(sent):
                 continue
+            # "X are expected to sign Y to a seven-year extension, Friedman reports": an insider-reported agreement, not a guess
+            if re.search(r"\b(?:report|according to|Friedman|LeBrun|Seravalli|Dreger|McKenzie|Pagnotta|Johnston)", sent, re.I):
+                sent = re.sub(r"\b(are|is) expected to (sign|agree to terms with|ink|finalize)\b", r"\1 reportedly signing", sent)
             sp = SPECULATION.search(sent)
             part = sent[:sp.start()] if sp else sent  # "signed a one-year deal for $12MM, where he will exceed $15MM" -> the fact only
-            d = deal_from_text(part)
+            d = deal_from_text(part, ". ".join(sents[si + 1:si + 4]))  # the cap hit is often in the next sentence
             if d and re.search(r"\bsign|extension|agree|inked|deal|contract\b", part, re.I):
                 when = deal_date(part, it["date"], d)
                 if when is None:
