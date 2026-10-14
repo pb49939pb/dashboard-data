@@ -10,8 +10,10 @@ on:
 permissions:
   contents: read
 
+# Same queue as the nightly update (update.yml): both write hockey/contracts, so they never run at once
+# (a news run that started from an older copy would otherwise write it back over a fresh full build)
 concurrency:
-  group: contracts
+  group: nightly
   cancel-in-progress: false
 
 jobs:

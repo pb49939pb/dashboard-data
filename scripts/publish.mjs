@@ -65,7 +65,10 @@ export function cleanContracts(doc) {
 // (after merging, rows are checked for values no deal can have, which a merge would otherwise keep forever)
 if (want("contracts")) {
   const c = await load("public/hockey/contracts.json");
-  if (c) await store.put("hockey/contracts", c, {}, { fix: cleanContracts });
+  // never write back a list built from an older full build than the one stored (two jobs racing on the same document)
+  const stored = c ? await store.read("hockey/contracts").catch(() => null) : null;
+  if (c && stored?.builtAt && c.builtAt && stored.builtAt > c.builtAt) console.log(`contracts: skipped (stored full build ${stored.builtAt} is newer than this run's base ${c.builtAt})`);
+  else if (c) await store.put("hockey/contracts", c, {}, { fix: cleanContracts });
 }
 if (only.length && !only.some((n) => n !== "contracts")) {
   await publishAdmin([publishLog()]);
