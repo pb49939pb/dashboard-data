@@ -175,13 +175,15 @@ def deal_from_text(text: str, following: str = "") -> dict | None:
     if v is not None and not 500_000 <= v <= 21_000_000:
         v = None
     st = re.search(r"(?:begin|begins|began|beginning|start|starts|starting|kicks? in|effective|through)[^.]{0,30}?(20\d\d)[–-](?:20)?\d\d season", text, re.I)
+    # an explicit range: "(2026-27 to 2033-34)", "2026-27 through 2033-34"
+    rng = re.search(r"\b(20\d\d)[–-](?:20)?\d\d\s+(?:to|through|thru|–|-)\s+(20\d\d)[–-](?:20)?\d\d\b", full)
     # entry-level only when it's said of this deal ("a three-year, entry-level contract"), not anywhere in the passage
     # (a Wikipedia paragraph often covers the entry-level deal and a later extension together)
     near = text[max(0, m.start() - 40):m.end() + 60].lower()
     elc = re.search(r"entry[- ]level", near) is not None and "extension" not in near and term <= 3
-    reported = re.search(r"expected to (?:sign|agree)|not yet official|reportedly|agreed to terms|is set to sign|nearing (?:a|an) ", full + " " + after, re.I) is not None
+    reported = re.search(r"expected to (?:sign|agree)|not yet official|reportedly|is set to sign|nearing (?:a|an) ", full + " " + after, re.I) is not None
     return {"term": term, "aav": int(round(v, -3)) if v else None, "ext": "extension" in text.lower(), "reported": reported,
-            "elc": elc, "start": int(st.group(1)) if st and "through" not in st.group(0).lower() else None}
+            "elc": elc, "start": int(st.group(1)) if st and "through" not in st.group(0).lower() else int(rng.group(1)) if rng and int(rng.group(2)) - int(rng.group(1)) + 1 == term else None}
 
 
 # ---------------- Source 5: Wikipedia team season pages ----------------
