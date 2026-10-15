@@ -101,6 +101,12 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/snapshot.mjs || echo "snapshot failed; tomorrow's run tries again"
+      # Rating history (write-once): this month's ratings and every finished season's final ratings, for future aging curves
+      - name: Rating history
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/ratingSnapshot.mjs || echo "rating history failed; tomorrow's run tries again"
       - name: Record a failed run for the admin panel
         if: failure() && steps.hour.outputs.skip != 'true'
         env:

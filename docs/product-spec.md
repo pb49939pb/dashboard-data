@@ -106,6 +106,9 @@ Its promise is that every number names its source and date, and every model is t
 - **Ideas:** the owner files ideas, and Claude answers each one by building it, asking a question or declining with a reason. Statuses: new, in progress, needs input, needs approval, approved and queued, done, won't do.
 - **Bug reports:** from allowed accounts, triaged with statuses. A sweep every 2 hours (while the Claude app is open) works through new items. Big or direction-changing items wait for owner approval.
 
+### Data kept for later
+- **Rating history (F14):** every player's ratings are saved write-once each month during the season, plus each finished season's final ratings (from 2024-25). Nothing shows on the site yet. This is the history that aging curves and "when do players peak" questions will need.
+
 ### Elsewhere
 - **Red Wings widget:** on the personal dashboard, with xG and shots.
 - **Usability:** remembered picks per browser, deep links per tab and a back gesture that closes pop-ups. Works on phones.
@@ -146,7 +149,7 @@ Its promise is that every number names its source and date, and every model is t
 Open feature requests and their status live on the Ideas & bugs tab (owner). As of the last review:
 - **Needs an owner answer:** offensive zone time per period (proposal: a labelled territory estimate).
 - **Approved by the owner (Oct 14), in build order:**
-  1. F14 rating snapshots
+  1. F14 rating snapshots (done: saved nightly from Oct 2026)
   2. F05 game story viewer
   3. F02 deserved standings (careful definitions)
   4. F10 buyer/seller index
