@@ -20,3 +20,21 @@ From the rebrand's Phase 0 baseline (`docs/brand/baseline/2026-10-14/metrics.jso
 
 ## How to check
 Rerun `node docs/brand/tools/baseline.mjs` and compare `metrics.json` with the 2026-10-14 baseline on the same Mac. Also check that every tab still loads its data (signed out and as the owner) and that deep links work.
+
+## Result of steps 1-3 (approved and shipped 2026-10-15)
+Overview's main content dropped from 5.3 s to 0.8 s; layout shift went to ~0 on every tab measured (see `docs/brand/README.md`). Teams and Goalies still show their main content after about 5.5 s on the slow profile, because they need the large documents.
+
+## Step 2 proposal (for the owner's decision; nothing built)
+The large documents and why they're large (uncompressed):
+- `players` (~480 KB): every skater's per-60 stats for the ratings; most tabs need only `id, name, team, pos, ratings`.
+- `playerValue` (~330 KB): fine-grained, but every field is used by the trade engine.
+- `injuries` (~250 KB): includes the full previous season; only the Teams card needs it.
+- `assets` (~200 KB): includes `wikiPages` and the draft curve; used by the Assets card and trades.
+- `lines` (~180 KB): every unit's details; used by one Teams card.
+
+Options, cheapest first:
+1. **Load per card, not per tab:** Teams draws its first cards (record, win/lose, strength by position) from `league`, `projections` and `playerValue`, and loads `lines`, `injuries`, `styles` and `assets` behind their own skeletons. It's a client change only, similar to step 1. Expected: Teams' main content after about the player-value download (~1.5–2.5 s on this profile, to be measured).
+2. **Publish slim companions nightly:** `playersLite` (id, name, team, pos, ratings: about a quarter of the size) and `injuries` without the previous season, and keep the full documents for the cards that need them. It's a pipeline change, so the dossier and artifacts need updating too.
+3. Both.
+
+Recommendation: 1 first, measure, then decide on 2.
