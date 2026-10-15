@@ -15,9 +15,10 @@ const y0 = Number(season.slice(0, 4)), out = `public/hockey/seasons/${season}`;
 const NHL = "https://api-web.nhle.com/v1", MP = "https://moneypuck.com/moneypuck/playerData/seasonSummary";
 const get = async (url, as = "json") => { await new Promise((r) => setTimeout(r, 400)); const r = await fetch(url, { headers: { "user-agent": "pat-dashboard (personal, low volume)" } }); if (!r.ok) throw new Error(`${r.status} ${url}`); return as === "json" ? r.json() : r.text(); };
 
-// final standings (the day after the regular season ended)
-const sched = await get(`${NHL}/club-schedule-season/DET/${season}`);
-const lastDay = sched.games.filter((g) => g.gameType === 2).map((g) => g.gameDate).sort().pop();
+// final standings on the league's last regular-season day (not one team's: DET finished a day early in 2025-26 and
+// 12 teams were frozen at 81 games)
+const lastDay = (await get(`${NHL}/standings-season`)).seasons.find((x) => String(x.id) === season)?.standingsEnd;
+if (!lastDay) throw new Error(`no standingsEnd for ${season}`);
 const standings = (await get(`${NHL}/standings/${lastDay}`)).standings;
 const teams = standings.map((t) => t.teamAbbrev.default).sort();
 
@@ -57,5 +58,7 @@ const finalTeams = standings.map((s) => { const t = s.teamAbbrev.default, R0 = R
     projPts: s.points, lo: s.points, hi: s.points, playoffs: reached[t] ? 100 : 0, cup: t === champ ? 100 : 0, result: result(t), round: reached[t] || 0,
     rating: R0 ? { off: +R0.off.toFixed(3), def: +R0.def.toFixed(3), gf: +R0.gf.toFixed(2), ga: +R0.ga.toFixed(2), fin: +R0.fin.toFixed(3), gk: +R0.gk.toFixed(3), gp: R0.gp } : null }; })
   .sort((a, b) => b.pts - a.pts);
+const short = finalTeams.filter((t) => t.gp !== 82).map((t) => `${t.team} ${t.gp}`);
+if (short.length) throw new Error(`final standings as of ${lastDay} aren't complete: ${short.join(", ")}`);
 await writeFile(`${out}/projections.json`, JSON.stringify({ final: true, updatedAt: new Date().toISOString(), season, standingsAsOf: lastDay, mu: R.mu, remaining: 0, sims: 0, teams: finalTeams, bracket, ...sd }));
 console.log("champion:", champ, "| DET:", finalTeams.find((t) => t.team === "DET")?.pts, "pts,", result("DET"));
