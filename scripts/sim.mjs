@@ -69,11 +69,16 @@ function poisson(lambda, k) { let p = Math.exp(-lambda); for (let i = 1; i <= k;
 // Tied after regulation: regular-season 3-on-3 OT and shootouts are a coin flip in the data (2025-26 walk-forward
 // backtest, 317 games: home 49.5%; 0.5 beat the old 0.6 × share + 0.2 and the raw share), so 0.5. Playoff overtime is
 // 5-on-5 sudden death, so the better team's share of scoring applies there.
+// Regulation ties: independent Poisson under-predicts them (16.8% predicted vs 20.6% in 2024-25 and 24.9% in 2025-26).
+// Each tied score's probability x (1 + TIE_D), renormalized; TIE_D = 0.28, calibrated on 2024-25 and better on 2025-26
+// out of sample (scripts/tieTest.mjs; adopted with the owner's approval 2026-10-14; the conservative of the two fits).
+// Regular season only (the data); playoff games keep plain Poisson.
+export const TIE_D = 0.28;
 function gameProbs(lh, la, playoff = false) {
   let ph = 0, pa = 0, pt = 0;
   for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) {
     const p = poisson(lh, i) * poisson(la, j);
-    if (i > j) ph += p; else if (j > i) pa += p; else pt += p;
+    if (i > j) ph += p; else if (j > i) pa += p; else pt += p * (playoff ? 1 : 1 + TIE_D);
   }
   const s = ph + pa + pt;
   return { h: ph / s, a: pa / s, t: pt / s, otH: playoff ? lh / (lh + la) : 0.5 };
