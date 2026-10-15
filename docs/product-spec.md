@@ -37,7 +37,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Current standings, Team stats and division strength.**
 - **Who's controlling play:** xG share.
 - **Leaderboards:** best goaltending (GSAx), hot finishers, the snakebitten, most dangerous shooters, best forwards, defensemen and top defenders.
-- **Question of the day** (footer link): a pop-up answering one hockey question from our data each day (rotating, screenshot-friendly). Being built; the first question is scheduled for Oct 15, 2026.
+- **Question of the day** (footer link, every tab): a pop-up answering one hockey question a day from our own play-by-play, starting Oct 15, 2026. Ten questions rotate in order: pulling the goalie, faceoffs, fights, two-goal leads, back-to-backs, scoring first, leads after two, the most dangerous shots, goalie luck, power-play timing. Each shows a headline, one chart, a few sentences, the method and the sample. It's built to screenshot, and earlier questions can be paged back.
 
 ### Game recaps
 - **Deserved-to-win odds:** every shot replayed 10,000 times.
@@ -103,7 +103,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Your forecasts** and the trade-engine self-tests.
 
 ### Ideas & bugs (owner; testers see "Report a bug")
-- **Ideas:** the owner files ideas, and Claude answers each one by building it, asking a question or declining with a reason. Statuses: new, in progress, needs input, needs approval, done, won't do.
+- **Ideas:** the owner files ideas, and Claude answers each one by building it, asking a question or declining with a reason. Statuses: new, in progress, needs input, needs approval, approved and queued, done, won't do.
 - **Bug reports:** from allowed accounts, triaged with statuses. A sweep every 2 hours (while the Claude app is open) works through new items. Big or direction-changing items wait for owner approval.
 
 ### Elsewhere
@@ -144,9 +144,21 @@ Its promise is that every number names its source and date, and every model is t
 ## 7. Open requests and roadmap
 
 Open feature requests and their status live on the Ideas & bugs tab (owner). As of the last review:
-- **Waiting on owner approval:** 16 filed requests (F01–F16): franchise mode, deserved standings, goalie-pull math, fantasy edge, game story viewer, expansion draft, luck board, award races, deadline war room, buyer/seller index, matchup previews, milestones, rest and travel, aging curves, all-time lineups, and the Edge board.
 - **Needs an owner answer:** offensive zone time per period (proposal: a labelled territory estimate).
-- **In progress:** Question of the day; a learned-weights retest of the "tested, not adopted" model ideas with more seasons of data.
+- **Approved by the owner (Oct 14), in build order:**
+  1. F14 rating snapshots
+  2. F05 game story viewer
+  3. F02 deserved standings (careful definitions)
+  4. F10 buyer/seller index
+  5. F07 shooting regression board (no "who's due" predictions)
+  6. F13 rest and travel
+  7. F09 deadline war room
+  8. F12 milestone watch
+  9. F03 goalie-pull advisor (research first)
+  10. F01 franchise mode (prototype only)
+  11. F08 award races (leaderboards only)
+- **Not planned (owner decision):** F04 fantasy edge, F06 expansion draft, F11 matchup previews, F15 all-time lineups, F16 NHL Edge board.
+- **In progress:** a learned-weights retest of the "tested, not adopted" model ideas with more seasons of data.
 
 ## 8. How this spec stays current
 

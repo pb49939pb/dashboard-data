@@ -27,9 +27,11 @@ const FIELDS = [
   { artifact: "tradePricing", field: "summary.sellerReturnRatio", class: "market", units: "seller's return ÷ face value given (ex-ante WAR-lite)", interval: "percentiles p10-p90", flags: ["no contracts in historical values", "not an acceptance probability"] },
   { artifact: "scorecards", field: "*", class: "observed", units: "out-of-sample test results", interval: "95% bootstrap intervals in each test", flags: ["each test states its leakage notes"] },
   { artifact: "assets", field: "market.*", class: "market", units: "Polymarket prices as probabilities", interval: "none", flags: ["comparator only; not mixed into our odds"] },
+  { artifact: "qotd", field: "questions[]", class: "observed", units: "per question: headline, body, chart (x/y with unit), method, sample", interval: "bootstrap 90% ranges where stated (fights, back-to-backs); otherwise sample sizes", flags: ["descriptive, 2024-25 and 2025-26 regular seasons", "pull timing is a model on measured rates (assumes constant rates)"] },
+  { artifact: "tradeMoves", field: "teams[T][].send / get / gain", class: "decision", units: "player/pick ids and long-term value gained (wins)", interval: "none (pricing heuristic)", flags: ["owner-only; not versioned here (contract-derived)", "used only when the page's tradeKey matches"] },
   { artifact: "browser", field: "trade value / market value / How? sheet", class: "counterfactual + decision", units: "wins, phase-weighted, discounted", interval: "none (pricing heuristic)", flags: ["computed in the browser from the versioned artifacts above; stamped with their hashes", "feasibility checks list what isn't verified"] },
 ];
-const NAMES = ["playerValue", "playerProjections", "tradePricing", "scorecards", "projections", "injuries", "assets"];
+const NAMES = ["playerValue", "playerProjections", "tradePricing", "scorecards", "projections", "injuries", "assets", "qotd"];
 const commit = process.env.GITHUB_SHA || (() => { try { return execSync("git rev-parse HEAD").toString().trim(); } catch { return null; } })();
 const store = await openStore().catch(() => null);
 const prev = await readFile("public/hockey/artifacts.json", "utf8").then(JSON.parse, () => null);
