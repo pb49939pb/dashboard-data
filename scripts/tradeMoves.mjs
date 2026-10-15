@@ -3,6 +3,8 @@
 // edits, for all 32 teams, and stores each team's best deals as ids only in hockey/tradeMoves (owner-only by the
 // database rules). The page re-checks those deals in milliseconds instead of searching for seconds, and only when its
 // inputs hash (tradeKey in lab.js) matches this run's; otherwise it searches by itself as before.
+// It also stores the public versions for signed-out visitors: hockey/tradeBlock (news-only trade block, no contract fields)
+// and hockey/tradeMovesPublic (the same search without contracts, cap table or owner edits).
 // This repo is public: logs print counts and timings only, never values, names or contract numbers.
 //   node scripts/tradeMoves.mjs                 Firestore in, Firestore out (FIREBASE_SERVICE_ACCOUNT)
 //   node scripts/tradeMoves.mjs --local [lab]   published JSON files in, nothing written (a smoke test of the harness)
@@ -47,7 +49,10 @@ run?.count("patrickreidbaldwin.com");
 if (local) {
   const read = (n) => { try { return JSON.parse(readFileSync(`public/hockey/${n}.json`, "utf8")); } catch { return null; } };
   const docs = Object.fromEntries(NAMES.map((n) => [n, read(n)]));
-  const out = await lab.headlessTradeMoves(docs, {});
+  const block = { block: (docs.contracts?.block || []).filter((b) => b.auto) };
+  const out = process.argv.includes("--public") ? await lab.headlessTradeMoves({ ...docs, contracts: null, teamCap: null, tradeBlock: block }, {}) : await lab.headlessTradeMoves(docs, {});
+  if (process.argv.includes("--write") && process.argv.includes("--public")) { // local preview files (public data only)
+    writeFileSync("public/hockey/tradeMovesPublic.json", JSON.stringify(out)); writeFileSync("public/hockey/tradeBlock.json", JSON.stringify(block)); }
   const n = Object.values(out.teams).reduce((a, l) => a + l.length, 0);
   console.log(`local run: ${Object.keys(out.teams).length} teams, ${n} deals, key ${out.key}, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   process.exit(0);
@@ -71,10 +76,19 @@ for (const name of ["contracts", "block", "meta"]) {
 }
 const out = await lab.headlessTradeMoves(docs, userEdits);
 const json = JSON.stringify(out);
+// Public versions for signed-out visitors (no contract or cap data, no owner edits): the news-only trade block, and the
+// same search run as a visitor's page runs it (no contracts list, no cap table)
+const tradeBlock = { builtAt: new Date().toISOString(), block: (docs.contracts.block || []).filter((b) => b.auto).map((b) => ({ id: b.id ?? null, name: b.name, team: b.team, status: b.status,
+  since: b.since ?? null, firstSeen: b.firstSeen ?? null, lastSeen: b.lastSeen ?? null, reports: b.reports ?? null, sources: (b.sources || []).map((x) => ({ site: x.site, url: x.url, date: x.date, title: x.title, quote: x.quote })) })) };
+await db.doc("hockey/tradeBlock").set({ json: JSON.stringify(tradeBlock), updatedAt: new Date().toISOString() });
+const pub = await lab.headlessTradeMoves({ ...docs, contracts: null, teamCap: null, tradeBlock }, {});
+const pubJson = JSON.stringify(pub);
+if (Buffer.byteLength(pubJson) > 1_000_000) throw new Error("hockey/tradeMovesPublic is over Firestore's 1 MB limit");
+await db.doc("hockey/tradeMovesPublic").set({ json: pubJson, updatedAt: new Date().toISOString() });
 if (Buffer.byteLength(json) > 1_000_000) throw new Error("hockey/tradeMoves is over Firestore's 1 MB limit");
 await db.doc("hockey/tradeMoves").set({ json, updatedAt: new Date().toISOString() });
 const n = Object.values(out.teams).reduce((a, l) => a + l.length, 0), teams = Object.keys(out.teams).length;
 run.check(teams === 32, "every team searched", `${teams} teams`);
-run.finish({ outputs: ["hockey/tradeMoves"], notes: { teams, deals: n, kb: Math.round(json.length / 1024), key: out.key } });
+run.finish({ outputs: ["hockey/tradeMoves", "hockey/tradeMovesPublic", "hockey/tradeBlock"], notes: { teams, deals: n, kb: Math.round(json.length / 1024), key: out.key } });
 console.log(`${teams} teams, ${n} deals stored (${(json.length / 1024).toFixed(0)} KB) in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
 process.exit(0);

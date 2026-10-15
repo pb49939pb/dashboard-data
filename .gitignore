@@ -2,3 +2,6 @@ public/
 node_modules/
 prev/
 .cache/
+
+# rebrand baseline screenshots (large; regenerate with docs/brand/tools/baseline.mjs)
+docs/brand/baseline/**/*.png

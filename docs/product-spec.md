@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-14
+Last reviewed: 2026-10-14 (evening)
 
 ## 1. What it is
 
@@ -32,26 +32,46 @@ Its promise is that every number names its source and date, and every model is t
 ## 4. Features
 
 ### Overview
+- **Hockey Lab / Today** (top of Overview): "What do the numbers say?", up to three short rows built nightly by fixed, tested rules:
+  - last night's biggest scoreboard-vs-chances surprise;
+  - a team winning more than its 5-on-5 chances suggest, or an honest "too early" note;
+  - the Question of the day.
+  
+  Each row links to the evidence. Never generated text, never a prediction.
 - **Recent games:** scores with pre-game model odds vs the Polymarket moneyline. On game nights, live win odds update every 5 minutes. Each game opens a full **game recap**.
 - **Projected final standings:** 10,000 simulated seasons, with playoff, division and Cup odds (with simulation errors), the projected playoff bracket and strength of schedule. Past seasons show the final standings and bracket instead.
 - **Current standings, Team stats and division strength.**
+- **Points from the chances** (shot-quality standings): each team's points if every shot had gone in at its expected rate, with the shots held fixed.
+  - Shows a 90% range and a plain read (in line, ahead of or behind the chances).
+  - Deliberately not "deserved" and not a forecast; the half-season test is published on the card.
+- **Shooting and save luck at 5-on-5:** PDO, finishing and goaltending vs expected for every team, next to 5v5 chance share.
+  - Read as running hot, normal or running cold.
+  - Shows how much each piece repeated from the first half of a season to the second, instead of "who's due" claims.
 - **Who's controlling play:** xG share.
+- **Award races:** the leaderboards each award is argued on (Hart, Norris, Vezina, Calder). Leaderboards only; no award predictions.
+- **Milestone watch:** the next round-number career milestones in reach (500 goals, 1,000 points, 300 wins, 1,000 games…) with the projected game at each player's pace, plus milestones reached this season.
 - **Leaderboards:** best goaltending (GSAx), hot finishers, the snakebitten, most dangerous shooters, best forwards, defensemen and top defenders.
 - **Question of the day** (footer link, every tab): a pop-up answering one hockey question a day from our own play-by-play, starting Oct 15, 2026. Ten questions rotate in order: pulling the goalie, faceoffs, fights, two-goal leads, back-to-backs, scoring first, leads after two, the most dangerous shots, goalie luck, power-play timing. Each shows a headline, one chart, a few sentences, the method and the sample. It's built to screenshot, and earlier questions can be paged back.
 
 ### Game recaps
 - **Deserved-to-win odds:** every shot replayed 10,000 times.
 - **Game flow:** xG flow, the turning point (the goal that moved win odds most) and three stars by game score.
+- **The story of the game** (tap to open): the game in order, mobile-first.
+  - Every goal, with the score, scorer and assists, power play or shorthanded, the scoring team's win odds before → after, and both teams' five skaters on the ice.
+  - Each team's best five-minute stretch and a line at the end of each period.
+  - The on-ice data loads only when the section is opened.
 - **Lines and storylines:** who was on the ice for each goal, matchup difficulty from shift charts, storylines (including "rough nights" judged by expected ±), and box scores with an expected ± column.
 
 ### Teams (pick any of 32)
 - **Team breakdowns:** where the team wins and loses (a goal-differential ledger: 5v5 chances, finishing, goaltending, special teams), team phase (inferred, or the owner's objective) with Polymarket as a comparator, and playoff odds.
 - **Player strength:** core players, the team's best players, and strength by position (C, LW, RW, LD, RD, G) ranked league-wide.
 - **Absences:** man-games lost, an absence proxy weighted by lost points and wins, with current absences tagged.
+- **Rest and travel:** the team's next games, with each side's days of rest, back-to-backs and miles from the previous arena, plus the week's back-to-back mismatches.
+  - Effects are measured over 11,389 games: back-to-backs cost about 6.7 points of win probability. Travel and extra rest showed no measurable effect.
 - **Assets:** draft picks (next three drafts, including traded and conditional picks) and prospects, valued in wins.
 - **Lines and pairs:** most-used units, their minutes and on-ice results.
 - **Style:** style fingerprint and archetype, matchups (descriptive only) and player types that fit the system.
-- **Owner only: Recommended GM moves.** The three best deals that could all be made (no shared player), with a plain-English why, playoff odds before → after and a feasibility chip. They're searched server-side nightly and re-checked on the page.
+- **Recommended GM moves** (everyone; the owner's version also uses contracts, cap space and saved edits). The three best deals that could all be made (no shared player), with a plain-English why, playoff odds before → after and a feasibility chip. They're searched server-side nightly and re-checked on the page.
 - **Explore trades** (owner gets the full version): build any deal (players, picks, prospects, from several teams) and see:
   - wins this season and long-term value by each team's window;
   - the other team's verdict and EA-style value bars;
@@ -59,6 +79,10 @@ Its promise is that every number names its source and date, and every model is t
   - cap compliance, a feasibility checklist, a real-trade comparison and playoff odds before and after.
   
   Best trades for a team are also listed.
+
+- **My franchise (prototype):** make any deal the trade checker passes, then see your moves, the combined wins this season and playoff odds before and after for you and your partners.
+  - Saved in your browser.
+  - Each deal is valued against today's rosters; free agents and lines aren't built yet.
 
 ### Skaters
 - **Ratings and stats:** ratings (offense, defense, usage, overall, 40–99 within position) and stats (xG, goals above expected, expected ±, ice time).
@@ -80,6 +104,11 @@ Its promise is that every number names its source and date, and every model is t
 - **Contracts:** every contract (term, cap hit, extensions, with provenance), editable on the site. Edits are saved privately and never overwrite the source.
 - **Cap space:** every team's cap space (from the owner's PuckPedia cap table, pasted by hand) and cap projections.
 - **Trade block:** from news feeds that allow it, plus the owner's edits.
+- **Deadline war room:** the 15 most useful realistic targets for the team being viewed, ranked by wins added this season, with value, asking price and cap fit.
+- **Buyers and sellers:** all 32 teams sorted by likely deadline role, from our odds and team phase or the owner's objective.
+  - Buyers show needs and cap space.
+  - Sellers show their most valuable movable pieces (pending UFAs, trade-block players, veterans) and their pending UFAs.
+  - The thresholds are stated on the card.
 
 ### Front office
 - **GM grades:** grades by GM era.
@@ -117,7 +146,7 @@ Its promise is that every number names its source and date, and every model is t
 
 | Source | What we take | How | Terms |
 |---|---|---|---|
-| NHL web API (api-web.nhle.com) | Play-by-play, standings, schedules, rosters, club stats, scores, prospects, player pages (injured reserve) | Nightly and every 5 min on game nights | Public endpoints |
+| NHL web API (api-web.nhle.com) | Play-by-play, standings, schedules, rosters, club stats, scores, prospects, player pages (injured reserve, career totals) | Nightly and every 5 min on game nights | Public endpoints |
 | NHL stats API (api.nhle.com) | Shift charts, goalie game logs, skater bios and handedness | Nightly | Public endpoints |
 | NHL HTML game reports | Shift reports when the API's shift charts are missing or partial | Nightly fallback | Public pages |
 | MoneyPuck | Season files: on-ice xG, ice time, zone starts; goalie seasons since 2008-09 | Nightly and by hand | Their published data files, credited |
@@ -150,18 +179,22 @@ Open feature requests and their status live on the Ideas & bugs tab (owner). As 
 - **Needs an owner answer:** offensive zone time per period (proposal: a labelled territory estimate).
 - **Approved by the owner (Oct 14), in build order:**
   1. F14 rating snapshots (done: saved nightly from Oct 2026)
-  2. F05 game story viewer
-  3. F02 deserved standings (careful definitions)
-  4. F10 buyer/seller index
-  5. F07 shooting regression board (no "who's due" predictions)
-  6. F13 rest and travel
-  7. F09 deadline war room
-  8. F12 milestone watch
+  2. F05 game story viewer (done)
+  3. F02 deserved standings (done as "Points from the chances", careful definitions)
+  4. F10 buyer/seller index (done)
+  5. F07 shooting regression board (done, no "who's due" predictions)
+  6. F13 rest and travel (done)
+  7. F09 deadline war room (done)
+  8. F12 milestone watch (done)
   9. F03 goalie-pull advisor (research first)
-  10. F01 franchise mode (prototype only)
-  11. F08 award races (leaderboards only)
+  10. F01 franchise mode (prototype done)
+  11. F08 award races (done, leaderboards only)
 - **Not planned (owner decision):** F04 fantasy edge, F06 expansion draft, F11 matchup previews, F15 all-time lineups, F16 NHL Edge board.
-- **In progress:** a learned-weights retest of the "tested, not adopted" model ideas with more seasons of data.
+- **Done:** Hockey Lab / Today (spec of 2026-10-14).
+- **Done:** a learned-weights retest of the "tested, not adopted" ideas. Learned weights came out at zero, so they stay out. A backfill of earlier seasons for more statistical power is a possible next step.
+
+## 7a. Brand direction
+Hockey Lab is gradually becoming **The Other Score**. Phase 0 (baseline and guardrails) is done; every later phase waits for the owner's review, and the public rename needs a separate go/no-go. The plan, voice, UI inventory, checklist and baseline are in `docs/brand/`. Brand work never changes models, data, permissions or routes.
 
 ## 8. How this spec stays current
 

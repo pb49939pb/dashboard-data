@@ -66,6 +66,25 @@ jobs:
         run: python scripts/block.py || echo "trade block scan failed; last night's list is kept"
       - name: Team assets (draft picks and prospects)
         run: node scripts/assets.mjs || echo "assets build failed; last night's assets are kept"
+      # Shot-quality standings (F02): exact replay of every game's shots -> points from the chances
+      - name: Shot-quality standings
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/xgStandings.mjs || echo "shot-quality standings failed; last night's are kept"
+      # Rest and travel (F13): next two weeks' rest, back-to-backs and miles, with the measured effects (model/restEffect.json)
+      - name: Rest and travel
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/restTravel.mjs || echo "rest and travel failed; last night's are kept"
+      # Milestone watch (F12): career totals from NHL player pages (cached a week; players near a milestone nightly)
+      - name: Player career cache
+        if: steps.hour.outputs.skip != 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/careers
+          key: careers-${{ github.run_id }}
+          restore-keys: careers-
+      - name: Milestone watch
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/milestones.mjs || echo "milestone watch failed; last night's list is kept"
       - name: Data checks (invariants)
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/invariants.mjs || echo "some data checks failed; see the Admin page"
@@ -95,6 +114,12 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/publish.mjs
+      # Hockey Lab / Today: tonight's edition from the published recaps, league build and question bank (selector tests gate it)
+      - name: Today edition
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node --test scripts/todaySelect.test.mjs && node scripts/today.mjs || echo "Today edition not published; last edition kept (the page dates it)"
       # What the models could see tonight, kept once per day for point-in-time backtests (owner only)
       - name: Point-in-time snapshot
         if: steps.hour.outputs.skip != 'true'
