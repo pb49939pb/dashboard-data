@@ -1,0 +1,37 @@
+{
+ "base": "https://patrickreidbaldwin.com/hockey/",
+ "takenAt": "2026-10-15T10:09:19.186Z",
+ "profile": "390x844 DPR3 mobile, 1.6Mbps/750kbps/150ms, CPU 4x, cold cache, median of 3",
+ "pages": [
+  {
+   "page": "overview",
+   "lcpMs": 804,
+   "cls": 0,
+   "dclMs": 1301,
+   "requests": 24,
+   "transferKB": 454,
+   "cards": 21,
+   "runs": 3
+  },
+  {
+   "page": "teams",
+   "lcpMs": 5688,
+   "cls": 0,
+   "dclMs": 1287,
+   "requests": 76,
+   "transferKB": 684,
+   "cards": 11,
+   "runs": 3
+  },
+  {
+   "page": "goalies",
+   "lcpMs": 5492,
+   "cls": 0.019,
+   "dclMs": 1296,
+   "requests": 72,
+   "transferKB": 687,
+   "cards": 3,
+   "runs": 3
+  }
+ ]
+}

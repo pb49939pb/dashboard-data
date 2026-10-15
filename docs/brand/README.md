@@ -41,6 +41,15 @@ Each phase stops for the owner's review before the next one starts (plan, sectio
 - **Owner view, checked by hand at 390 px (Cap & trades):** it renders fully. One observation for Phase 2: on a phone, the header, the team/season switcher and the tab row take about 430 px (half the first screen) before the first card. The masthead work should shrink this, never add to it.
 - **Deep links:** hash routes `#overview`, `#teams`, `#skaters`, `#goalies`, `#coaches`, `#shots`, `#cap`, `#office`, `#model`, `#ideas` and `#admin`; recaps and pop-ups close on the back gesture.
 
+## After the first-load fix (2026-10-15, same profile, live site; `baseline/2026-10-15-after-perf/`)
+| Tab | Main content (LCP) | Layout shift (CLS) | Requests | Transfer |
+|---|---|---|---|---|
+| Overview | 5.3 s → **0.8 s** | 0.15 → **0** | 68 → 24 | 563 → 454 KB |
+| Teams | 0.6 s* → 5.7 s | 0.15 → **0** | 26 → 76 | 443 → 684 KB |
+| Goalies | 5.4 s → 5.5 s | 0.37 → **0.02** | 65 → 72 | 649 → 687 KB |
+
+\* Teams' 0.6 s in the baseline measured the footer, which used to be the largest thing on screen early. With space now reserved for the header and loading placeholder, the footer is off-screen, so the number is the real content, which on Teams still waits for the large documents (player value, ratings, lines, styles, assets, injuries). Teams also loads more since 2026-10-14: the public GM moves, contract terms and trade block (about 240 KB). Next step: split the large documents or load them per card (queued). Layout shift is fixed everywhere measured.
+
 ## How to test the three kinds of visitor
 1. **Signed out:** a private window, or `baseline.mjs`. Expect the public tabs; no Cap & trades, Admin or Ideas & bugs; GM moves from the public search; no contract or cap figures anywhere.
 2. **Allowed tester** (the account allowed in the Firestore rules; don't put its address in public files): expect an extra "Report a bug" tab and nothing else private.
