@@ -1,0 +1,40 @@
+# Server-side trade search: after each nightly build, run the site's own trade engine (lab.js, as deployed) for all
+# 32 teams and store each team's best deals (ids only) in Firestore hockey/tradeMoves, readable only by the site owner.
+# The page re-checks them instead of searching in the browser. Also started by Admin "Run now" (trade-moves).
+# This repo is public: the script logs counts and timings only.
+name: Trade search
+on:
+  workflow_run:
+    workflows: ["Update dashboard data"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trades
+  cancel-in-progress: true
+
+jobs:
+  trades:
+    # after a nightly run that actually built something (the off-season-hour cron exits early but still "succeeds")
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Search trades for every team
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/tradeMoves.mjs
+      - name: Run log for the admin panel
+        if: always()
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/publish.mjs admin

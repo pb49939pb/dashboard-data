@@ -8,6 +8,7 @@ const TARGETS = {
   "nightly-build": { repo: "pb49939pb/dashboard-data", workflow: "update.yml", token: "GITHUB_TOKEN" },
   "contracts-news": { repo: "pb49939pb/dashboard-data", workflow: "update.yml", token: "GITHUB_TOKEN" },
   contracts: { repo: "pb49939pb/dashboard-data", workflow: "contracts.yml", token: "GITHUB_TOKEN" },
+  "trade-moves": { repo: "pb49939pb/dashboard-data", workflow: "trades.yml", token: "GITHUB_TOKEN" },
   models: { repo: "pb49939pb/hockey-models", workflow: "monthly.yml", token: "JOBS_TOKEN" },
 };
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });

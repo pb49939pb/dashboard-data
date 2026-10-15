@@ -62,6 +62,14 @@ export const CATALOG = {
       outputs: [{ doc: "hockey/assets", pages: ["Hockey Lab · Teams (assets card, trade explorer)"] }],
     },
     {
+      id: "trade-moves", name: "Trade search", schedule: "Every night, after the nightly build (GitHub Actions: trades.yml); Run now after big edits", script: "scripts/tradeMoves.mjs",
+      sources: [
+        { name: "Hockey Lab page code", host: "patrickreidbaldwin.com", what: "the deployed trade engine (lab.js), run headlessly so the search matches the page exactly" },
+        { name: "Firestore", host: "firestore", what: "tonight's league, projections, player value, projections, assets, contracts, cap table and the owner's saved edits" },
+      ],
+      outputs: [{ doc: "hockey/tradeMoves", pages: ["Hockey Lab · Teams (recommended GM moves)", "Trade explorer (best trades)"] }],
+    },
+    {
       id: "publish", name: "Publish to Firestore", schedule: "After each job", script: "scripts/publish.mjs",
       sources: [{ name: "This run's files", host: "local", what: "merged into Firestore; nothing stored is ever dropped" }],
       outputs: [{ doc: "(all of the above)", pages: [] }],
