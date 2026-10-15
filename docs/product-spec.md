@@ -16,7 +16,7 @@ Its promise is that every number names its source and date, and every model is t
 |---|---|---|
 | **The owner** (a hockey fan acting as an armchair GM) | Everything below, plus the GM workbench: contracts, cap space, the trade explorer, recommended GM moves, scouting notes, forecasts, model switches, data health, ideas and bug triage | Signed in, verified owner account |
 | **Curious fans / readers** | Who's actually good (xG, ratings), standings and playoff odds, recaps of last night's games, shot maps, coach and GM report cards, the question of the day | Anyone can read; signing in adds saved preferences |
-| **Stats-minded reviewers** | How the models work and whether they hold up: scorecards, calibration, the methods dossier, this spec | The Model tab (public) |
+| **Stats-minded reviewers** | How the models work and whether they hold up: scorecards, calibration, the methods dossier, this spec | The Model tab (public); the methods dossier and this spec are on the Admin tab, and their files are public under /hockey/ |
 | **Allowed testers** | Filing bug reports | An account allowed by the database rules ("Report a bug" tab) |
 
 **Not for:** betting advice (market odds are shown only as a comparator), real-time scouting, and private or paywalled data. No PuckPedia or CapWages scraping, and no X/Twitter.
@@ -94,12 +94,11 @@ Its promise is that every number names its source and date, and every model is t
   - RAPM vs WAR-lite, the WAR ledger, goalie forecasts, styles and fatigue;
   - season simulation at frozen dates;
   - "How good are the forecasts?" from the prospective log.
-- **Methods dossier:** a Markdown file for expert review.
-- **This product spec.**
 
 ### Admin (owner only)
 - **Model switches:** player value WAR-lite vs RAPM, and team-only vs roster-aware simulation.
 - **Health and versions:** drift alarms, model artifacts (versions and hashes, with a field dictionary), nightly data checks, and the roster-aware simulation in shadow.
+- **Documents:** the methods dossier (Markdown for expert review) and this product spec, each with Copy and Download.
 - **Jobs:** data jobs with run history and "Run now" (nightly build, contracts, contract news, trade search, models).
 - **Your forecasts** and the trade-engine self-tests.
 
@@ -132,7 +131,7 @@ Its promise is that every number names its source and date, and every model is t
 - Contracts get a weekly full refresh.
 - The models are refit by hand or monthly (hockey-models, Python).
 - Everything is stored in Firestore (project pat-dashboard-eb494), with a snapshot bundled into each deploy as a fallback.
-- The architecture diagram (Model tab) shows every job, store and model.
+- The architecture diagram (Model tab summary, full version in Admin) shows every job, store and model.
 
 ## 6. What it deliberately doesn't do
 
@@ -151,4 +150,4 @@ Open feature requests and their status live on the Ideas & bugs tab (owner). As 
 
 ## 8. How this spec stays current
 
-Every feature change updates this file, along with the changelog, the methods dossier, the model inventory and the architecture diagram. The source is `dashboard-data/docs/product-spec.md`, and each site deploy copies it to `/hockey/product-spec.md`. The Model tab's "Product spec" button shows it with generated appendices.
+Every feature change updates this file, along with the changelog, the methods dossier, the model inventory and the architecture diagram. The source is `dashboard-data/docs/product-spec.md`, and each site deploy copies it to `/hockey/product-spec.md`. The "Product spec" button on the Admin tab's Models card shows it with generated appendices. The raw file is public at that URL.
