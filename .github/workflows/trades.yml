@@ -12,9 +12,10 @@ on:
 permissions:
   contents: read
 
+# a run in progress always finishes (each takes several minutes); a newer request waits behind it
 concurrency:
   group: trades
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   trades:
