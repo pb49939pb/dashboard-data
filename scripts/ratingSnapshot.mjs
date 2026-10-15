@@ -33,9 +33,17 @@ if (cur?.players?.length) {
   const month = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).slice(0, 7);
   await writeOnce(`hockey/ratingHistory/${cur.season}/${month}`, snap(cur, month, true)); // player value as of tonight
 }
-// finished seasons' final ratings (backfill; a no-op once written)
-for (const s of await readdir("public/hockey/seasons").catch(() => [])) {
+// finished seasons' final ratings (backfill; a no-op once written): local season files, else the published season
+// documents (hockey/seasons/{season}/players), since CI only restores the current season
+const local = await readdir("public/hockey/seasons").catch(() => []);
+const done = new Set();
+for (const s of local) {
   const doc = await read(`public/hockey/seasons/${s}/players.json`);
-  if (doc?.players?.length && String(doc.season) !== String(cur?.season)) await writeOnce(`hockey/ratingHistory/${doc.season}/final`, snap(doc, "final"));
+  if (doc?.players?.length && String(doc.season) !== String(cur?.season)) { await writeOnce(`hockey/ratingHistory/${doc.season}/final`, snap(doc, "final")); done.add(String(doc.season)); }
+}
+for (const s of ["20242025", "20252026"]) {
+  if (done.has(s) || s === String(cur?.season)) continue;
+  const doc = await store.read(`hockey/seasons/${s}/players`).catch(() => null);
+  if (doc?.players?.length) await writeOnce(`hockey/ratingHistory/${s}/final`, snap({ season: s, ...doc }, "final"));
 }
 console.log(`rating history: ${wrote} written, ${kept} already kept`);

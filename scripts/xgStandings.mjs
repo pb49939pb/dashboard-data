@@ -99,5 +99,11 @@ for (const s of await readdir("public/hockey/seasons").catch(() => [])) {
   const gs = await gamesOf(`public/hockey/seasons/${s}/teams`);
   if (gs.length > 600) out.seasons[s] = { games: gs.length, teams: table(gs), test: test(gs) };
 }
+// finished seasons don't change: keep them in model/xgStandingsPast.json (written here when the season files are on hand,
+// e.g. on the Mac; read back in CI, where only the current season's games are restored)
+const pastFile = "model/xgStandingsPast.json";
+const past = Object.fromEntries(Object.entries(out.seasons).filter(([k, v]) => k !== out.season && v.test));
+if (Object.keys(past).length) await writeFile(pastFile, JSON.stringify(past));
+else Object.assign(out.seasons, (await read(pastFile)) || {});
 await writeFile("public/hockey/xgStandings.json", JSON.stringify(out));
 console.log(Object.entries(out.seasons).map(([s, v]) => `${s}: ${v.games} games${v.test ? `, half-season test r(actual) ${v.test.rActual} vs r(shot quality) ${v.test.rShotQuality}` : ""}`).join("\n"));
