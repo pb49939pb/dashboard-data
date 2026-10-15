@@ -2,7 +2,7 @@
 // Drives the locally installed Google Chrome over the DevTools protocol (no new dependencies): for each page and width it
 // saves a full-page screenshot, and for the mobile profile it records load metrics under a cellular-like throttle.
 //
-//   node docs/brand/tools/baseline.mjs [baseUrl] [outDir]
+//   node docs/brand/tools/baseline.mjs [baseUrl] [outDir] [tabs]
 //     baseUrl  default https://patrickreidbaldwin.com/hockey/
 //     outDir   default docs/brand/baseline/<YYYY-MM-DD>
 //
@@ -17,7 +17,7 @@ import { join } from "node:path";
 const BASE = process.argv[2] || "https://patrickreidbaldwin.com/hockey/";
 const OUT = process.argv[3] || `docs/brand/baseline/${new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })}`;
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const PAGES = ["overview", "teams", "skaters", "goalies", "coaches", "shots", "office", "model"];
+const PAGES = process.argv[4] ? process.argv[4].split(",") : ["overview", "teams", "skaters", "goalies", "coaches", "shots", "office", "model"]; // optional 3rd arg: comma-separated tabs
 const WIDTHS = [320, 360, 390, 430, 1280];
 const RUNS = 3;
 mkdirSync(OUT, { recursive: true });

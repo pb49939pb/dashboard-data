@@ -26,7 +26,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Sources and dates on every card.** If a number can't be traced, it doesn't ship.
 - **Tested before trusted.** There are out-of-sample scorecards for every model, a prospective prediction log from 2026-10-13, nightly drift alarms, and versioned, content-hashed model artifacts.
 - **Honest labels.** Estimates are called estimates, associations aren't presented as causes, and a heuristic verdict isn't called a probability.
-- **Private stays private.** Contracts, cap tables, the trade search and the owner's edits are owner-only by database rule. Allow-lists live in the rules, never in public code. The public data repo never logs contract-derived values.
+- **Private stays private.** Salaries, cap tables, the trade search and the owner's edits are owner-only by database rule. Allow-lists live in the rules, never in public code. The public data repo never logs contract-derived values.
 - **Light on the reader's device.** Heavy work runs server-side (nightly jobs, including the trade search), and the page does what's left in small slices so it never freezes.
 
 ## 4. Features
@@ -38,7 +38,12 @@ Its promise is that every number names its source and date, and every model is t
   - the Question of the day.
   
   Each row links to the evidence. Never generated text, never a prediction.
-- **Recent games:** scores with pre-game model odds vs the Polymarket moneyline. On game nights, live win odds update every 5 minutes. Each game opens a full **game recap**.
+- **Recent games:** scores with pre-game model odds vs the Polymarket moneyline. During games:
+  - the clock, score and strength update about every 20 seconds;
+  - live win odds update every 5 minutes;
+  - a **goalie-pull advisor** appears for a team down one or two late in the third: too early, in the window, or past it, with the chance to tie. It's a decision aid from league-wide rates, not a prediction.
+
+  Each game opens a full **game recap**.
 - **Projected final standings:** 10,000 simulated seasons, with playoff, division and Cup odds (with simulation errors), the projected playoff bracket and strength of schedule. Past seasons show the final standings and bracket instead.
 - **Current standings, Team stats and division strength.**
 - **Points from the chances** (shot-quality standings): each team's points if every shot had gone in at its expected rate, with the shots held fixed.
@@ -155,6 +160,7 @@ Its promise is that every number names its source and date, and every model is t
 | NHL.com team releases | Contract terms and cap hits | Weekly | Public releases |
 | Polymarket Gamma API | Moneylines, playoff and Cup futures | Nightly and live | A comparator only, never an input to our odds |
 | PuckPedia cap table | Each team's cap space | Pasted by the owner on the site (no scraping) | Owner only |
+| Contract terms (public subset) | Contract years, status and extensions, with no money | Nightly, from the owner's contract list | Public |
 | The owner's edits | Contract fixes, trade block, objectives, scouting values, forecasts | Saved on the site | Owner only |
 
 **Pipeline:**
@@ -194,7 +200,7 @@ Open feature requests and their status live on the Ideas & bugs tab (owner). As 
 - **Done:** a learned-weights retest of the "tested, not adopted" ideas. Learned weights came out at zero, so they stay out. A backfill of earlier seasons for more statistical power is a possible next step.
 
 ## 7a. Brand direction
-Hockey Lab is gradually becoming **The Other Score**. Phase 0 (baseline and guardrails) is done; every later phase waits for the owner's review, and the public rename needs a separate go/no-go. The plan, voice, UI inventory, checklist and baseline are in `docs/brand/`. Brand work never changes models, data, permissions or routes.
+Hockey Lab is gradually becoming **The Other Score**. Phase 0 (baseline and guardrails) and Phase 1 (copy: a helper line on every tab, official/estimated/projected labels) are done; every later phase waits for the owner's review, and the public rename needs a separate go/no-go. The plan, voice, UI inventory, checklist and baseline are in `docs/brand/`. Brand work never changes models, data, permissions or routes.
 
 ## 8. How this spec stays current
 

@@ -5,6 +5,9 @@
 // past ~5h30m it starts a fresh run of itself (gh workflow run) if games are still to come or under way.
 //   node scripts/live.mjs        (needs FIREBASE_SERVICE_ACCOUNT for scores.mjs; GH_TOKEN to hand off)
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { openStore } from "./store.mjs";
+import { advise } from "./pullAdvisor.mjs";
 
 const UA = { "User-Agent": "hockey-lab/1.0 (personal, non-commercial)" };
 const EVERY = 5 * 60e3, SOON = 20 * 60e3, BUDGET = 5.5 * 3600e3, started = Date.now();
@@ -21,6 +24,32 @@ async function games() {
   return out;
 }
 
+/* Between the 5-minute rounds, while a game is live: every 20 s, the NHL scoreboard (one ~11 KB request per day) ->
+   hockey/live (public): clock, score, strength and the goalie-pull advisor for each live game. Written only when it
+   changes; about 20-45 s behind real time (NHL CDN cache + this interval). */
+const FAST = 20e3;
+const pullRates = (() => { try { return JSON.parse(readFileSync("model/qotd.json", "utf8")).questions.find((q) => q.id === "pull")?.rates || null; } catch { return null; } })();
+let store = null;
+async function liveTick() {
+  store ??= await openStore().catch(() => null);
+  if (!store) return;
+  const days = [eastern(new Date(Date.now() - 864e5)), eastern(new Date())], rows = [];
+  for (const d of days) {
+    const r = await fetch(`https://api-web.nhle.com/v1/score/${d}`, { headers: UA }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
+    for (const g of r?.games || []) {
+      if (!["LIVE", "CRIT"].includes(g.gameState)) continue;
+      const c = g.clock || {}, pd = g.periodDescriptor || {}, sit = g.situation?.situationCode || null;
+      const row = { id: g.id, period: pd.number ?? null, periodType: pd.periodType ?? null, clock: c.timeRemaining ?? null, secondsLeft: c.secondsRemaining ?? null, intermission: !!c.inIntermission,
+        home: g.homeTeam?.abbrev, away: g.awayTeam?.abbrev, hs: g.homeTeam?.score ?? 0, as: g.awayTeam?.score ?? 0, situation: sit };
+      row.advisor = advise({ period: row.period, periodType: row.periodType, secondsLeft: row.secondsLeft, inIntermission: row.intermission, homeScore: row.hs, awayScore: row.as,
+        situationCode: sit || "1551", home: row.home, away: row.away }, pullRates);
+      rows.push(row);
+    }
+  }
+  await store.put("hockey/live", { games: rows, at: new Date().toISOString() }, {}, { replace: true }).catch((e) => console.log("live write failed:", e.message));
+}
+async function fastUntil(ms) { const end = Date.now() + ms; while (Date.now() < end) { await liveTick(); await sleep(Math.min(FAST, Math.max(0, end - Date.now()))); } }
+
 function runScores() {
   const r = spawnSync("node", ["scripts/scores.mjs"], { stdio: "inherit", env: process.env, timeout: 8 * 60e3 });
   if (r.status !== 0) console.log("scores.mjs failed this round; trying again next round");
@@ -34,7 +63,7 @@ for (;;) {
   const pending = gs.filter((g) => !["FINAL", "OFF"].includes(g.state) && g.start > now - 6 * 3600e3);
   const next = pending.filter((g) => g.start > now).sort((a, b) => a.start - b.start)[0];
   const elapsed = now - started;
-  if (!pending.length) { if (rounds === 0) runScores(); console.log(`No games left to play or finish today; done after ${rounds} rounds.`); break; }
+  if (!pending.length) { if (rounds === 0) runScores(); await liveTick(); /* clears hockey/live */ console.log(`No games left to play or finish today; done after ${rounds} rounds.`); break; }
   if (elapsed > BUDGET) {
     console.log(`${pending.length} games still to finish; handing off to a fresh run.`);
     const h = spawnSync("gh", ["workflow", "run", "live.yml", "--ref", process.env.GITHUB_REF_NAME || "main"], { stdio: "inherit", env: process.env });
@@ -44,7 +73,7 @@ for (;;) {
   if (live.length || (next && next.start - now <= SOON) || pending.some((g) => g.start <= now)) {
     console.log(`${new Date().toISOString()}: ${live.length} live, ${pending.length} to finish; updating scores.`);
     runScores(); rounds++;
-    await sleep(EVERY);
+    if (live.length) await fastUntil(EVERY); else await sleep(EVERY);
   } else {
     const wait = Math.min(next.start - now - SOON + 1000, BUDGET - elapsed);
     console.log(`Next puck drop ${new Date(next.start).toISOString()}; waking in ${Math.round(wait / 60e3)} minutes.`);

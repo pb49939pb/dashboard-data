@@ -1,4 +1,5 @@
-# Game night: live scores, Recent games and recaps every 5 minutes while games are on (scripts/live.mjs).
+# Game night: live scores, Recent games and recaps every 5 minutes while games are on, plus the live feed and goalie-pull
+# advisor (hockey/live) every ~20 seconds while a game is live (scripts/live.mjs).
 # GitHub only runs frequent schedules when it has spare capacity (dispatch.yml's every 10 minutes can go hours
 # between runs), so this starts once before games and stays up until the last one is final, handing off to a fresh
 # run before GitHub's 6-hour limit. Three start times in case one is dropped; only one run at a time.

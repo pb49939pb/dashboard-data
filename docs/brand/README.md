@@ -5,8 +5,8 @@ The plan is `rollout.md`: the owner's phased plan, copied verbatim. The creative
 ## Phase status
 | Phase | Focus | Status |
 |---|---|---|
-| 0 | Baseline & guardrails | **Done 2026-10-14**: docs, reproducible baseline, permission check. No UI change. Awaiting owner review. |
-| 1 | Editorial voice (copy only) | Waiting for owner review of Phase 0 |
+| 0 | Baseline & guardrails | **Done 2026-10-14**, approved by the owner 2026-10-15 |
+| 1 | Editorial voice (copy only) | **Done 2026-10-15** (`phase1-copy.md`): awaiting owner review |
 | 2 | Brand signature (scoped masthead) | After Phase 1 review |
 | 3 | Today as flagship | After Phase 2 review and the Today feature |
 | 4 | "After the Horn" recap | After Phase 3 review |

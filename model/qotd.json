@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-10-15T01:02:49+00:00",
+ "builtAt": "2026-10-15T10:01:49+00:00",
  "start": "2026-10-15",
  "seasons": [
   "20242025",
@@ -112,7 +112,29 @@
     "yFrom": 38
    },
    "method": "Third periods of 2024-25 and 2025-26 regular-season games. Goal rates for teams trailing by one (and two) measured at 5-on-5 with the goalie in and 6-on-5 with it pulled, then a second-by-second model of the race to a tying goal for every possible pull time. Assumes rates don't change with the clock; a goal against ends the chase.",
-   "sample": "1759 goalie pulls; 1957 minutes of 6-on-5"
+   "sample": "1759 goalie pulls; 1957 minutes of 6-on-5",
+   "rates": {
+    "2_in": [
+     0.0007472,
+     0.000722
+    ],
+    "2_out": [
+     0.0019987,
+     0.0066563
+    ],
+    "1_in": [
+     0.0006569,
+     0.0006416
+    ],
+    "1_out": [
+     0.0020685,
+     0.0061566
+    ]
+   },
+   "typicalPull": {
+    "1": 106,
+    "2": 154
+   }
   },
   {
    "id": "faceoffs",
