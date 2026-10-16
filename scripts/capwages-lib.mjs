@@ -179,8 +179,11 @@ export function leagueDoc(players, years, meta) {
     if (!p.team && hits.every((h) => h === null)) continue;
     const contract = cur ? p.contracts[cur.contract] : null;
     const last = contract ? Math.max(...contract.seasons.map(seasonStart)) : null;
+    // his latest deal (an extension may run past the window): its last season and what he is when it ends
+    const newest = p.contracts.filter((c) => c.seasons.some((x) => seasonStart(x) >= years[0])).sort((u, v) => u.index - v.index)[0] ?? contract;
+    const endLast = newest ? Math.max(...newest.seasons.map(seasonStart)) : last;
     if (!p.nhlId) continue; // the site joins on NHL ids
-    P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
+    P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
       elc: /entry/i.test(contract?.type || ""), anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};

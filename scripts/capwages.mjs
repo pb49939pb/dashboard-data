@@ -75,7 +75,7 @@ if (args.has("--revalidate")) {
   const players = raw.map((d) => normalizePlayer(d));
   const y = Number(process.env.CAP_SEASON) || capSeasonNow();
   const v = validate({ players, errors: 0, attempted: players.length, y, prev: before?.ok ? before : null });
-  const years = [y, y + 1, y + 2, y + 3, y + 4, y + 5];
+  const years = [y, y + 1, y + 2, y + 3, y + 4, y + 5, y + 6, y + 7]; // the trade valuation looks 8 seasons ahead
   const fetchedAt = before?.lastAttempt?.importedAt ?? null;
   const meta = { lastUpdated: before?.lastAttempt?.lastUpdated ?? null, importedAt: fetchedAt ?? new Date().toISOString() };
   const docs = Object.keys(TEAMS).map((a) => ({ a, doc: teamDoc(a, players, years, meta) }));
@@ -153,7 +153,7 @@ try {
   // 4) validate (fail closed)
   const y = Number(process.env.CAP_SEASON) || capSeasonNow();
   const v = validate({ players, errors, attempted: keep.length, y, prev: before?.ok ? before : null });
-  const years = [y, y + 1, y + 2, y + 3, y + 4, y + 5];
+  const years = [y, y + 1, y + 2, y + 3, y + 4, y + 5, y + 6, y + 7]; // the trade valuation looks 8 seasons ahead
   const meta = { lastUpdated, importedAt: new Date().toISOString() };
   const docs = Object.keys(TEAMS).map((a) => ({ a, doc: { ...teamDoc(a, players, years, meta), lineup: lineups[a] || null } }));
 
