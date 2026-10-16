@@ -81,13 +81,20 @@ const store = {
     return true;
   },
   /** Write many small documents (games), skipping ones already stored unchanged. Never deletes. */
-  async putMany(docs) {
+  /** Delete a collection and everything under it (one operation, e.g. CapWages data when the subscription ends). */
+  async dropTree(path) {
+    if (db.docs) { let n = 0; for (const k of [...db.docs.keys()]) if (k === path || k.startsWith(path + "/")) { db.docs.delete(k); n++; } return n; }
+    const ref = db.collection(path); let n = 0;
+    for (const d of (await ref.listDocuments())) { n++; await db.recursiveDelete(d); }
+    return n;
+  },
+  async putMany(docs, { replace = false } = {}) {
     const refs = docs.map((d) => db.doc(d.path));
     const existing = refs.length ? await db.getAll(...refs) : [];
     let batch = db.batch(), n = 0, written = 0;
     for (let i = 0; i < docs.length; i++) {
       const prev = existing[i].exists ? JSON.parse(existing[i].data().json) : null;
-      const merged = prev ? merge(prev, docs[i].data) : docs[i].data;
+      const merged = prev && !replace ? merge(prev, docs[i].data) : docs[i].data;
       const json = JSON.stringify(merged), h = hash(json);
       if (existing[i].exists && existing[i].data().hash === h) continue;
       batch.set(refs[i], { json, hash: h, updatedAt: new Date().toISOString(), ...(docs[i].fields || {}) });

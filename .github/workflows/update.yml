@@ -62,6 +62,14 @@ jobs:
       - name: Contract news
         if: steps.hour.outputs.skip != 'true'
         run: python scripts/contracts.py --recent || echo "contract news check failed; stored contracts are kept"
+      # CapWages (licensed API): fail-closed import into owner-only capwages/*; prints counts only (this log is public)
+      - name: CapWages contracts and cap
+        if: steps.hour.outputs.skip != 'true'
+        env:
+          CAPWAGES_API_KEY: ${{ secrets.CAPWAGES_API_KEY }}
+          CAPWAGES_API_USER: ${{ secrets.CAPWAGES_API_USER }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node --test scripts/capwages.test.mjs && node scripts/capwages.mjs || echo "CapWages import didn't publish; the previous import keeps serving (see the Admin page)"
       - name: Trade block from the news
         run: python scripts/block.py || echo "trade block scan failed; last night's list is kept"
       - name: Team assets (draft picks and prospects)

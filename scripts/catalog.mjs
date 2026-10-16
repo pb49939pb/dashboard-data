@@ -43,6 +43,13 @@ export const CATALOG = {
       outputs: [{ doc: "hockey/contracts", pages: ["Hockey Lab · Cap & trades"] }],
     },
     {
+      id: "capwages", name: "CapWages contracts and cap", schedule: "Every night, after contract news (update.yml); at most once a day", script: "scripts/capwages.mjs",
+      sources: [
+        { name: "CapWages API (licensed)", host: "capwages.com", what: "cap hits, terms, clauses, buyouts and retained salary for every NHL player; game-day lineups" },
+      ],
+      outputs: [{ doc: "capwages/live/teams/* (owner-only)", pages: ["Hockey Lab · Trade explorer cap check (pending)"] }],
+    },
+    {
       id: "trade-block", name: "Trade block from the news", schedule: "Every night, after contract news (update.yml)", script: "scripts/block.py",
       sources: [
         { name: "ProHockeyRumors league and team feeds", host: "www.prohockeyrumors.com", what: "trade requests and players being shopped" },
