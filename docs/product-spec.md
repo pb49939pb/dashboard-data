@@ -92,6 +92,7 @@ Its promise is that every number names its source and date, and every model is t
 
 ### Skaters
 - **Ratings and stats:** ratings (offense, defense, usage, overall, 40–99 within position) and stats (xG, goals above expected, expected ±, ice time).
+- **Contracts in lists:** every player list shows his current contract beside him (cap hit, final season, clause, extension; "Contract data: CapWages"): Teams (best players, core players, strength by position, style fits, GM moves), the trade explorer's player lists, and sortable Cap hit / Thru columns on the Skaters and Goalies tables.
 - **Player cards:** ratings, WAR-lite value, system fit, the contract line (cap hit, years left, UFA/RFA, clause; "Contract data: CapWages") and the owner's private scouting note. Goalie profiles carry the same contract line.
 
 ### Goalies
