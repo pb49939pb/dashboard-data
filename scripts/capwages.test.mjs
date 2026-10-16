@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { teamAbbrev, lineupSlug, seasonStart, normalizeRetention, normalizePlayer, teamCharges, validate, teamDoc, TEAMS } from "./capwages-lib.mjs";
 
 const season = (s, o = {}) => ({ season: s, clause: null, capHit: 1_000_000, aav: 1_000_000, performanceBonuses: 0, signingBonuses: 0, baseSalary: 1_000_000, totalSalary: 1_000_000, minorsSalary: null, ...o });
-const player = (slug, team, contracts, o = {}) => ({ slug, name: slug, nhlId: o.nhlId ?? Math.abs([...slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)), team: { slug: team }, position: "C", leagueStatus: "NHL", contracts });
+const player = (slug, team, contracts, o = {}) => ({ slug, name: slug, nhlId: o.nhlId ?? Math.abs([...slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)), team: { slug: team }, position: "C", leagueStatus: o.status ?? "NHL", contracts });
 
 test("team names and slugs in every spelling", () => {
   assert.equal(teamAbbrev("anaheim_ducks"), "ANA");
@@ -61,6 +61,13 @@ test("buyout and retention charges land on the right teams; anomalous seasons ar
   const c = teamCharges([kept], 2026);
   assert.equal(c.TOR.totals.players, 3_750_000);
   assert.equal(c.OTT.totals.retained, 1_250_000);
+});
+
+test("cap counting: roster and injured lists in full, minors buried above the threshold, prospects not at all", () => {
+  const mk = (slug, status, cap) => ({ ...normalizePlayer(player(slug, "detroit_red_wings", [{ seasons: [season("2026-27", { capHit: cap })] }])), leagueStatus: status });
+  const c = teamCharges([mk("a", "NHL", 5_000_000), mk("b", "LTIR", 3_000_000), mk("c", "Minor", 1_500_000), mk("d", "Minor", 900_000), mk("e", "Prospect", 950_000)], 2026).DET;
+  assert.equal(c.totals.players, 5_000_000 + 3_000_000 + (1_500_000 - 1_225_000));
+  assert.equal(c.totals.ltir, 3_000_000);
 });
 
 test("validation fails closed: missing spot checks, bad team counts, error rate, swings in player count", () => {

@@ -6,6 +6,12 @@
 
 export const SOURCE = "CapWages";
 export const CEILING = { 2026: 104_000_000 }; // season start year -> upper limit (SEASON_RULES in hockey-web/lab.js)
+export const LEAGUE_MIN = { 2026: 850_000 };
+/** What a player's CapWages leagueStatus means for his team's cap this season: "full" (NHL roster and injured lists),
+    "buried" (in the minors: only his cap hit above the league minimum + $375K counts) or "none" (prospects, juniors,
+    loans, tryouts, retired). LTIR counts in full; the relief it allows over the ceiling isn't modelled (verdicts say so). */
+export const capCount = (status) => ({ NHL: "full", IR: "full", LTIR: "full", SOIR: "full", SEIR: "full", Suspended: "full", Minor: "buried" })[status] || "none";
+export const buriedAt = (y) => (LEAGUE_MIN[y] ?? LEAGUE_MIN[2026]) + 375_000;
 
 /** The 32 NHL teams: abbreviation -> CapWages team name (also used for retention keys). Aliases cover renames. */
 export const TEAMS = {
@@ -84,7 +90,7 @@ const rowsOf = (p, y) => [].concat(p.seasons?.[y] ?? []);
 /** Everything charged to each team's cap for season y: its own players' cap hits (net of retention it receives),
     buyout charges and salary it retains for players now elsewhere. Unverifiable pieces are listed, never zeroed. */
 export function teamCharges(players, y) {
-  const T = Object.fromEntries(Object.keys(TEAMS).map((a) => [a, { team: a, players: [], buyouts: [], retained: [], unverified: [] }]));
+  const T = Object.fromEntries(Object.keys(TEAMS).map((a) => [a, { team: a, players: [], buyouts: [], retained: [], unverified: [], ltir: [] }]));
   for (const p of players) for (const r of rowsOf(p, y)) {
     const id = p.nhlId ?? p.slug;
     if (r.retentionAnomaly) { for (const t of new Set([p.team, ...r.retention.map((x) => x.abbr)].filter((a) => T[a]))) T[t].unverified.push({ id, name: p.name, why: r.retentionWhy.join("; ") }); continue; }
@@ -93,12 +99,15 @@ export function teamCharges(players, y) {
     if (!r.buyout && T[p.team] && r.capHit !== null) {
       // his current team carries the cap hit less whatever other teams retained
       const away = r.retention.filter((x) => x.abbr !== p.team).reduce((n, x) => n + (x.retainedCapHit || 0), 0);
-      T[p.team].players.push({ id, name: p.name, capHit: r.capHit - away, clause: r.clause, expiry: r.expiry, retainedElsewhere: away > 0 });
+      const net = r.capHit - away, how = capCount(p.leagueStatus);
+      const counted = how === "full" ? net : how === "buried" ? Math.max(0, net - buriedAt(y)) : 0;
+      if (p.leagueStatus === "LTIR") T[p.team].ltir.push({ id, name: p.name, capHit: net });
+      T[p.team].players.push({ id, name: p.name, capHit: counted, fullCapHit: net, status: p.leagueStatus, clause: r.clause, expiry: r.expiry, retainedElsewhere: away > 0 });
     } else if (!r.buyout && T[p.team]) T[p.team].unverified.push({ id, name: p.name, why: "no cap hit for this season" });
   }
   for (const t of Object.values(T)) {
     const sum = (a) => a.reduce((n, x) => n + (x.capHit || 0), 0);
-    t.totals = { players: sum(t.players), buyouts: sum(t.buyouts), retained: sum(t.retained) };
+    t.totals = { players: sum(t.players), buyouts: sum(t.buyouts), retained: sum(t.retained), ltir: sum(t.ltir) };
     t.totals.all = t.totals.players + t.totals.buyouts + t.totals.retained;
   }
   return T;
@@ -129,7 +138,7 @@ export function validate({ players, errors, attempted, y, prev }, spot = SPOT_CH
   const ceiling = CEILING[y];
   if (ceiling) for (const t of Object.values(teamCharges(players, y))) {
     const r = t.totals.all / ceiling;
-    if (r < 0.6 || r > 1.25) warnings.push(`${t.team}: cap total outside the usual band for its roster count (roster counting rules differ)`);
+    if (r < 0.6 || r > 1.08) warnings.push(`${t.team}: cap total outside the usual band for its roster count (roster counting rules differ)`);
   }
   return { ok: failures.length === 0, failures, warnings, counts, nhlPlayers: nhl };
 }
@@ -160,12 +169,12 @@ export function leagueDoc(players, years, meta) {
     const contract = cur ? p.contracts[cur.contract] : null;
     const last = contract ? Math.max(...contract.seasons.map(seasonStart)) : null;
     if (!p.nhlId) continue; // the site joins on NHL ids
-    P.push({ id: p.nhlId, team: p.team, hits, end: last, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
+    P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
       elc: /entry/i.test(contract?.type || ""), anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};
-  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, n: t.players.length, unverified: t.unverified.map((u) => u.id) }; }
-  return { source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), players: P, teams };
+  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
+  return { source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), buriedAt: Object.fromEntries(years.map((y) => [y, buriedAt(y)])), players: P, teams };
 }
 
 /** The per-team document (public fields only): this season and the next few, per player, plus the team's buyout and
