@@ -32,7 +32,7 @@ const num = (v) => { if (v === null || v === undefined || v === "") return null;
 /** Retention entries are keyed by team name: { "<Team Name>": { capHit, retainedPct } }. The encoding is inconsistent
     in the wild (the brief's OEL case: two teams at 88% with the same cap hit), so normalize to a list and flag, never
     guess: an anomalous season counts as unverified in cap verdicts, not as zero. */
-export function normalizeRetention(retention) {
+export function normalizeRetention(retention, buyout = null) {
   if (!retention || typeof retention !== "object") return { list: [], anomaly: false, reasons: [] };
   const list = Object.entries(retention).map(([team, r]) => ({ team, abbr: teamAbbrev(team), retainedPct: num(r?.retainedPct), retainedCapHit: num(r?.capHit) }));
   const reasons = [];
@@ -41,6 +41,9 @@ export function normalizeRetention(retention) {
   if (new Set(pcts).size < pcts.length) reasons.push("the same percentage appears for two teams");
   if (list.some((x) => x.retainedPct === null || x.retainedCapHit === null)) reasons.push("an entry is missing its percentage or cap hit");
   if (list.some((x) => !x.abbr)) reasons.push("an entry names a team we can't match");
+  // a team can't retain salary on a player it bought out (OEL 2024-25 lists Vancouver at 88% beside its buyout)
+  const bo = buyout && teamAbbrev(buyout.teamSlug || buyout.teamName);
+  if (bo && list.some((x) => x.abbr === bo)) reasons.push("the buyout team also appears as retaining salary");
   return { list, anomaly: reasons.length > 0, reasons };
 }
 
@@ -61,7 +64,7 @@ export function normalizePlayer(d) {
   const seasons = {};
   for (const c of d.contracts || []) for (const s of c.seasons || []) {
     const y = seasonStart(s.season); if (y === null) continue;
-    const ret = normalizeRetention(s.retention);
+    const ret = normalizeRetention(s.retention, s.buyout);
     const row = {
       season: s.season, year: y, contract: (d.contracts || []).indexOf(c), clause: s.clause ?? null,
       capHit: num(s.capHit), aav: num(s.aav), baseSalary: num(s.baseSalary), totalSalary: num(s.totalSalary), minorsSalary: num(s.minorsSalary),
@@ -135,7 +138,9 @@ export function validate({ players, errors, attempted, y, prev }, spot = SPOT_CH
 export const SPOT_CHECKS = [
   { slug: "connor-mcdavid", seasons: { 2026: { capHit: 12_500_000, clause: "NMC" } } },
   { slug: "auston-matthews", seasons: { 2026: { capHit: 13_250_000 } } },
-  { slug: "oliver-ekman-larsson", seasons: { 2027: { buyoutCapHit: 146_667 }, 2028: { buyoutCapHit: 2_346_667 }, 2029: { buyoutCapHit: 4_766_667 }, 2030: { buyoutCapHit: 4_766_667 }, 2031: { buyoutCapHit: 2_126_667 } } },
+  // The brief's amounts, on the seasons CapWages gives them. The brief labelled them "2027-28 through 2030-31" (four
+  // seasons for five numbers); Vancouver's buyout was in summer 2023, so the first buyout season is 2023-24.
+  { slug: "oliver-ekman-larsson", seasons: { 2023: { buyoutCapHit: 146_667 }, 2024: { buyoutCapHit: 2_346_667 }, 2025: { buyoutCapHit: 4_766_667 }, 2026: { buyoutCapHit: 4_766_667 }, 2027: { buyoutCapHit: 2_126_667 } } },
 ];
 
 /** The compact per-team document the site reads (owner-only): this season and the next few, per player, plus the

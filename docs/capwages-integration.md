@@ -84,6 +84,9 @@ The Other Score's Trade Explorer currently labels its results "cap compliance un
 - **Correction to the brief's premise:** the site does have contract data (Wikipedia/NHL.com/ProHockeyRumors terms and the owner's pasted PuckPedia cap table); "unverified" appears when a cap hit is estimated or a team's cap space is missing. CapWages replaces those estimates for money fields once the app reads it.
 - **Standing rule unchanged:** no scraping of CapWages (or X, PuckPedia). This is the licensed API under the subscription and permission described above.
 
+- **Spot-check correction (2026-10-16, first dry run):** the brief's OEL buyout amounts are right but its season labels aren't ("2027-28 through 2030-31" is four seasons for five numbers). CapWages puts them on 2023-24 through 2027-28, consistent with Vancouver's summer-2023 buyout, so the gate checks them there. Utah's 12% "retention" in those seasons is its share of the buyout (Vancouver's figures are exactly 88% of the total), so both are charged, with no double count. One more encoding problem found and ruled: 2024-25 also lists Vancouver retaining 88% of the full cap hit beside its own buyout, so a buyout team appearing as retaining salary flags the season.
+- **Freshness:** `meta.lastUpdated` is the response time, not the data's, so the unchanged-data skip never fires; the once-a-day guard is what enforces fair use. `--revalidate` reruns the gates on the stored fetch without any request.
+
 ### Pending (needs Pat)
 1. GitHub secrets `CAPWAGES_API_KEY` (and `CAPWAGES_API_USER`) on pb49939pb/dashboard-data. Until then the nightly step logs "not configured" and skips.
 2. Copy the three fixture files to `scripts/fixtures/capwages/` (they weren't with the brief).

@@ -11,7 +11,7 @@ on:
       mode:
         description: "check = test the key (1 request); dry-run = fetch + validate, staging only; import = publish if the gates pass"
         type: choice
-        options: [check, dry-run, import, inspect]
+        options: [check, dry-run, import, inspect, revalidate, revalidate-publish]
         default: check
 permissions:
   contents: read
@@ -40,6 +40,8 @@ jobs:
             check) node scripts/capwages.mjs --check ;;
             dry-run) node scripts/capwages.mjs --dry-run --force ;;
             import) node scripts/capwages.mjs --force ;;
+            revalidate) node scripts/capwages.mjs --revalidate ;;
+            revalidate-publish) node scripts/capwages.mjs --revalidate --publish ;;
             inspect) node scripts/capwages.mjs --inspect "${{ inputs.slug }}" ;;
           esac
       - name: Publish the run log (owner-only Admin page)

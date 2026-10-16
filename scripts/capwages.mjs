@@ -67,6 +67,31 @@ if (args.has("--inspect")) {
   console.log(p ? `inspected ${slug}: ${Object.keys(p.seasons).length} seasons, ${p.contracts.length} contracts (details in the owner's run log)` : `${slug}: not found`);
   run.finish({ ok: !!p, notes: { inspect: slug, contracts: p?.contracts, seasons } }); process.exit(p ? 0 : 1);
 }
+// --revalidate [--publish]: rerun normalization and the gates on the raw payloads stored by the last fetch (zero API
+// requests), e.g. after fixing a rule; with --publish, publish them if the gates pass.
+if (args.has("--revalidate")) {
+  const raw = await store.readAll("capwages/raw/players");
+  const before = await store.read("capwages/meta").catch(() => null);
+  const players = raw.map((d) => normalizePlayer(d));
+  const y = Number(process.env.CAP_SEASON) || capSeasonNow();
+  const v = validate({ players, errors: 0, attempted: players.length, y, prev: before?.ok ? before : null });
+  const years = [y, y + 1, y + 2, y + 3, y + 4, y + 5];
+  const fetchedAt = before?.lastAttempt?.importedAt ?? null;
+  const meta = { lastUpdated: before?.lastAttempt?.lastUpdated ?? null, importedAt: fetchedAt ?? new Date().toISOString() };
+  const docs = Object.keys(TEAMS).map((a) => ({ a, doc: teamDoc(a, players, years, meta) }));
+  for (const w of v.warnings) run.check(true, "Warning", w);
+  for (const f of v.failures) run.check(false, "Gate", f);
+  const summary = { ok: v.ok, revalidated: true, lastUpdated: meta.lastUpdated, importedAt: meta.importedAt, season: y, nhlPlayers: v.nhlPlayers, kept: players.length, errors: 0, counts: v.counts };
+  const totals = Object.fromEntries(docs.map(({ a, doc }) => [a, doc.charges[y]?.totals]));
+  if (!v.ok || !args.has("--publish")) {
+    console.log(`revalidated ${players.length} stored players: ${v.ok ? "all gates passed" : `${v.failures.length} gate(s) failed`}${args.has("--publish") ? "; not published" : " (check only)"}`);
+    run.finish({ ok: v.ok, notes: { ...summary, failures: v.failures, warnings: v.warnings, totals } }); process.exit(v.ok ? 0 : 1);
+  }
+  for (const { a, doc } of docs) await store.put(`capwages/live/teams/${a}`, { ...doc, lineup: (await store.read(`capwages/staging/teams/${a}`).catch(() => null))?.lineup ?? null }, {}, { replace: true });
+  await store.put("capwages/meta", summary, {}, { replace: true });
+  console.log(`published ${players.length} players across ${docs.length} teams from the stored fetch (gates passed, ${v.warnings.length} warning(s))`);
+  run.finish({ ok: true, outputs: ["capwages/live/teams/*"], notes: { ...summary, warnings: v.warnings, totals } }); process.exit(0);
+}
 if (DROP) {
   const n = await store.dropTree?.("capwages");
   console.log(`CapWages data deleted (${n ?? "?"} documents)`);

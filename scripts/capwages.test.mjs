@@ -28,6 +28,9 @@ test("retention: clean entries pass, the OEL-style encodings are flagged", () =>
   assert.equal(dup.anomaly, true);
   assert.ok(dup.reasons.some((r) => r.includes("more than 100")) && dup.reasons.some((r) => r.includes("same percentage")));
   assert.equal(normalizeRetention({ Nowhere: { capHit: 1, retainedPct: 10 } }).anomaly, true); // unknown team: unverified, not ignored
+  const bo = { teamName: "Vancouver Canucks", teamSlug: "vancouver-canucks", capHit: 2_346_667 };
+  assert.equal(normalizeRetention({ "Vancouver Canucks": { capHit: 7_260_000, retainedPct: 88 }, "Utah Mammoth": { capHit: 320_000, retainedPct: 12 } }, bo).anomaly, true);
+  assert.equal(normalizeRetention({ "Utah Mammoth": { capHit: 650_000, retainedPct: 12 } }, bo).anomaly, false); // Utah's share of the buyout
 });
 
 test("McDavid-shaped payload: the extension's seasons parse with NMC at 12.5M", () => {
@@ -85,7 +88,7 @@ test("real fixture: McDavid", { skip: !fx("player-connor-mcdavid.json") && "fixt
 });
 test("real fixture: Ekman-Larsson buyout schedule and retention anomaly", { skip: !fx("player-oliver-ekman-larsson.json") && "fixture not added yet" }, () => {
   const p = normalizePlayer(body(fx("player-oliver-ekman-larsson.json")));
-  const want = { 2027: 146_667, 2028: 2_346_667, 2029: 4_766_667, 2030: 4_766_667, 2031: 2_126_667 };
+  const want = { 2023: 146_667, 2024: 2_346_667, 2025: 4_766_667, 2026: 4_766_667, 2027: 2_126_667 };
   for (const [y, v] of Object.entries(want)) assert.equal([].concat(p.seasons[y] || []).find((r) => r.buyout)?.buyout.capHit, v, `buyout ${y}`);
   assert.ok(Object.values(p.seasons).flat().some((r) => r.retentionAnomaly), "the early seasons' retention is flagged");
 });
