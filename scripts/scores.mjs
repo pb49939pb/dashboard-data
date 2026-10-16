@@ -1,4 +1,4 @@
-// Recent games for Hockey Lab's Overview: yesterday's and today's NHL games with scores, saved to Firestore
+// Recent games for Hockey Lab's Overview: yesterday's, today's and tomorrow's NHL games with scores, saved to Firestore
 // public/scores. Runs every 5 minutes on game nights (live.yml) and with dispatch.yml (the NHL API can't be read from a browser on another site),
 // but only calls the NHL when a game is live or about to start (see want()). Also:
 //   - pre-game win odds for today's games: Hockey Lab's model (nightly, hockey/projections.upcoming) and Polymarket's
@@ -12,7 +12,9 @@ import { buildRecap, RECAP_VERSION } from "./recap.mjs";
 const UA = { "User-Agent": "hockey-lab/1.0 (personal, non-commercial)" };
 // The NHL's day runs on Eastern time: a 10 PM Pacific game is still "today" there
 const eastern = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
-const today = eastern(new Date()), yesterday = eastern(new Date(Date.now() - 864e5));
+const today = eastern(new Date());
+const adjacentDate = (offset) => { const d = new Date(`${today}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + offset); return d.toISOString().slice(0, 10); };
+const yesterday = adjacentDate(-1), tomorrow = adjacentDate(1);
 const BACKFILL_PER_RUN = 12;
 
 const side = (t) => ({ team: t.abbrev, score: t.score ?? null, sog: t.sog ?? null });
@@ -78,7 +80,7 @@ async function want(date, isToday) {
   for (const g of games) { const o = old?.games.find((x) => x.id === g.id); if (o) for (const k of ["pred", "recapAt", "recapFinal", "recapV", "live", "trail", "logged"]) if (o[k] !== undefined) g[k] = o[k]; }
   return { date, checkedAt: new Date().toISOString(), games };
 }
-const days = [await want(yesterday, false), await want(today, true)];
+const days = [await want(yesterday, false), await want(today, true), await want(tomorrow, true)];
 
 // predictions for games that haven't started: our model (nightly) and Polymarket (now); frozen once the puck drops
 const upcoming = days.flatMap((d) => d.games).filter((g) => !done(g) && !live(g) && g.state !== "PPD");

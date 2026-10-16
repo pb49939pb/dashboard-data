@@ -209,3 +209,7 @@ Hockey Lab is gradually becoming **The Other Score**. Phase 0 (baseline and guar
 ## 8. How this spec stays current
 
 Every feature change updates this file, along with the changelog, the methods dossier, the model inventory and the architecture diagram. The source is `dashboard-data/docs/product-spec.md`, and each site deploy copies it to `/hockey/product-spec.md`. The "Product spec" button on the Admin tab's Models card shows it with generated appendices. The raw file is public at that URL.
+
+
+### Three-day game schedule
+Overview shows Yesterday, Today and Tomorrow using Eastern calendar dates. The score feed includes tomorrow with hourly schedule refreshes; available pre-game model and market odds use the existing prediction pipeline. Missing schedules are labeled unavailable, distinct from a confirmed day with no games. Projected standings chart rows are numbered 1–32 in projected-points order.
