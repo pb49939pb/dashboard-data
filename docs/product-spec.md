@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-15
+Last reviewed: 2026-10-16
 
 ## 1. What it is
 
@@ -135,6 +135,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Documents:** the methods dossier (Markdown for expert review) and this product spec, each with Copy and Download.
 - **Jobs:** data jobs with run history and "Run now" (nightly build, contracts, contract news, trade search, models).
 - **Your forecasts** and the trade-engine self-tests.
+- **Brand preview (owner only):** the rebrand's Phase 2 masthead prototypes for The Other Score, side by side, with a switch that applies one to the owner's own header. Everyone else sees the current header.
 
 ### Ideas & bugs (owner; testers see "Report a bug")
 - **Ideas:** the owner files ideas, and Claude answers each one by building it, asking a question or declining with a reason. Statuses: new, in progress, needs input, needs approval, approved and queued, done, won't do.
