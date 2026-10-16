@@ -4,10 +4,14 @@ name: CapWages
 on:
   workflow_dispatch:
     inputs:
+      slug:
+        description: "inspect only: the player slug (e.g. oliver-ekman-larsson)"
+        required: false
+        default: oliver-ekman-larsson
       mode:
         description: "check = test the key (1 request); dry-run = fetch + validate, staging only; import = publish if the gates pass"
         type: choice
-        options: [check, dry-run, import]
+        options: [check, dry-run, import, inspect]
         default: check
 permissions:
   contents: read
@@ -36,6 +40,7 @@ jobs:
             check) node scripts/capwages.mjs --check ;;
             dry-run) node scripts/capwages.mjs --dry-run --force ;;
             import) node scripts/capwages.mjs --force ;;
+            inspect) node scripts/capwages.mjs --inspect "${{ inputs.slug }}" ;;
           esac
       - name: Publish the run log (owner-only Admin page)
         if: always() && inputs.mode != 'check'

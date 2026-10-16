@@ -57,6 +57,16 @@ const store = await openStore();
 if (!store) { console.log("FIREBASE_SERVICE_ACCOUNT not set; nothing to do"); run.finish({ ok: true, notes: { skipped: "no store" } }); process.exit(0); }
 
 if (!DROP && !process.env.CAPWAGES_API_KEY) { console.log("CapWages isn't configured (no CAPWAGES_API_KEY secret); skipping"); run.finish({ ok: true, notes: { skipped: "not configured" } }); process.exit(0); }
+// --inspect <slug>: one player's normalized seasons (buyout, retention, cap hit per season) into the owner-only run log,
+// to diagnose a failed spot check without a second full import. Prints nothing about the contract here (public log).
+if (args.has("--inspect")) {
+  const slug = process.argv[process.argv.indexOf("--inspect") + 1];
+  const j = await api(`/players/${encodeURIComponent(slug)}`, run);
+  const p = j?.data ? normalizePlayer(j.data) : null;
+  const seasons = p ? Object.fromEntries(Object.entries(p.seasons).map(([y, rs]) => [y, [].concat(rs).map((r) => ({ season: r.season, contract: r.contract, capHit: r.capHit, buyout: r.buyout, retention: r.retention, retentionAnomaly: r.retentionAnomaly }))])) : null;
+  console.log(p ? `inspected ${slug}: ${Object.keys(p.seasons).length} seasons, ${p.contracts.length} contracts (details in the owner's run log)` : `${slug}: not found`);
+  run.finish({ ok: !!p, notes: { inspect: slug, contracts: p?.contracts, seasons } }); process.exit(p ? 0 : 1);
+}
 if (DROP) {
   const n = await store.dropTree?.("capwages");
   console.log(`CapWages data deleted (${n ?? "?"} documents)`);
