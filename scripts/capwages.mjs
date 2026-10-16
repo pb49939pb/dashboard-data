@@ -124,6 +124,7 @@ try {
     run.finish({ ok: false, error: "validation failed", notes: { ...summary, failures: v.failures, warnings: v.warnings, totals } }); process.exit(1);
   }
   if (DRY) {
+    await store.put("capwages/meta", { ...(before || {}), lastAttempt: summary }, {}, { replace: true }); // counts as today's import (fair use)
     console.log(`dry run: validation passed; staging written, live untouched (${players.length} players, ${errors} fetch errors)`);
     run.finish({ ok: true, notes: { ...summary, warnings: v.warnings, totals } }); process.exit(0);
   }
