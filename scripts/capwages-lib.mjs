@@ -87,11 +87,22 @@ export function normalizePlayer(d) {
 }
 
 const rowsOf = (p, y) => [].concat(p.seasons?.[y] ?? []);
+/** A season's cap rows with overlaps resolved: buyout rows as they are, and of two or more ordinary contracts covering
+    the same season (bad data, e.g. Kreider 2026-27) only the newest (CapWages lists contracts newest first), with
+    `alt` = how much the total would change if another one were the right one. */
+function resolved(p, y) {
+  const rs = rowsOf(p, y), bo = rs.filter((r) => r.buyout), plain = rs.filter((r) => !r.buyout).sort((u, v) => u.contract - v.contract);
+  if (plain.length <= 1) return { rows: rs, alt: 0 };
+  const keep = plain[0], alt = Math.max(...plain.map((r) => r.capHit || 0)) - (keep.capHit || 0);
+  return { rows: [...bo, keep], alt, overlap: true };
+}
 /** Everything charged to each team's cap for season y: its own players' cap hits (net of retention it receives),
     buyout charges and salary it retains for players now elsewhere. Unverifiable pieces are listed, never zeroed. */
 export function teamCharges(players, y) {
   const T = Object.fromEntries(Object.keys(TEAMS).map((a) => [a, { team: a, players: [], buyouts: [], retained: [], unverified: [], ltir: [] }]));
-  for (const p of players) for (const r of rowsOf(p, y)) {
+  for (const p of players) { const R = resolved(p, y);
+    if (R.overlap && T[p.team] && R.alt) (T[p.team].overlaps ??= []).push({ id: p.nhlId ?? p.slug, name: p.name, alt: R.alt });
+    for (const r of R.rows) {
     const id = p.nhlId ?? p.slug;
     if (r.retentionAnomaly) { for (const t of new Set([p.team, ...r.retention.map((x) => x.abbr)].filter((a) => T[a]))) T[t].unverified.push({ id, name: p.name, why: r.retentionWhy.join("; ") }); continue; }
     if (r.buyout && T[r.buyout.abbr] && r.buyout.capHit !== null) T[r.buyout.abbr].buyouts.push({ id, name: p.name, capHit: r.buyout.capHit });
@@ -104,10 +115,10 @@ export function teamCharges(players, y) {
       if (p.leagueStatus === "LTIR") T[p.team].ltir.push({ id, name: p.name, capHit: net });
       T[p.team].players.push({ id, name: p.name, capHit: counted, fullCapHit: net, status: p.leagueStatus, clause: r.clause, expiry: r.expiry, retainedElsewhere: away > 0 });
     } else if (!r.buyout && T[p.team]) T[p.team].unverified.push({ id, name: p.name, why: "no cap hit for this season" });
-  }
+  } }
   for (const t of Object.values(T)) {
     const sum = (a) => a.reduce((n, x) => n + (x.capHit || 0), 0);
-    t.totals = { players: sum(t.players), buyouts: sum(t.buyouts), retained: sum(t.retained), ltir: sum(t.ltir) };
+    t.totals = { players: sum(t.players), buyouts: sum(t.buyouts), retained: sum(t.retained), ltir: sum(t.ltir), overlapAlt: (t.overlaps || []).reduce((n, x) => n + x.alt, 0) };
     t.totals.all = t.totals.players + t.totals.buyouts + t.totals.retained;
   }
   return T;
@@ -164,7 +175,7 @@ export function leagueDoc(players, years, meta) {
   for (const p of players) {
     if (!p.team && !years.some((y) => p.seasons[y])) continue;
     const cur = [].concat(p.seasons[years[0]] ?? []).find((r) => !r.buyout) ?? null;
-    const hits = years.map((y) => { const r = [].concat(p.seasons[y] ?? []).filter((x) => !x.buyout); return r.length ? r.reduce((n, x) => n + (x.capHit || 0), 0) : null; });
+    const hits = years.map((y) => { const r = resolved(p, y).rows.filter((x) => !x.buyout); return r.length ? r[0].capHit : null; });
     if (!p.team && hits.every((h) => h === null)) continue;
     const contract = cur ? p.contracts[cur.contract] : null;
     const last = contract ? Math.max(...contract.seasons.map(seasonStart)) : null;
@@ -173,7 +184,7 @@ export function leagueDoc(players, years, meta) {
       elc: /entry/i.test(contract?.type || ""), anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};
-  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
+  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, overlapAlt: t.totals.overlapAlt, overlaps: (t.overlaps || []).map((x) => x.id), n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
   return { source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), buriedAt: Object.fromEntries(years.map((y) => [y, buriedAt(y)])), players: P, teams };
 }
 

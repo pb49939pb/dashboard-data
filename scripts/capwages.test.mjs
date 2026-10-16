@@ -70,6 +70,13 @@ test("cap counting: roster and injured lists in full, minors buried above the th
   assert.equal(c.totals.ltir, 3_000_000);
 });
 
+test("overlapping contracts: the newest counts once, the difference is kept for the verdict", () => {
+  const k = normalizePlayer(player("kreider", "montreal_canadiens", [{ contractType: "35+ Contract", seasons: [season("2026-27", { capHit: 2_150_000 })] }, { contractType: "Standard Contract (Extension)", seasons: [season("2026-27", { capHit: 6_500_000 })] }]));
+  const c = teamCharges([k], 2026).MTL;
+  assert.equal(c.totals.players, 2_150_000);
+  assert.equal(c.totals.overlapAlt, 4_350_000);
+});
+
 test("validation fails closed: missing spot checks, bad team counts, error rate, swings in player count", () => {
   const many = Object.keys(TEAMS).flatMap((a) => Array.from({ length: 20 }, (_, i) => normalizePlayer(player(`${a}-${i}`, TEAMS[a], [{ seasons: [season("2026-27", { capHit: 4_000_000 })] }]))));
   const v = validate({ players: many, errors: 0, attempted: many.length, y: 2026, prev: null });
