@@ -86,6 +86,15 @@ test("league doc: retention counts for the CBA limits", async () => {
   assert.deepEqual(L.players.find((p) => p.team === "BOS").retBy, ["OTT", "BUF"]);
 });
 
+test("a rostered player without a contract this season: warned, and his last deal is kept", async () => {
+  const { leagueDoc } = await import("./capwages-lib.mjs");
+  const p = normalizePlayer(player("edvinsson", "detroit_red_wings", [{ contractType: "Entry-Level Contract", expiryStatus: "RFA", seasons: [season("2025-26", { capHit: 894_167 })] }]));
+  const L = leagueDoc([p], [2026, 2027], { importedAt: "x" });
+  assert.deepEqual(L.players[0].lastDeal, { end: 2025, expiry: "RFA" });
+  const v = validate({ players: [p], errors: 0, attempted: 1, y: 2026, prev: null }, []);
+  assert.ok(v.warnings.some((w) => /no contract for 2026-27/.test(w) && /edvinsson \(DET\)/.test(w)));
+});
+
 test("validation fails closed: missing spot checks, bad team counts, error rate, swings in player count", () => {
   const many = Object.keys(TEAMS).flatMap((a) => Array.from({ length: 20 }, (_, i) => normalizePlayer(player(`${a}-${i}`, TEAMS[a], [{ seasons: [season("2026-27", { capHit: 4_000_000 })] }]))));
   const v = validate({ players: many, errors: 0, attempted: many.length, y: 2026, prev: null });

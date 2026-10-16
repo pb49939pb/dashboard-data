@@ -147,6 +147,8 @@ export function validate({ players, errors, attempted, y, prev }, spot = SPOT_CH
   const nhl = players.filter((p) => p.team).length;
   if (prev?.nhlPlayers && Math.abs(nhl - prev.nhlPlayers) / prev.nhlPlayers > 0.05) failures.push(`${nhl} NHL players vs ${prev.nhlPlayers} last run (more than 5% apart)`);
   if (attempted && errors / attempted > 0.01) failures.push(`${errors} of ${attempted} player fetches failed (over 1%)`);
+  const unsigned = players.filter((p) => p.team && capCount(p.leagueStatus) === "full" && !rowsOf(p, y).some((r) => !r.buyout));
+  if (unsigned.length) warnings.push(`${unsigned.length} player(s) listed on an NHL roster or injured list with no contract for ${y}-${String(y + 1).slice(2)} (unsigned RFA, or a deal CapWages hasn't entered): ${unsigned.map((p) => `${p.name} (${p.team})`).join(", ")}`);
   const ceiling = CEILING[y];
   if (ceiling) for (const t of Object.values(teamCharges(players, y))) {
     const r = t.totals.all / ceiling;
@@ -184,9 +186,11 @@ export function leagueDoc(players, years, meta) {
     const newest = p.contracts.filter((c) => c.seasons.some((x) => seasonStart(x) >= years[0])).sort((u, v) => u.index - v.index)[0] ?? contract;
     const endLast = newest ? Math.max(...newest.seasons.map(seasonStart)) : last;
     if (!p.nhlId) continue; // the site joins on NHL ids
+    // no contract this season: keep his last deal's end and status, so the site can say "unsigned (RFA)" instead of "unknown"
+    const lastDeal = !cur ? (() => { const c = p.contracts.slice().sort((u, v) => u.index - v.index)[0]; return c ? { end: Math.max(...c.seasons.map(seasonStart)), expiry: c.expiry ?? null } : null; })() : null;
     const retBy = cur ? cur.retention.filter((x) => x.abbr && x.abbr !== p.team).map((x) => x.abbr) : [];
     P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, retBy: retBy.length ? retBy : undefined, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
-      elc: /entry/i.test(contract?.type || ""), anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
+      elc: /entry/i.test(contract?.type || ""), lastDeal: lastDeal || undefined, anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};
   for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, retainedN: new Set(t.retained.map((x) => x.id)).size, overlapAlt: t.totals.overlapAlt, overlaps: (t.overlaps || []).map((x) => x.id), n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
