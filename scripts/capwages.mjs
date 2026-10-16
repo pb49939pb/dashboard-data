@@ -81,7 +81,12 @@ if (args.has("--revalidate")) {
   const docs = Object.keys(TEAMS).map((a) => ({ a, doc: teamDoc(a, players, years, meta) }));
   for (const w of v.warnings) run.check(true, "Warning", w);
   for (const f of v.failures) run.check(false, "Gate", f);
-  const summary = { ok: v.ok, revalidated: true, lastUpdated: meta.lastUpdated, importedAt: meta.importedAt, season: y, nhlPlayers: v.nhlPlayers, kept: players.length, errors: 0, counts: v.counts };
+  // roster diagnostics (owner-only log): league status per team, and this season's totals counting NHL-status players only
+  const status = {}, nhlOnly = {};
+  for (const p of players) { if (!p.team) continue; (status[p.team] ??= {})[p.leagueStatus ?? "none"] = (status[p.team][p.leagueStatus ?? "none"] || 0) + 1;
+    if (p.leagueStatus === "NHL") { const r = [].concat(p.seasons[y] ?? []).filter((x) => !x.buyout); nhlOnly[p.team] = (nhlOnly[p.team] || 0) + r.reduce((n, x) => n + (x.capHit || 0), 0); } }
+  run.check(true, "Roster status", JSON.stringify(Object.values(status).reduce((a, t) => { for (const [k, n] of Object.entries(t)) a[k] = (a[k] || 0) + n; return a; }, {})));
+  const summary = { ok: v.ok, revalidated: true, status, nhlOnly, lastUpdated: meta.lastUpdated, importedAt: meta.importedAt, season: y, nhlPlayers: v.nhlPlayers, kept: players.length, errors: 0, counts: v.counts };
   const totals = Object.fromEntries(docs.map(({ a, doc }) => [a, doc.charges[y]?.totals]));
   if (!v.ok || !args.has("--publish")) {
     console.log(`revalidated ${players.length} stored players: ${v.ok ? "all gates passed" : `${v.failures.length} gate(s) failed`}${args.has("--publish") ? "; not published" : " (check only)"}`);
