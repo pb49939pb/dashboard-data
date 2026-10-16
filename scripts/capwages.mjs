@@ -9,12 +9,12 @@
 //   node scripts/capwages.mjs --drop                          delete every stored CapWages document (terms: within
 //                                                             14 days of the subscription ending)
 //
-// Storage (one root, so --drop is one operation): capwages/meta (last good run), capwages/live/teams/{ABBR} (what the
-// site reads), capwages/staging/teams/{ABBR} and capwages/raw/players/{slug} (last import, for diffing).
+// Storage (one root, so --drop is one operation): capwages/meta (last good run, private), capwages/live (compact league
+// doc, public) and capwages/live/teams/{ABBR} (per team, public: cap fields only, no salaries or bonuses), capwages/staging/teams/{ABBR} and capwages/raw/players/{slug} (last import, for diffing).
 // Fair use (their terms): one full import a day, at most 4 requests a second, cache responses.
 import { openStore } from "./store.mjs";
 import { startRun } from "./runlog.mjs";
-import { TEAMS, teamAbbrev, lineupSlug, normalizePlayer, validate, teamDoc, seasonStart } from "./capwages-lib.mjs";
+import { TEAMS, teamAbbrev, lineupSlug, normalizePlayer, validate, teamDoc, leagueDoc, seasonStart } from "./capwages-lib.mjs";
 
 const BASE = "https://capwages.com/api/gateway/v1";
 const args = new Set(process.argv.slice(2));
@@ -88,6 +88,7 @@ if (args.has("--revalidate")) {
     run.finish({ ok: v.ok, notes: { ...summary, failures: v.failures, warnings: v.warnings, totals } }); process.exit(v.ok ? 0 : 1);
   }
   for (const { a, doc } of docs) await store.put(`capwages/live/teams/${a}`, { ...doc, lineup: (await store.read(`capwages/staging/teams/${a}`).catch(() => null))?.lineup ?? null }, {}, { replace: true });
+  await store.put("capwages/live", leagueDoc(players, years, meta), {}, { replace: true });
   await store.put("capwages/meta", summary, {}, { replace: true });
   console.log(`published ${players.length} players across ${docs.length} teams from the stored fetch (gates passed, ${v.warnings.length} warning(s))`);
   run.finish({ ok: true, outputs: ["capwages/live/teams/*"], notes: { ...summary, warnings: v.warnings, totals } }); process.exit(0);
@@ -164,6 +165,7 @@ try {
     run.finish({ ok: true, notes: { ...summary, warnings: v.warnings, totals } }); process.exit(0);
   }
   for (const { a, doc } of docs) await store.put(`capwages/live/teams/${a}`, doc, {}, { replace: true });
+  await store.put("capwages/live", leagueDoc(players, years, meta), {}, { replace: true });
   await store.put("capwages/meta", summary, {}, { replace: true });
   console.log(`published: ${players.length} players across ${docs.length} teams, ${errors} fetch errors, ${v.warnings.length} warning(s)`);
   run.finish({ ok: true, outputs: ["capwages/live/teams/*"], notes: { ...summary, warnings: v.warnings, totals } });

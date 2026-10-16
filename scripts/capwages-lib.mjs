@@ -143,14 +143,39 @@ export const SPOT_CHECKS = [
   { slug: "oliver-ekman-larsson", seasons: { 2023: { buyoutCapHit: 146_667 }, 2024: { buyoutCapHit: 2_346_667 }, 2025: { buyoutCapHit: 4_766_667 }, 2026: { buyoutCapHit: 4_766_667 }, 2027: { buyoutCapHit: 2_126_667 } } },
 ];
 
-/** The compact per-team document the site reads (owner-only): this season and the next few, per player, plus the
-    team's buyout and retained charges and anything unverifiable. */
+/** Public fields only (owner decision 2026-10-16: cap hits are public). Base salary, bonuses and minors salary stay in
+    the private raw copy (capwages/raw); a season row going public keeps cap hit, AAV, clause, expiry, buyout, retention. */
+export const publicRow = (r) => ({ year: r.year, capHit: r.capHit, aav: r.aav, clause: r.clause, expiry: r.expiry, buyout: r.buyout && { abbr: r.buyout.abbr, capHit: r.buyout.capHit },
+  retention: r.retention.map((x) => ({ abbr: x.abbr, retainedPct: x.retainedPct, retainedCapHit: x.retainedCapHit })), retentionAnomaly: r.retentionAnomaly, ...(r.overlap ? { overlap: true } : {}) });
+
+/** The compact league document the site loads once (public): per player this season and the next five (cap hit per
+    season, his current deal's last season, expiry, clause, entry-level), and each team's charges and unverified ids. */
+export function leagueDoc(players, years, meta) {
+  const P = [];
+  for (const p of players) {
+    if (!p.team && !years.some((y) => p.seasons[y])) continue;
+    const cur = [].concat(p.seasons[years[0]] ?? []).find((r) => !r.buyout) ?? null;
+    const hits = years.map((y) => { const r = [].concat(p.seasons[y] ?? []).filter((x) => !x.buyout); return r.length ? r.reduce((n, x) => n + (x.capHit || 0), 0) : null; });
+    if (!p.team && hits.every((h) => h === null)) continue;
+    const contract = cur ? p.contracts[cur.contract] : null;
+    const last = contract ? Math.max(...contract.seasons.map(seasonStart)) : null;
+    if (!p.nhlId) continue; // the site joins on NHL ids
+    P.push({ id: p.nhlId, team: p.team, hits, end: last, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
+      elc: /entry/i.test(contract?.type || ""), anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
+  }
+  const teams = {};
+  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, n: t.players.length, unverified: t.unverified.map((u) => u.id) }; }
+  return { source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), players: P, teams };
+}
+
+/** The per-team document (public fields only): this season and the next few, per player, plus the team's buyout and
+    retained charges and anything unverifiable. */
 export function teamDoc(abbr, players, years, meta) {
   const mine = players.filter((p) => p.team === abbr || years.some((y) => rowsOf(p, y).some((r) => r.buyout?.abbr === abbr || r.retention.some((x) => x.abbr === abbr))));
   return {
     team: abbr, source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt,
     players: mine.map((p) => ({ id: p.nhlId, slug: p.slug, name: p.name, team: p.team, pos: p.pos,
-      seasons: Object.fromEntries(years.filter((y) => p.seasons[y]).map((y) => [y, rowsOf(p, y).map(({ season, contract, ...r }) => r)])) })),
+      seasons: Object.fromEntries(years.filter((y) => p.seasons[y]).map((y) => [y, rowsOf(p, y).map(publicRow)])) })),
     charges: Object.fromEntries(years.map((y) => { const t = teamCharges(mine, y)[abbr]; return [y, { totals: t.totals, buyouts: t.buyouts, retained: t.retained, unverified: t.unverified }]; })),
   };
 }
