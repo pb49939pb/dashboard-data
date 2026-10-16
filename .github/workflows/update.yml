@@ -10,6 +10,19 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    # a push rebuilds everything (and spends Firestore reads/writes), so docs, notes, tests and other workflows' files
+    # don't start one (2026-10-16: 15 push-triggered builds in a day exhausted the free daily read quota)
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "scripts/*.test.mjs"
+      - "scripts/fixtures/**"
+      - ".github/workflows/capwages.yml"
+      - ".github/workflows/trades.yml"
+      - ".github/workflows/season.yml"
+      - ".github/workflows/live.yml"
+      - ".github/workflows/dispatch.yml"
+      - ".github/workflows/contracts.yml"
 
 permissions:
   contents: write   # only for the occasional keep-alive commit below

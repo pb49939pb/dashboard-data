@@ -10,7 +10,7 @@
 //                                                             14 days of the subscription ending)
 //
 // Storage (one root, so --drop is one operation): capwages/meta (last good run, private), capwages/live (compact league
-// doc, public) and capwages/live/teams/{ABBR} (per team, public: cap fields only, no salaries or bonuses), capwages/staging/teams/{ABBR} and capwages/raw/players/{slug} (last import, for diffing).
+// doc, public) and capwages/live/teams/{ABBR} (per team, public: cap fields only, no salaries or bonuses), capwages/staging/teams/{ABBR} and capwages/raw/teams/{ABBR}-{n} (last import's raw payloads, for diffing).
 // Fair use (their terms): one full import a day, at most 4 requests a second, cache responses.
 import { openStore } from "./store.mjs";
 import { startRun } from "./runlog.mjs";
@@ -21,7 +21,27 @@ const args = new Set(process.argv.slice(2));
 const DRY = args.has("--dry-run"), DROP = args.has("--drop");
 const GAP_MS = 300; // ≤ 3.4 requests a second, under their 4/s limit
 
-class Stop extends Error {} // 401/403: bad or suspended key, or a fair-use problem: stop the whole run, never retry
+class Stop extends Error {}
+// The raw payloads (kept for revalidating and diffing) live one document per team, split if one nears Firestore's 1 MB
+// limit: ~35 documents instead of one per player (2,194), so a fetch or a revalidate costs ~35 reads/writes, not thousands.
+async function writeRaw(raw) {
+  const byTeam = new Map();
+  for (const d of raw) { const t = teamAbbrev(d.team?.slug || d.team?.name || d.team) || "none"; (byTeam.get(t) || byTeam.set(t, []).get(t)).push(d); }
+  for (const [t, list] of byTeam) {
+    let part = 0, chunk = [], size = 0;
+    const flush = async () => { if (chunk.length) await store.put(`capwages/raw/teams/${t}-${part++}`, { team: t, players: chunk }, {}, { replace: true }); chunk = []; size = 0; };
+    for (const d of list) { const n = JSON.stringify(d).length; if (size + n > 850_000) await flush(); chunk.push(d); size += n; }
+    await flush();
+  }
+  if (await store.read("capwages/rawMigrated").catch(() => null) == null) { // one-time: drop the old per-player copies
+    const n = await store.dropTree?.("capwages/raw/players");
+    await store.put("capwages/rawMigrated", { at: new Date().toISOString(), removed: n ?? null }, {}, { replace: true });
+  }
+}
+async function readRaw() {
+  const docs = await store.readAll("capwages/raw/teams");
+  return docs.length ? docs.flatMap((d) => d.players || []) : store.readAll("capwages/raw/players"); // older layout until the next fetch
+} // 401/403: bad or suspended key, or a fair-use problem: stop the whole run, never retry
 let last = 0;
 async function api(path, run) {
   const key = process.env.CAPWAGES_API_KEY;
@@ -70,7 +90,7 @@ if (args.has("--inspect")) {
 // --revalidate [--publish]: rerun normalization and the gates on the raw payloads stored by the last fetch (zero API
 // requests), e.g. after fixing a rule; with --publish, publish them if the gates pass.
 if (args.has("--revalidate")) {
-  const raw = await store.readAll("capwages/raw/players");
+  const raw = await readRaw();
   const before = await store.read("capwages/meta").catch(() => null);
   const players = raw.map((d) => normalizePlayer(d));
   const y = Number(process.env.CAP_SEASON) || capSeasonNow();
@@ -159,7 +179,7 @@ try {
 
   // staging first, always (for diffing and review)
   for (const { a, doc } of docs) await store.put(`capwages/staging/teams/${a}`, doc, {}, { replace: true });
-  await store.putMany(raw.map((d) => ({ path: `capwages/raw/players/${d.slug}`, data: d, fields: {} })), { replace: true });
+  await writeRaw(raw);
   run.check(v.failures.length === 0, "Validation gates", v.failures.length ? `${v.failures.length} gate(s) failed` : "all gates passed");
   for (const f of v.failures) run.check(false, "Gate", f);
   for (const w of v.warnings) run.check(true, "Warning", w);
