@@ -1,0 +1,44 @@
+# CapWages by hand: check the key (one request), a dry run (full fetch + validation, staging only) or a full import.
+# The nightly run is a step in update.yml. Output is counts and pass/fail only (this log is public).
+name: CapWages
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check = test the key (1 request); dry-run = fetch + validate, staging only; import = publish if the gates pass"
+        type: choice
+        options: [check, dry-run, import]
+        default: check
+permissions:
+  contents: read
+concurrency:
+  group: capwages
+  cancel-in-progress: false
+jobs:
+  capwages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/capwages.test.mjs
+      - name: Run
+        env:
+          CAPWAGES_API_KEY: ${{ secrets.CAPWAGES_API_KEY }}
+          CAPWAGES_API_USER: ${{ secrets.CAPWAGES_API_USER }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          case "${{ inputs.mode }}" in
+            check) node scripts/capwages.mjs --check ;;
+            dry-run) node scripts/capwages.mjs --dry-run --force ;;
+            import) node scripts/capwages.mjs --force ;;
+          esac
+      - name: Publish the run log (owner-only Admin page)
+        if: always() && inputs.mode != 'check'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/publish.mjs admin

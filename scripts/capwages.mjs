@@ -5,6 +5,7 @@
 //   CAPWAGES_API_KEY=... node scripts/capwages.mjs            nightly import: staging, validate, then publish
 //   CAPWAGES_API_KEY=... node scripts/capwages.mjs --dry-run  fetch, normalize and validate; write staging only
 //   (add --force to run again within 20 hours)
+//   CAPWAGES_API_KEY=... node scripts/capwages.mjs --check    one request: does the key work?
 //   node scripts/capwages.mjs --drop                          delete every stored CapWages document (terms: within
 //                                                             14 days of the subscription ending)
 //
@@ -29,7 +30,7 @@ async function api(path, run) {
     const wait = last + GAP_MS - Date.now(); if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     last = Date.now();
     let r;
-    try { r = await fetch(BASE + path, { headers: { Authorization: `ApiKey ${key}`, Accept: "application/json", "User-Agent": "the-other-score nightly import (owner-only)" } }); }
+    try { r = await fetch(BASE + path, { headers: { Authorization: `ApiKey ${key.trim()}`, Accept: "application/json", "User-Agent": "the-other-score nightly import (owner-only)" } }); }
     catch (e) { r = null; }
     if (r && (r.status === 401 || r.status === 403)) { run.count("capwages", { ok: false }); throw new Stop(`CapWages answered ${r.status} (${r.status === 403 ? "fair use or suspended key" : "key missing or rejected"}); stopping`); }
     if (r && r.ok) { run.count("capwages"); if (attempt > 1) run.retry("capwages", true); const j = await r.json(); if (j.success === false) throw new Error(`${path}: success=false`); return j; }
@@ -40,6 +41,17 @@ async function api(path, run) {
   }
 }
 
+// --check: one request to confirm the key works (status and counts only; no store needed, nothing written)
+if (args.has("--check")) {
+  const key = process.env.CAPWAGES_API_KEY;
+  if (!key) { console.log("CAPWAGES_API_KEY isn't set in this run"); process.exit(1); }
+  console.log(`key present (${key.length} characters${/\s/.test(key) ? ", contains whitespace: re-save it without spaces or line breaks" : ""})`);
+  const r = await fetch(`${BASE}/players?limit=1&page=1`, { headers: { Authorization: `ApiKey ${key.trim()}`, Accept: "application/json" } }).catch((e) => ({ status: 0, e }));
+  const j = r.status === 200 ? await r.json().catch(() => null) : null;
+  if (r.status === 200 && j?.success !== false) console.log(`key works: HTTP 200, apiVersion ${j?.apiVersion ?? "?"}, ${j?.meta?.pagination?.total ?? "?"} players listed, source updated ${j?.meta?.lastUpdated ?? "?"}`);
+  else console.log(`key check failed: HTTP ${r.status}${r.status === 401 ? " (key missing or rejected)" : r.status === 403 ? " (suspended key or fair-use block)" : ""}`);
+  process.exit(r.status === 200 ? 0 : 1);
+}
 const run = startRun("capwages", { dryRun: DRY });
 const store = await openStore();
 if (!store) { console.log("FIREBASE_SERVICE_ACCOUNT not set; nothing to do"); run.finish({ ok: true, notes: { skipped: "no store" } }); process.exit(0); }
