@@ -46,7 +46,7 @@ Recommendation: 1 first, measure, then decide on 2.
 
 The site loads them first and fetches the full documents only for the Skaters tab, a player card, or last season's man-games lost (and for past seasons, which have no slim versions).
 
-**Measured** (live site, same Mac and profile: 390×844, 1.6 Mbps / 150 ms, CPU 4×, cold cache, median of 3). The baseline tool now also reports `readyMs`, when the tab's main content is in the page, because LCP turned out to be the header's loading text on Teams (0.7 s, not content):
+**Measured, provisional** (Firestore's daily read quota ran out on 2026-10-16 around these runs, so the "after" column may reflect the deploy-snapshot fallback rather than the slim documents; re-measured after the quota reset, see below) (live site, same Mac and profile: 390×844, 1.6 Mbps / 150 ms, CPU 4×, cold cache, median of 3). The baseline tool now also reports `readyMs`, when the tab's main content is in the page, because LCP turned out to be the header's loading text on Teams (0.7 s, not content):
 
 | Tab | Main content before | After |
 |---|---|---|
