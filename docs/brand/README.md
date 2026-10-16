@@ -7,8 +7,8 @@ The plan is `rollout.md`: the owner's phased plan, copied verbatim. The creative
 |---|---|---|
 | 0 | Baseline & guardrails | **Done 2026-10-14**, approved by the owner 2026-10-15 |
 | 1 | Editorial voice (copy only) | **Done 2026-10-15** (`phase1-copy.md`), approved by the owner 2026-10-16 |
-| 2 | Brand signature (scoped masthead) | **Prototype live, owner-only, 2026-10-16** (`phase2-masthead.md`): round 2 (three no-box designs), awaiting the owner's pick |
-| 3 | Today as flagship | After Phase 2 review and the Today feature |
+| 2 | Brand signature (scoped masthead) | **Done 2026-10-16 on Center ice, owner preview** (`phase2-masthead.md`): masthead, section header, tabular figures; public switch-over waits for Phase 7 |
+| 3 | Today as flagship | Next, when the owner says go (optionally after the five-fan test, `fan-test.md`) |
 | 4 | "After the Horn" recap | After Phase 3 review |
 | 5 | Teams → Skaters → Goalies → Model | One page family at a time |
 | 6 | Charts, shared primitives, owner Workbench | Last |

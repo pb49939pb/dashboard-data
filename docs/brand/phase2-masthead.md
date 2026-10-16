@@ -61,3 +61,15 @@ None is taller than today's header; no horizontal overflow at 320–1280. Contra
 
 ## Round 1 decision (superseded)
 Pick **A**, **B** or **neither** (or ask for changes). After that: Patch B/C on the chosen masthead, then the five-fan qualitative test (rollout section 7) and Phase 3 (Today) per the plan. A public switch-over still waits for the Phase 7 name go/no-go.
+
+## Final: Center ice (owner pick, 2026-10-16) — Phase 2 complete, owner preview
+Round 2's other two designs are retired; Center ice is the masthead. While the name decision (Phase 7) is open, everything below shows **only on the owner's header** (on by default; Admin → "Brand preview" turns it off on that device). Scoped by `body.tos`.
+
+- **Patch A, masthead:** THE OTHER SCORE in caps (existing font, weight 900, .045em tracking, one line at every width, 18 px minimum), OTHER in frost, over a frost center line with a coral faceoff dot. Tab row at 390 px: 387 vs 390 today.
+- **Patch B, editorial signature:** `sectionHead({ eyebrow, title, when, link })` in lab.js: a voice.md eyebrow label, the heading (ⓘ explainer still attached), an optional timestamp and one contextual link, over the same center line (the motif's second and last place). Used once, on Overview → Projected final standings ("Projected" · "Simulated <time>" · "How well it has held up →" to the Model tab). Off the preview it returns the plain h3, and the card's text keeps its "Projected." label.
+- **Patch C, type:** tabular figures for every table cell and the remaining stat chips and ranks (Overview standings tables, Teams position ranks, man-games tiles, GM-move ranks) that weren't already tabular.
+- **Condensed type test:** measured "THE OTHER SCORE" at 24 px/900: current font 238 px; Avenir Next Condensed 178 px and Arial Narrow 189 px exist on Apple/Windows-with-Office devices only, so Android and most Windows phones would fall back to the full width; a downloaded condensed face would cost ~15–20 KB. The wordmark already fits on one line at 320 px, so **not adopted**: no font request.
+- **Bytes vs before Phase 2:** +1.9 KB lab.js, +0.9 KB lab.css gzipped; no fonts, images or requests.
+- **Acceptance gate:** header doesn't obscure navigation or add height (checked 320–1280 px, no overflow); contrast AA everywhere (paper 15.7, frost 11.4, steel 9.1, coral 6.8 to 1 on ink, higher on the page background); no load regression (CSS/markup only, signed-out visitors get the unchanged site); reads as a publication, not a betting app.
+
+**Next (needs Pat):** run the five-fan test (`fan-test.md`) on the preview if you want feedback before Phase 3, or go straight to Phase 3 (Today as the flagship). Turning the masthead on for everyone waits for the Phase 7 name go/no-go.
