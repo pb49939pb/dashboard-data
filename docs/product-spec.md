@@ -217,3 +217,6 @@ Overview shows Yesterday, Today and Tomorrow using Eastern calendar dates. The s
 
 ### Nightly player opponent difficulty
 Player profiles show current-season, 5v5 shared-ice-time opponent strength, same-position percentile, time against top players, most-faced opponents and data coverage. Computed in the nightly pipeline from cached shift overlaps, published in the existing players document. Percentiles need 60 tracked minutes and at least 80% known opponent values. Missing data stays unavailable. Underlying player ratings are unchanged; model-inventory.md documents the calculation and architecture.
+
+### Docket: historical training expansion
+Add cached 2023–24 history, then retrain offline and compare against the existing models on identical chronological holdouts. 2024–25 already participates in current xG training and player values. Plan and pending date/API-budget clarification: `docs/research/historical-training-expansion.md`. Do not change production model coefficients without validation.
