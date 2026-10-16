@@ -37,5 +37,27 @@ The shared section-header primitive (eyebrow, heading, timestamp, link) and the 
 ## Rollback
 Delete the "The Other Score, Phase 2" block at the end of `hockey-web/lab.css`, and in `hockey-web/lab.js` the masthead block (`MAST`, `mastPref`, `applyMasthead`, `brandCard`), `brandCard() +` in `adminView`, the `act === "mast"` handler and the `applyMasthead()` call in `render()`.
 
-## Owner decision needed
+
+## Round 2 (2026-10-16): three new designs, no box
+Owner feedback on round 1: A was acceptable, but neither looked good and the ink "card" around the header looked odd. Round 1 (A typographic, B transitional) is retired. Round 2 drops the band entirely; the name sits on the page like a publication's nameplate, in the brand colors:
+
+| | Design | Notes |
+|---|---|---|
+| **A · Broadsheet** | "The Other Score" in the device's own serif (ui-serif / New York / Georgia), paper color, over a thick-and-thin rule | Reads as a publication; no font download |
+| **B · Center ice** | THE OTHER SCORE in caps, OTHER in frost, over a frost center line with a coral faceoff dot | Hockey motif; one line at every width (nowrap, 18 px minimum) |
+| **C · Score bug** | THE / OTHER stacked small beside a big SCORE, split by a frost bar, coral dot after SCORE | TV score-bug lockup; the shortest |
+
+Top of the tab row, CSS px (owner header, Overview):
+
+| Width | Current | Broadsheet | Center ice | Score bug |
+|---|---|---|---|---|
+| 320 | 405 | 402 | 397 | 396 |
+| 390 | 390 | 390 | 387 | 384 |
+| 1280 | 286 | 285 | 281 | 275 |
+
+None is taller than today's header; no horizontal overflow at 320–1280. Contrast on the page background is at least as high as on ink (paper, frost, steel and coral all pass AA). Bytes since before Phase 2: about +1.6 KB lab.js and +1.1 KB lab.css gzipped, no fonts, images or requests.
+
+**Owner decision needed:** pick Broadsheet, Center ice or Score bug (or ask for another round).
+
+## Round 1 decision (superseded)
 Pick **A**, **B** or **neither** (or ask for changes). After that: Patch B/C on the chosen masthead, then the five-fan qualitative test (rollout section 7) and Phase 3 (Today) per the plan. A public switch-over still waits for the Phase 7 name go/no-go.
