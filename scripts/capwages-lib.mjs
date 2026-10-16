@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // CapWages import, the pure parts (no network, no Firestore): team names and slugs, player normalization, the
 // retention-anomaly rule, the validation gates and the compact per-team documents the site reads.
 // The integration brief is docs/capwages-integration.md. Licensed API use (paid subscription, written permission for
@@ -189,7 +190,10 @@ export function leagueDoc(players, years, meta) {
   }
   const teams = {};
   for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, retainedN: new Set(t.retained.map((x) => x.id)).size, overlapAlt: t.totals.overlapAlt, overlaps: (t.overlaps || []).map((x) => x.id), n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
-  return { source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), buriedAt: Object.fromEntries(years.map((y) => [y, buriedAt(y)])), players: P, teams };
+  const body = { years, players: P, teams };
+  // content fingerprint: the site's trade-search key uses it, so a republish of identical data doesn't invalidate the search
+  const version = createHash("sha1").update(JSON.stringify(body)).digest("hex").slice(0, 12);
+  return { source: SOURCE, version, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), buriedAt: Object.fromEntries(years.map((y) => [y, buriedAt(y)])), players: P, teams };
 }
 
 /** The per-team document (public fields only): this season and the next few, per player, plus the team's buyout and
