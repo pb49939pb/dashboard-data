@@ -55,6 +55,7 @@ run?.count("patrickreidbaldwin.com");
 if (local) {
   const read = (n) => { try { return JSON.parse(readFileSync(`public/hockey/${n}.json`, "utf8")); } catch { return null; } };
   const docs = Object.fromEntries(NAMES.map((n) => [n, read(n)]));
+  docs.capwages = read("capwages"); // a local copy of capwages/live, if one was saved
   const block = { block: (docs.contracts?.block || []).filter((b) => b.auto) }, terms = docs.contracts ? publicTerms(docs.contracts) : null;
   const out = process.argv.includes("--public") ? await lab.headlessTradeMoves({ ...docs, contracts: null, teamCap: null, tradeBlock: block, contractTerms: terms }, {}) : await lab.headlessTradeMoves(docs, {});
   if (process.argv.includes("--write") && process.argv.includes("--public")) { // local preview files (public data only)
@@ -74,6 +75,7 @@ const owner = (await db.doc("admin/owner").get()).data()?.uid;
 const skip = (why) => { console.log(why); run.check(false, "inputs", why); run.finish({ ok: true, notes: { skipped: why } }); process.exit(0); };
 if (!owner) skip("No owner id yet (it's recorded when the owner opens Hockey Lab signed in); skipped.");
 const docs = Object.fromEntries(await Promise.all(NAMES.map(async (n) => [n, await read(`hockey/${n}`)])));
+docs.capwages = await read("capwages/live").catch(() => null); // CapWages cap data (public; the cap verdict uses it)
 if (!docs.contracts || !docs.playerValue || !docs.league) skip("Missing contracts, player value or league data; skipped.");
 const userEdits = {};
 for (const name of ["contracts", "block", "meta"]) {
