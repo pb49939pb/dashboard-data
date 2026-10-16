@@ -77,6 +77,15 @@ test("overlapping contracts: the newest counts once, the difference is kept for 
   assert.equal(c.totals.overlapAlt, 4_350_000);
 });
 
+test("league doc: retention counts for the CBA limits", async () => {
+  const { leagueDoc } = await import("./capwages-lib.mjs");
+  const mk = (slug, team, ret) => normalizePlayer(player(slug, team, [{ contractType: "Standard Contract", seasons: [season("2026-27", { capHit: 5_000_000, retention: ret })] }]));
+  const ps = [mk("a", "toronto_maple_leafs", { "Ottawa Senators": { capHit: 1_250_000, retainedPct: 25 } }), mk("b", "boston_bruins", { "Ottawa Senators": { capHit: 500_000, retainedPct: 10 }, "Buffalo Sabres": { capHit: 750_000, retainedPct: 15 } })];
+  const L = leagueDoc(ps, [2026, 2027], { importedAt: "x" });
+  assert.equal(L.teams.OTT[2026].retainedN, 2);
+  assert.deepEqual(L.players.find((p) => p.team === "BOS").retBy, ["OTT", "BUF"]);
+});
+
 test("validation fails closed: missing spot checks, bad team counts, error rate, swings in player count", () => {
   const many = Object.keys(TEAMS).flatMap((a) => Array.from({ length: 20 }, (_, i) => normalizePlayer(player(`${a}-${i}`, TEAMS[a], [{ seasons: [season("2026-27", { capHit: 4_000_000 })] }]))));
   const v = validate({ players: many, errors: 0, attempted: many.length, y: 2026, prev: null });

@@ -183,11 +183,12 @@ export function leagueDoc(players, years, meta) {
     const newest = p.contracts.filter((c) => c.seasons.some((x) => seasonStart(x) >= years[0])).sort((u, v) => u.index - v.index)[0] ?? contract;
     const endLast = newest ? Math.max(...newest.seasons.map(seasonStart)) : last;
     if (!p.nhlId) continue; // the site joins on NHL ids
-    P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
+    const retBy = cur ? cur.retention.filter((x) => x.abbr && x.abbr !== p.team).map((x) => x.abbr) : [];
+    P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, retBy: retBy.length ? retBy : undefined, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
       elc: /entry/i.test(contract?.type || ""), anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};
-  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, overlapAlt: t.totals.overlapAlt, overlaps: (t.overlaps || []).map((x) => x.id), n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
+  for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, retainedN: new Set(t.retained.map((x) => x.id)).size, overlapAlt: t.totals.overlapAlt, overlaps: (t.overlaps || []).map((x) => x.id), n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
   return { source: SOURCE, lastUpdated: meta.lastUpdated ?? null, importedAt: meta.importedAt, years, ceiling: Object.fromEntries(years.map((y) => [y, CEILING[y] ?? null])), buriedAt: Object.fromEntries(years.map((y) => [y, buriedAt(y)])), players: P, teams };
 }
 
