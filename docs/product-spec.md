@@ -220,3 +220,6 @@ Player profiles show current-season, 5v5 shared-ice-time opponent strength, same
 
 ### Docket: historical training expansion
 Add cached 2023–24 history, then retrain offline and compare against the existing models on identical chronological holdouts. 2024–25 already participates in current xG training and player values. No extra nightly external API calls: fetch historical inputs once and reuse cached data. Plan and season-boundary detail: `docs/research/historical-training-expansion.md`. Do not change production model coefficients without validation.
+
+### Overview presentation cleanup
+Team stats moves from Overview to Teams. Milestone Watch leads with four player panels (career target, current count, distance and conditional projected date), with remaining and achieved milestones expandable. Shot-replay points lead with the favorite and largest positive/negative point gaps, using explicit Actual / Shot replay / Difference labels, uncertainty ranges and an expandable full comparison. Finishing and goaltending use goals-versus-expected labels, chance share and expandable full league comparisons. Calculations remain unchanged; hypothetical past-shot replay is clearly distinct from a standings forecast.
