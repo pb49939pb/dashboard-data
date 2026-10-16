@@ -226,3 +226,6 @@ Add cached 2023–24 history, then retrain offline and compare against the exist
 
 ### Overview presentation cleanup
 Team stats moves from Overview to Teams. Milestone Watch leads with four player panels (career target, current count, distance and conditional projected date), with remaining and achieved milestones expandable. Shot-replay points lead with the favorite and largest positive/negative point gaps, using explicit Actual / Shot replay / Difference labels, uncertainty ranges and an expandable full comparison. Finishing and goaltending use goals-versus-expected labels, chance share and expandable full league comparisons. Calculations remain unchanged; hypothetical past-shot replay is clearly distinct from a standings forecast.
+
+### Compact game cards and ten-row projections
+Game cards place model-inclusion badges in their top-center gutter and favorite labels at top left; outcomes are centered below the symmetric score. Tighter mobile spacing retains both odds sources. The projected standings chart uses a native vertical scroll region showing ten compact rows with persistent column labels and axis; scrolling chains normally to the page at the edges. A Show all teams control removes the inner scroll area. Team ranks, expandable details, Chart/Table switching and projection values remain available.
