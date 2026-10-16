@@ -82,7 +82,7 @@ Its promise is that every number names its source and date, and every model is t
   - wins this season and long-term value by each team's window;
   - the other team's verdict and EA-style value bars;
   - the "How?" sheet with every input (projection ranges, roster fit, contract bonus, cap shadow price, availability and premium);
-  - a real cap check from CapWages (compliant with each team's room left, over the ceiling by how much, or unverified with the reason), a feasibility checklist, a real-trade comparison and playoff odds before and after.
+  - a real cap check from CapWages (compliant with each team's room left, over the ceiling by how much, or unverified with the reason), a feasibility checklist (contract rights, no-move and no-trade clauses from CapWages, the CBA's retained-salary limits, conditional picks, reported availability, price), a real-trade comparison and playoff odds before and after.
   
   Best trades for a team are also listed.
 
