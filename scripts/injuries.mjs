@@ -21,6 +21,11 @@ const arg = process.argv.indexOf("--season"), only = arg > 0 ? process.argv[arg 
 
 const league = await readJson("public/hockey/league.json");
 const pv = (await readJson("model/playerValue.json")) || { players: [] };
+// CapWages roster status (public capwages/live, nightly): tells injured reserve from the minors for players who are out
+// now (the NHL roster feed can't). Missing = the older "off-roster" label stands.
+const cwStatus = await fetch("https://firestore.googleapis.com/v1/projects/pat-dashboard-eb494/databases/(default)/documents/capwages/live")
+  .then((r) => (r.ok ? r.json() : null)).then((d) => (d ? new Map(JSON.parse(d.fields.json.stringValue).players.map((x) => [Number(x.id), x.s])) : null)).catch(() => null);
+const REASON = { IR: "injured reserve", LTIR: "long-term injured reserve", SOIR: "injured reserve", SEIR: "injured reserve", Minor: "in the minors", Loan: "on loan", Suspended: "suspended" };
 const pvById = new Map(pv.players.map((p) => [p.id, p]));
 const current = String(league.season), season = only || current;
 const prevOf = (s) => `${Number(s.slice(0, 4)) - 1}${s.slice(0, 4)}`;
@@ -111,7 +116,8 @@ async function build(s) {
         pts: +(missed * ppg).toFixed(1), wins: +(missed * wpg).toFixed(2), out: counted.some((r) => r.ongoing), stretches: counted, ppgEstimated: !ppgSeen.has(id) && p.group !== "G",
         // why he's out now, as far as rosters can tell (no confirmed-injury source): off the NHL roster but still signed
         // = injured reserve or the minors; on the roster but not dressing = scratch, day-to-day or illness
-        ...(counted.some((r) => r.ongoing) ? { status: offRosterIds.has(id) ? "off-roster" : roster[t]?.has(id) ? "not-dressing" : "unknown" } : {}) });
+        ...(counted.some((r) => r.ongoing) ? { status: offRosterIds.has(id) ? "off-roster" : roster[t]?.has(id) ? "not-dressing" : "unknown",
+          ...(cwStatus?.get(id) && REASON[cwStatus.get(id)] ? { reason: REASON[cwStatus.get(id)], cwStatus: cwStatus.get(id) } : {}) } : {}) });
     }
     rows.sort((a, b) => b.wins - a.wins || b.pts - a.pts);
     out[t] = { gp: n, mgl: rows.reduce((a, r) => a + r.missed, 0), ptsLost: +rows.reduce((a, r) => a + r.pts, 0).toFixed(1), winsLost: +rows.reduce((a, r) => a + r.wins, 0).toFixed(2), players: rows };

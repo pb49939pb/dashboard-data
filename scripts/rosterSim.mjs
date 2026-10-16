@@ -71,7 +71,9 @@ for (const t of teams) {
   const sumStarts = (s) => Object.values(s).reduce((a, b) => a + b, 0);
   const gl = (s) => perGame(s, sumStarts(s), gVal), gc = sumStarts(cur.starts), lg = sumStarts(last.starts);
   const baseG = lg ? (gc * (gc ? gl(cur.starts) : 0) + PRIOR_GAMES * gl(last.starts)) / (gc + PRIOR_GAMES) : gl(cur.starts);
-  const roster = inj.current.rosters[t].map(([id, pos]) => ({ id: String(id), g: grp(pos), name: pvById.get(String(id))?.name || String(id) }));
+  // a player who's out because he's in the minors (CapWages status) isn't an injury that heals: leave him off the NHL roster
+  const minors = new Set((inj.current.teams[t]?.players || []).filter((p) => p.out && p.reason === "in the minors").map((p) => String(p.id)));
+  const roster = inj.current.rosters[t].filter(([id]) => !minors.has(String(id))).map(([id, pos]) => ({ id: String(id), g: grp(pos), name: pvById.get(String(id))?.name || String(id) }));
   const outRows = new Map((inj.current.teams[t]?.players || []).filter((p) => p.out).map((p) => [String(p.id), p.stretches[p.stretches.length - 1].games]));
   const sk = roster.filter((p) => p.g !== "G").map((p) => ({ ...p, v: skVal(p.id), missed: outRows.get(p.id) ?? null })).sort((a, b) => b.v - a.v);
   const gk = roster.filter((p) => p.g === "G").map((p) => ({ ...p, v: gVal(p.id), share: pvById.get(p.id)?.startShare ?? 0, missed: outRows.get(p.id) ?? null })).sort((a, b) => b.share - a.share || b.v - a.v);
