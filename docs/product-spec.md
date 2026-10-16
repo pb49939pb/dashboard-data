@@ -132,12 +132,14 @@ Its promise is that every number names its source and date, and every model is t
   - "How good are the forecasts?" from the prospective log.
 
 ### Admin (owner only)
-- **Model switches:** player value WAR-lite vs RAPM, and team-only vs roster-aware simulation.
-- **Health and versions:** drift alarms, model artifacts (versions and hashes, with a field dictionary), nightly data checks, and the roster-aware simulation in shadow.
-- **Documents:** the methods dossier (Markdown for expert review) and this product spec, each with Copy and Download.
-- **Jobs:** data jobs with run history and "Run now" (nightly build, contracts, contract news, trade search, models).
-- **Your forecasts** and the trade-engine self-tests.
-- **Brand preview (owner only):** the rebrand's Phase 2 masthead prototypes for The Other Score, side by side, with a switch that applies one to the owner's own header. Everyone else sees the current header.
+Sub-tabs (since 2026-10-16), the last one used remembered:
+- **Visitors:** unique visitors, visits, tab views, time per visit, visits per day, each tab's visits and time (and how many visits landed there), devices, where visits came from, busiest hours and the 25 most recent visits, over 7, 30 or 90 days, with or without your own visits. From our own anonymous visit log (`visits/{id}` in Firestore): a random id per browser (no cookie), tabs and visible time, device class, referring site; no IP address, account or email; Do Not Track honored; readable by the owner only. Counted per browser, so one person on two devices counts twice.
+- **Data jobs:** every data job with run history, sources and "Run now" (nightly build, contracts, contract news, CapWages, trade search, models).
+- **Model health:** model switches (WAR-lite vs RAPM, team-only vs roster-aware simulation), drift alarms, nightly data checks, model artifacts (versions and hashes, with a field dictionary) and the roster-aware simulation in shadow.
+- **Forecasts:** your forecasts and the trade-engine self-tests.
+- **Docs & models:** the methods dossier and this product spec (Copy and Download) and the model list.
+- **Architecture:** the full diagram of sources, jobs, stores, models and pages.
+- **Brand preview:** the Center ice masthead preview (Phase 2), on or off for your header.
 
 ### Ideas & bugs (owner; testers see "Report a bug")
 - **Ideas:** the owner files ideas, and Claude answers each one by building it, asking a question or declining with a reason. Statuses: new, in progress, needs input, needs approval, approved and queued, done, won't do.
@@ -165,6 +167,7 @@ Its promise is that every number names its source and date, and every model is t
 | CapWages API (licensed) | Cap hits, terms, expiry, clauses, buyouts, retained salary, roster status, game-day lineups | Nightly, once a day, fail-closed validation, staging before publish (capwages.mjs) | Paid subscription with permission; credited; cap fields public, salaries private; deleted within 14 days if the subscription ends |
 | PuckPedia cap table | Each team's cap space | Pasted by the owner on the site (no scraping) | Owner only |
 | Contract terms (public subset) | Contract years, status and extensions, with no money | Nightly, from the owner's contract list | Public |
+| Our visit log | Anonymous visits: tabs, visible time, device class, referring site | Written by every page as it's used (validated by the database rules) | No cookies, IPs or accounts; owner-only read; footer disclosure |
 | The owner's edits | Contract fixes, trade block, objectives, scouting values, forecasts | Saved on the site | Owner only |
 
 **Pipeline:**
