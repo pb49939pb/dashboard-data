@@ -85,8 +85,15 @@ if (args.has("--revalidate")) {
   const status = {}, nhlOnly = {};
   for (const p of players) { if (!p.team) continue; (status[p.team] ??= {})[p.leagueStatus ?? "none"] = (status[p.team][p.leagueStatus ?? "none"] || 0) + 1;
     if (p.leagueStatus === "NHL") { const r = [].concat(p.seasons[y] ?? []).filter((x) => !x.buyout); nhlOnly[p.team] = (nhlOnly[p.team] || 0) + r.reduce((n, x) => n + (x.capHit || 0), 0); } }
+  // over-ceiling diagnostics (owner-only): which rows make a team's total, flagging overlaps and status
+  const { teamCharges } = await import("./capwages-lib.mjs");
+  const over = {};
+  for (const [a, t] of Object.entries(teamCharges(players, y))) if (t.totals.all > 104e6) over[a] = {
+    total: t.totals.all, ltir: t.totals.ltir, buyouts: t.buyouts, retained: t.retained,
+    overlaps: players.filter((p) => p.team === a && [].concat(p.seasons[y] ?? []).length > 1).map((p) => ({ name: p.name, rows: [].concat(p.seasons[y]).map((r) => ({ contract: r.contract, type: p.contracts[r.contract]?.type, capHit: r.capHit, buyout: !!r.buyout })) })),
+    counted: t.players.filter((x) => x.capHit > 0).sort((u, v) => v.capHit - u.capHit).map((x) => `${x.name} ${x.status} ${x.capHit}`) };
   run.check(true, "Roster status", JSON.stringify(Object.values(status).reduce((a, t) => { for (const [k, n] of Object.entries(t)) a[k] = (a[k] || 0) + n; return a; }, {})));
-  const summary = { ok: v.ok, revalidated: true, status, nhlOnly, lastUpdated: meta.lastUpdated, importedAt: meta.importedAt, season: y, nhlPlayers: v.nhlPlayers, kept: players.length, errors: 0, counts: v.counts };
+  const summary = { ok: v.ok, revalidated: true, status, nhlOnly, over, lastUpdated: meta.lastUpdated, importedAt: meta.importedAt, season: y, nhlPlayers: v.nhlPlayers, kept: players.length, errors: 0, counts: v.counts };
   const totals = Object.fromEntries(docs.map(({ a, doc }) => [a, doc.charges[y]?.totals]));
   if (!v.ok || !args.has("--publish")) {
     console.log(`revalidated ${players.length} stored players: ${v.ok ? "all gates passed" : `${v.failures.length} gate(s) failed`}${args.has("--publish") ? "; not published" : " (check only)"}`);
