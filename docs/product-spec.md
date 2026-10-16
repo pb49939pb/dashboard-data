@@ -213,3 +213,7 @@ Every feature change updates this file, along with the changelog, the methods do
 
 ### Three-day game schedule
 Overview shows Yesterday, Today and Tomorrow using Eastern calendar dates. The score feed includes tomorrow with hourly schedule refreshes; available pre-game model and market odds use the existing prediction pipeline. Missing schedules are labeled unavailable, distinct from a confirmed day with no games. Projected standings chart rows are numbered 1–32 in projected-points order.
+
+
+### Nightly player opponent difficulty
+Player profiles show current-season, 5v5 shared-ice-time opponent strength, same-position percentile, time against top players, most-faced opponents and data coverage. Computed in the nightly pipeline from cached shift overlaps, published in the existing players document. Percentiles need 60 tracked minutes and at least 80% known opponent values. Missing data stays unavailable. Underlying player ratings are unchanged; model-inventory.md documents the calculation and architecture.

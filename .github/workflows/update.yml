@@ -57,7 +57,7 @@ jobs:
         run: node scripts/restore.mjs
       - name: Build
         if: steps.hour.outputs.skip != 'true'
-        run: node scripts/redwings.mjs
+        run: node --test tests/competition.test.mjs && node scripts/redwings.mjs && node scripts/competition.mjs
       # New signings from tonight's news, applied to the stored contract list (the weekly job does the full refresh)
       - name: Contract news
         if: steps.hour.outputs.skip != 'true'

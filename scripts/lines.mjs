@@ -25,12 +25,16 @@ export function shiftIndex(shifts, pbp) {
   const at = (period, t, sd) => periods[period]?.secs[sd][t] || [];
   const skaters = (ids) => ids.filter((i) => pos[i] !== "G");
   const hasG = (ids) => ids.some((i) => pos[i] === "G");
-  const u5 = [{ F: {}, D: {} }, { F: {}, D: {} }], toi = {};
+  const u5 = [{ F: {}, D: {} }, { F: {}, D: {} }], toi = {}, matchups = new Map();
   for (const [, P] of Object.entries(periods)) {
     for (let t = 0; t < P.len; t++) {
       const h = P.secs[0][t] || [], w = P.secs[1][t] || [];
       const hs = skaters(h), ws = skaters(w);
       const even5 = hs.length === 5 && ws.length === 5 && hasG(h) && hasG(w);
+      if (even5) {
+        const H = [...new Set(hs)].sort((a,b)=>a-b), A = [...new Set(ws)].sort((a,b)=>a-b);
+        if (H.length === 5 && A.length === 5) { const key = `${H.join(",")}|${A.join(",")}`; const m = matchups.get(key) || [H, A, 0]; m[2]++; matchups.set(key, m); }
+      }
       for (const [sd, own, opp] of [[0, hs, ws], [1, ws, hs]]) {
         for (const id of own) {
           const x = (toi[id] ??= [0, 0, 0, 0]);
@@ -47,7 +51,7 @@ export function shiftIndex(shifts, pbp) {
   return {
     // skaters on the ice at an event: shots use the second just before (players who were out there), faceoffs the second of the drop
     onIce: (period, t, sd, kind) => skaters(at(period, kind === "faceoff" ? t : Math.max(0, t - 1), sd)),
-    u5, toi,
+    u5, toi, competition: [...matchups.values()],
   };
 }
 

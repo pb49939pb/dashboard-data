@@ -8,7 +8,7 @@ import { gameShots, xg } from "./shots.mjs";
 import { shiftIndex } from "./lines.mjs";
 
 const KIND = { goal: "g", "shot-on-goal": "s", "missed-shot": "m", "blocked-shot": "b" };
-const FORMAT = 4; // bump when the compact shot record changes, so cached games are rebuilt
+const FORMAT = 5; // bump when the compact shot record changes, so cached games are rebuilt
 const STYPE = { wrist: "w", snap: "n", slap: "s", backhand: "b", "tip-in": "t", deflected: "d", "wrap-around": "r", bat: "o", poke: "o", "between-legs": "o", cradle: "o" };
 
 /** Compact, model-scored record of one game (stored in both teams' files). */
@@ -38,6 +38,7 @@ function scoreGame(pbp, model, shifts = null) {
   }
   return {
     id: pbp.id, format: FORMAT, date: pbp.gameDate, home: pbp.homeTeam.abbrev, away: pbp.awayTeam.abbrev,
+    competition: ix && completeShifts(shifts, pbp) ? ix.competition : null,
     hs: pbp.homeTeam.score, as: pbp.awayTeam.score, end: pbp.gameOutcome?.lastPeriodType || "REG", players, ev,
     ...(ix ? { fo, u5: ix.u5, toi: [0, 1].map((sd) => Object.fromEntries(Object.entries(ix.toi).filter(([id]) => players[id]?.[2] === sd))) } : {}),
     // [x, y, kind, side (0 home shooter / 1 away), xG, shooterId, goalieId, strength, period, shot type,
