@@ -108,7 +108,7 @@ Its promise is that every number names its source and date, and every model is t
 
 ### Cap & trades (owner only)
 - **Contracts:** every contract (term, cap hit, extensions, with provenance), editable on the site. Edits are saved privately and never overwrite the source.
-- **Cap space:** every team's cap space (from the owner's PuckPedia cap table, pasted by hand) and cap projections.
+- **Cap space:** every team's cap space from CapWages (since 2026-10-16), with the owner's pasted PuckPedia table kept as a fallback and still editable, and cap projections.
 - **Trade block:** from news feeds that allow it, plus the owner's edits.
 - **Deadline war room:** the 15 most useful realistic targets for the team being viewed, ranked by wins added this season, with value, asking price and cap fit.
 - **Buyers and sellers:** all 32 teams sorted by likely deadline role, from our odds and team phase or the owner's objective.
