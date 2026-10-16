@@ -9,6 +9,6 @@ Plan:
 - Store immutable raw inputs, derived features and a completeness manifest in durable storage. Keep incomplete shift coverage explicit.
 - Offline retraining reads only cached history. Preserve chronological training/validation/test splits; never train on a held-out season or use future player values in historical validation.
 - Compare existing and expanded-history artifacts on identical held-out seasons using calibration, log loss/Brier score and the task-specific metrics. Adopt only supported improvements and retain rollback artifacts.
-- Proposed operating constraint: no increase in external NHL/MoneyPuck API calls in nightly jobs; historical downloads and refreshes are explicit offline work. The owner's latest message literally said “does increase”; a clarification is pending before treating this constraint as confirmed.
+- Confirmed operating constraint: no increase in external NHL/MoneyPuck API calls in nightly jobs; historical downloads and refreshes are explicit offline work. The owner confirmed this requirement on 2026-10-16.
 
 This is a research/backfill docket item, not authorization to change production model coefficients now.
