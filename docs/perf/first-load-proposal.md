@@ -38,3 +38,25 @@ Options, cheapest first:
 3. Both.
 
 Recommendation: 1 first, measure, then decide on 2.
+
+## Step 2 result (option 2 approved and shipped 2026-10-16)
+**Built:** `scripts/lite.mjs` publishes two slim companions each night, before `publish.mjs`:
+- `hockey/playersLite`: the ratings and the per-60 rates the Teams, Goalies and Overview cards read (ratings, player types, style fits, the trade explorer's production line), rounded to 3 decimals, without the nested season and competition blocks. 60 KB gzip instead of 95.
+- `hockey/injuriesLite`: this season's man-games lost only, without the server-only roster lists. 5 KB gzip instead of 34.
+
+The site loads them first and fetches the full documents only for the Skaters tab, a player card, or last season's man-games lost (and for past seasons, which have no slim versions).
+
+**Measured** (live site, same Mac and profile: 390×844, 1.6 Mbps / 150 ms, CPU 4×, cold cache, median of 3). The baseline tool now also reports `readyMs`, when the tab's main content is in the page, because LCP turned out to be the header's loading text on Teams (0.7 s, not content):
+
+| Tab | Main content before | After |
+|---|---|---|
+| Teams (team header) | 5.7 s | 5.3 s |
+| Goalies (goalie table) | 6.0 s | 5.4 s |
+| Overview (standings table) | 6.3 s | 5.8 s |
+
+**What's left, and why** (request timeline from the same runs): `lab.js` is 684 KB (179 KB gzip) and finishes downloading at about 1.4 s; parsing it and starting Firebase takes until about 3.0 s, when the first data request goes out. Data then arrives in two or three waves (Goalies: ~4.2 s, ~6.1 s, ~7.4 s). So about half of the remaining time is the page script itself. Next steps worth weighing, biggest first:
+1. Start the public data requests before Firebase starts (plain REST or the deploy snapshot), so they overlap with script parsing.
+2. Split `lab.js` so a tab loads only its own code (owner-only Cap, Admin and trade tools are a large share).
+3. Fetch each tab's documents in one wave.
+
+Also seen in the before run: Overview's layout shift is 1.10 (it was ~0 on 2026-10-15), likely from the new games/favorites header; worth a look.

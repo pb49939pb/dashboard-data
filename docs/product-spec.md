@@ -151,6 +151,7 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 ### Elsewhere
 - **Red Wings widget:** on the personal dashboard, with xG and shots.
 - **Usability:** remembered picks per browser, deep links per tab and a back gesture that closes pop-ups. Works on phones.
+- **Speed:** Teams, Goalies and Overview load slim nightly versions of the two largest documents first (playersLite, injuriesLite); the full ones load only for the Skaters tab, player cards and last season's man-games lost.
 
 ## 5. Data sources
 

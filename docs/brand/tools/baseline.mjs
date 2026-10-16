@@ -7,7 +7,9 @@
 //     outDir   default docs/brand/baseline/<YYYY-MM-DD>
 //
 // Profile ("cellular"): 1.6 Mbps down / 750 kbps up / 150 ms RTT, CPU slowed 4x, 390x844 at DPR 3, touch, cold cache,
-// 3 runs per page (median reported). These are lab measurements on this Mac, not field data; compare runs only with
+// 3 runs per page (median reported). readyMs = when the tab's main content is in the page (Teams: the team header;
+// Goalies, Overview, Skaters: a filled table), added 2026-10-16 because LCP can be the header's loading text instead.
+// These are lab measurements on this Mac, not field data; compare runs only with
 // the same machine and profile. Owner and tester views need a signed-in browser and are captured by hand (see README).
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, mkdtempSync } from "node:fs";
@@ -61,11 +63,11 @@ for (const page of PAGES) {
     await s.send("Emulation.setCPUThrottlingRate", { rate: 4 });
     await s.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
     await s.send("Emulation.setTouchEmulationEnabled", { enabled: true });
-    await s.send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__lcp=0;window.__cls=0;new PerformanceObserver(l=>{for(const e of l.getEntries())window.__lcp=e.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:"layout-shift",buffered:true});` });
+    await s.send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__lcp=0;window.__cls=0;window.__ready=0;new MutationObserver(()=>{const sel={teams:".team-hero2",goalies:"#view table tbody tr:nth-child(5)",overview:"#view table tbody tr:nth-child(5)",skaters:"#view table tbody tr:nth-child(5)"}[location.hash.slice(1)]||"#view .card:not(.skeleton)";if(!window.__ready&&document.querySelector(sel))window.__ready=performance.now()}).observe(document,{subtree:true,childList:true});new PerformanceObserver(l=>{for(const e of l.getEntries())window.__lcp=e.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:"layout-shift",buffered:true});` });
     const t0 = Date.now();
     await s.send("Page.navigate", { url: `${BASE}#${page}` });
     await settle(s);
-    const ev = (await s.send("Runtime.evaluate", { expression: `JSON.stringify({lcp:window.__lcp,cls:window.__cls,dcl:performance.getEntriesByType("navigation")[0]?.domContentLoadedEventEnd,cards:document.querySelectorAll(".card").length})`, returnByValue: true })).result?.result?.value;
+    const ev = (await s.send("Runtime.evaluate", { expression: `JSON.stringify({lcp:window.__lcp,cls:window.__cls,dcl:performance.getEntriesByType("navigation")[0]?.domContentLoadedEventEnd,cards:document.querySelectorAll(".card").length,ready:window.__ready})`, returnByValue: true })).result?.result?.value;
     const m = JSON.parse(ev || "{}");
     const done = s.events.filter((e) => e.method === "Network.loadingFinished");
     m.requests = done.length; m.kb = Math.round(done.reduce((a, e) => a + (e.params.encodedDataLength || 0), 0) / 1024); m.settledMs = Date.now() - t0;
@@ -73,7 +75,7 @@ for (const page of PAGES) {
     await s.close();
   }
   const med = (k) => { const v = runs.map((x) => x[k] ?? 0).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
-  metrics.push({ page, lcpMs: Math.round(med("lcp")), cls: +med("cls").toFixed(3), dclMs: Math.round(med("dcl")), requests: med("requests"), transferKB: med("kb"), cards: med("cards"), runs: RUNS });
+  metrics.push({ page, readyMs: Math.round(med("ready")), lcpMs: Math.round(med("lcp")), cls: +med("cls").toFixed(3), dclMs: Math.round(med("dcl")), requests: med("requests"), transferKB: med("kb"), cards: med("cards"), runs: RUNS });
   // screenshots at each width (unthrottled, warm)
   const s = await session();
   await s.send("Page.enable"); await s.send("Network.enable");
