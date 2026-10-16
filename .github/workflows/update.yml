@@ -116,6 +116,10 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node scripts/artifacts.mjs || echo "artifact manifest failed; last night's is kept"
+      # Slim companions of the players and injuries documents for the site's first paint (perf step 2)
+      - name: Slim documents
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/lite.mjs || echo "slim documents not built; the site falls back to the full ones"
       # Merge tonight's data into Firestore (only overwrites what came back new)
       - name: Publish to Firestore
         if: steps.hour.outputs.skip != 'true'

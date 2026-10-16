@@ -15,6 +15,7 @@ export const CATALOG = {
         { doc: "public/redwingsShots", pages: ["Dashboard · Red Wings detail · Shots"] },
         { doc: "hockey/league", pages: ["Hockey Lab · Overview", "Teams", "Skaters", "Goalies"] },
         { doc: "hockey/players", pages: ["Hockey Lab · Skaters (ratings: offense, defense, usage)", "player cards"] },
+        { doc: "hockey/playersLite", pages: ["Hockey Lab · first paint of Teams, Goalies, Overview (ratings and player types; built by lite.mjs)"] },
         { doc: "hockey/games/{season}/*", pages: ["Hockey Lab · Shot maps (every shot)"] },
         { doc: "hockey/heat", pages: ["Hockey Lab · Shot maps (heat map)"] },
         { doc: "hockey/lines", pages: ["Hockey Lab · Teams (lines and defense pairs)"] },

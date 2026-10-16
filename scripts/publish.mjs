@@ -111,7 +111,7 @@ const styles = await load("public/hockey/styles.json");
 if (styles) await store.put("hockey/styles", styles, {}, { replace: true });
 const heat = await load("public/hockey/heat.json");
 if (heat) await store.put("hockey/heat", heat, {}, { replace: true }); // rebuilt from every stored game each night
-for (const name of ["model", "age", "gm", "heatPrior", "coaches", "playerValue", "assets", "injuries", "scorecards", "invariants", "playerProjections", "tradePricing", "artifacts", "drift", "qotd", "xgStandings", "restTravel", "milestones"]) {
+for (const name of ["model", "age", "gm", "heatPrior", "coaches", "playerValue", "assets", "injuries", "playersLite", "injuriesLite", "scorecards", "invariants", "playerProjections", "tradePricing", "artifacts", "drift", "qotd", "xgStandings", "restTravel", "milestones"]) {
   const d = await load(`public/hockey/${name}.json`);
   if (d) await store.put(`hockey/${name}`, d, {}, { replace: true });
 }
