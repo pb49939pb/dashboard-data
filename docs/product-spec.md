@@ -71,7 +71,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Cap space tile:** each team's room under the ceiling from CapWages (roster and injured lists, buried minor-league deals, buyouts, retained salary; LTIR flagged).
 - **Team breakdowns:** where the team wins and loses (a goal-differential ledger: 5v5 chances, finishing, goaltending, special teams), team phase (inferred, or the owner's objective) with Polymarket as a comparator, and playoff odds.
 - **Player strength:** core players, the team's best players, and strength by position (C, LW, RW, LD, RD, G) ranked league-wide.
-- **Absences:** man-games lost, an absence proxy weighted by lost points and wins, with current absences tagged.
+- **Absences:** man-games lost, an absence proxy weighted by lost points and wins, with current absences tagged, and why the player is out when CapWages' roster status says (injured reserve, LTIR, minors, loan, suspended).
 - **Rest and travel:** the team's next games, with each side's days of rest, back-to-backs and miles from the previous arena, plus the week's back-to-back mismatches.
   - Effects are measured over 11,389 games: back-to-backs cost about 6.7 points of win probability. Travel and extra rest showed no measurable effect.
 - **Assets:** draft picks (next three drafts, including traded and conditional picks) and prospects, valued in wins.
@@ -109,7 +109,7 @@ Its promise is that every number names its source and date, and every model is t
 
 ### Cap & trades (owner only)
 - **Contracts:** every contract (term, cap hit, extensions, with provenance), editable on the site. Edits are saved privately and never overwrite the source.
-- **Cap space:** every team's cap space from CapWages (since 2026-10-16), with the owner's pasted PuckPedia table kept as a fallback and still editable, and cap projections.
+- **Cap space:** every team's cap space from CapWages (since 2026-10-16): today and next season, with buyouts, retained salary and LTIR shown; the owner's pasted PuckPedia table is a fallback, still editable, shown beside CapWages. The contracts list shows CapWages' cap hit and last season beside each row and flags differences.
 - **Trade block:** from news feeds that allow it, plus the owner's edits.
 - **Deadline war room:** the 15 most useful realistic targets for the team being viewed, ranked by wins added this season, with value, asking price and cap fit.
 - **Buyers and sellers:** all 32 teams sorted by likely deadline role, from our odds and team phase or the owner's objective.
