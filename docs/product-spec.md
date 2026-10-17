@@ -235,3 +235,6 @@ Game cards place model-inclusion badges in their top-center gutter and favorite 
 
 ### Recap difficulty and Teams player profiles
 Game recap skater cards show existing game-specific opponent difficulty on compact and full cards, explicitly distinguished from season percentiles; missing data is labeled. Player names across Teams core, position strength, absences, prospects and recommended moves open profile modals in place. Goalies and players without current NHL stats have appropriate summary profiles. See `docs/player-profile-links.md`.
+
+### Mobile Overview controls
+On phones, sticky Yesterday/Today/Tomorrow chips independently toggle visible schedules and remember device preferences across reloads. Default Yesterday+Today; Tomorrow opt-in; all-off is supported. Skip/Back shortcuts let users bypass long schedules without restricting normal scrolling. Today shows the daily question first, with other stories behind More from Today. Question modal padding is consistent. Desktop game days and full Today edition remain visible. See `docs/mobile-overview-controls.md`.
