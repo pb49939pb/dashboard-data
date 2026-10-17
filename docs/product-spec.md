@@ -260,3 +260,6 @@ Player leaderboards and current division standings share the same centered card 
 
 ### Award races mobile carousel
 Hart, Norris, Vezina and Calder share the existing mobile swipe controller with leaders and division standings: one-card gestures, small-drag rollback, 220ms ease-out settling, neighboring previews, arrows/status and keyboard navigation. Award panels have equal heights and aligned first-player rows. The Award races parent retains its persisted chevron collapse control and existing rankings, eligibility, explanations and sources. Empty eligible fields are labeled. Desktop retains the four-award grid.
+
+### Division strength placement and mobile swipe deck
+Division strength sits immediately below Current standings, before projected standings. On phones its four ranked divisions use the same swipe controller, centered card widths, neighboring previews, arrows/status, one-card gestures and 220ms settle as leaders, awards and current divisions. Expanded strength cards share a height; saved parent collapse, division detail links, rankings, explanations, head-to-head table and sources remain. Desktop retains the division strength grid in the new location.
