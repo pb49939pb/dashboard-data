@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: "5,15,25,35,45,55 * * * *"
   workflow_dispatch:
+    inputs:
+      test_rules:
+        description: "Only test that the cutoff can create rulesets (creates and deletes one; never releases it)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,4 +34,4 @@ jobs:
       - name: Check today's Firestore spend
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node scripts/budget.mjs
+        run: node scripts/budget.mjs ${{ inputs.test_rules && '--test-rules' || '' }}

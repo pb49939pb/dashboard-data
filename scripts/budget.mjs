@@ -145,6 +145,15 @@ export async function checkBudget({ log = console.log } = {}) {
   return doc;
 }
 
+if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--test-rules")) {
+  // Proves the cutoff would work: creates the lockdown ruleset (without releasing it) and deletes it again
+  const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT), { cert } = await import("firebase-admin/app");
+  const token = (await cert(sa).getAccessToken()).access_token, base = `https://firebaserules.googleapis.com/v1/projects/${sa.project_id}`;
+  const rs = await google(token, `${base}/rulesets`, { method: "POST", body: JSON.stringify({ source: { files: [{ name: "firestore.rules", content: LOCKDOWN }] } }) });
+  await google(token, `https://firebaserules.googleapis.com/v1/${rs.name}`, { method: "DELETE" });
+  console.log(`rules test ok: created and deleted ${rs.name.split("/").pop()} (never released)`);
+  process.exit(0);
+}
 if (import.meta.url === `file://${process.argv[1]}`) {
   const doc = await checkBudget();
   if (doc?.errors?.length && doc.counts.reads == null) process.exitCode = 1; // couldn't measure at all: show red in Actions
