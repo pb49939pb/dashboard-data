@@ -134,6 +134,7 @@ Its promise is that every number names its source and date, and every model is t
 ### Admin (owner only)
 Sub-tabs (since 2026-10-16), the last one used remembered:
 - **Visitors:** unique visitors, visits, tab views, time per visit, visits per day, each tab's visits and time (and how many visits landed there), devices, where visits came from, busiest hours and the 25 most recent visits, over 7, 30 or 90 days, with or without your own visits. From our own anonymous visit log (`visits/{id}` in Firestore): a random id per browser (no cookie), tabs and visible time, device class, referring site; no IP address, account or email; Do Not Track honored; readable by the owner only. Counted per browser, so one person on two devices counts twice.
+- **Usage:** today's Firestore reads, writes and deletes for the whole project, the cost past the free daily quota (at the nam5 multi-region price), the month so far, cost by day, whether the cutoff is in effect, and each data job's own reads and writes from its last run. From `admin/budget` (scripts/budget.mjs, every 10 minutes; see docs/firestore-budget.md).
 - **Data jobs:** every data job with run history, sources and "Run now" (nightly build, contracts, contract news, CapWages, trade search, models).
 - **Model health:** model switches (WAR-lite vs RAPM, team-only vs roster-aware simulation), drift alarms, nightly data checks, model artifacts (versions and hashes, with a field dictionary) and the roster-aware simulation in shadow.
 - **Forecasts:** your forecasts and the trade-engine self-tests.
@@ -151,6 +152,7 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 ### Elsewhere
 - **Red Wings widget:** on the personal dashboard, with xG and shots.
 - **Usability:** remembered picks per browser, deep links per tab and a back gesture that closes pop-ups. Works on phones.
+- **Spend cap:** Firestore spend is held to $5 a month. Past $5/30 in a Pacific day (or $5 in a month) the database is cut off to everyone but the owner until midnight Pacific, and the data jobs skip Firestore; the site falls back to its published files where it can.
 - **Speed:** Teams, Goalies and Overview load slim nightly versions of the two largest documents first (playersLite, injuriesLite); the full ones load only for the Skaters tab, player cards and last season's man-games lost.
 
 ## 5. Data sources
