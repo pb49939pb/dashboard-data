@@ -29,6 +29,7 @@ define("navigator", {});
 define("MutationObserver", class { observe() {} disconnect() {} });
 for (const k of ["addEventListener", "removeEventListener", "scrollTo", "requestAnimationFrame"]) define(k, () => 0);
 define("scrollY", 0);
+define("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} })); // lab.js reads media queries (mobile layouts)
 
 async function loadLab() {
   const given = process.argv.slice(2).find((a) => a.endsWith(".js"));
