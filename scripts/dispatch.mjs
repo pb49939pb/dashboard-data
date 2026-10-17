@@ -3,6 +3,7 @@
 // the monthly models live in the private hockey-models repo and need JOBS_TOKEN (a token you create).
 import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { budgetCutoff } from "./store.mjs";
 
 const TARGETS = {
   "nightly-build": { repo: "pb49939pb/dashboard-data", workflow: "update.yml", token: "GITHUB_TOKEN" },
@@ -13,6 +14,8 @@ const TARGETS = {
 };
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
 const db = getFirestore();
+// Past the daily Firestore budget (scripts/budget.mjs): jobs would skip their Firestore work anyway, so start nothing
+if (await budgetCutoff(db)) { console.log("Firestore budget cutoff is in effect today; not starting jobs"); process.exit(0); }
 const pending = (await db.collection("admin/requests/pending").get()).docs.filter((d) => !d.data().dispatchedAt);
 for (const d of pending) {
   const t = TARGETS[d.id];

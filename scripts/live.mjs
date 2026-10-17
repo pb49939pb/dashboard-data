@@ -7,6 +7,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { openStore } from "./store.mjs";
+import { checkBudget } from "./budget.mjs";
 import { advise } from "./pullAdvisor.mjs";
 
 const UA = { "User-Agent": "hockey-lab/1.0 (personal, non-commercial)" };
@@ -29,8 +30,16 @@ async function games() {
    changes; about 20-45 s behind real time (NHL CDN cache + this interval). */
 const FAST = 20e3;
 const pullRates = (() => { try { return JSON.parse(readFileSync("model/qotd.json", "utf8")).questions.find((q) => q.id === "pull")?.rates || null; } catch { return null; } })();
-let store = null;
+let store = null, budgetAt = 0, cut = false;
 async function liveTick() {
+  // Game nights are when the site is busiest, and GitHub's 10-minute schedule (budget.yml) can lag for hours, so the
+  // long-running live job checks the Firestore budget itself every 10 minutes and stops writing if it's passed.
+  if (Date.now() - budgetAt > 10 * 60e3) {
+    budgetAt = Date.now();
+    const b = await checkBudget().catch((e) => { console.log("budget check failed:", e.message); return null; });
+    cut = !!b?.tripped;
+  }
+  if (cut) return;
   store ??= await openStore().catch(() => null);
   if (!store) return;
   const days = [eastern(new Date(Date.now() - 864e5)), eastern(new Date())], rows = [];

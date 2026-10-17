@@ -1,0 +1,32 @@
+# Firestore spend guard: every 10 minutes, today's Firestore reads/writes/deletes from Cloud Monitoring, priced past the
+# free quota; past $5/30 for the day (or $5 for the month) it cuts off browser access until the next Pacific day
+# (scripts/budget.mjs). dispatch.yml and the game-night job (live.mjs) run the same check, since GitHub can skip or
+# delay frequent schedules.
+name: Firestore budget
+on:
+  schedule:
+    - cron: "5,15,25,35,45,55 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: budget
+  cancel-in-progress: false
+
+jobs:
+  budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Check today's Firestore spend
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/budget.mjs

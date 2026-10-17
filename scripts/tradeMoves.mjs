@@ -69,6 +69,7 @@ const { initializeApp, cert } = await import("firebase-admin/app");
 const { getFirestore } = await import("firebase-admin/firestore");
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
 const db = getFirestore();
+if (await (await import("./store.mjs")).budgetCutoff(db)) { console.log("Firestore budget cutoff is in effect today; skipped"); run?.finish({ ok: true, notes: { skipped: "budget cutoff" } }); process.exit(0); }
 const read = async (path) => { const s = await db.doc(path).get(); return s.exists ? JSON.parse(s.data().json) : null; };
 
 const owner = (await db.doc("admin/owner").get()).data()?.uid;

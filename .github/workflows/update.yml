@@ -23,6 +23,7 @@ on:
       - ".github/workflows/live.yml"
       - ".github/workflows/dispatch.yml"
       - ".github/workflows/contracts.yml"
+      - ".github/workflows/budget.yml"
 
 permissions:
   contents: write   # only for the occasional keep-alive commit below

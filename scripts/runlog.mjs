@@ -28,6 +28,8 @@ export function startRun(job, meta = {}) {
         job, ok, error: error ? String(error.stack || error).slice(0, 2000) : null,
         startedAt: startedAt.toISOString(), finishedAt: finishedAt.toISOString(), seconds: Math.round((finishedAt - startedAt) / 100) / 10,
         sources, outputs, notes, health, ...meta,
+        firestore: globalThis.__firestoreOps ? { ...globalThis.__firestoreOps } : null, // documents read/written by store.mjs this run
+
         github: process.env.GITHUB_RUN_ID ? { run: process.env.GITHUB_RUN_ID, url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`, workflow: process.env.GITHUB_WORKFLOW, event: process.env.GITHUB_EVENT_NAME } : { local: true },
       };
       mkdirSync("public/admin", { recursive: true });

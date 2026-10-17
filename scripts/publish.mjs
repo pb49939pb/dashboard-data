@@ -93,7 +93,7 @@ if (league) {
   }
   const n = await store.putMany([...games.values()].map((g) => ({
     path: `hockey/games/${league.season}/${g.id}`, data: g, fields: { teams: [g.home, g.away], date: g.date },
-  })));
+  })), { index: `admin/storeIndex/games/${league.season}` }); // unchanged games since last night: no read, no write
   console.log(`games: ${games.size} (${n} written)`);
 }
 const proj = await load("public/hockey/projections.json");

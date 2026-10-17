@@ -19,12 +19,15 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
   const { getFirestore } = await import("firebase-admin/firestore");
   initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
   db = getFirestore();
+  const { budgetCutoff } = await import("./store.mjs");
+  if (await budgetCutoff(db)) { console.log("Firestore budget cutoff is in effect today; Today is built from files only"); db = null; process.env.TODAY_NO_REST = "1"; }
 }
 async function recapsSince() {
   if (db) {
     const s = await db.collection(`hockey/recaps/${season}`).where("date", ">=", from).get();
     return s.docs.map((d) => JSON.parse(d.data().json));
   }
+  if (process.env.TODAY_NO_REST) return []; // cut off: the public REST read would be refused too
   // public REST (recaps are public): a structured query on the date field
   const body = { structuredQuery: { from: [{ collectionId: season }], where: { fieldFilter: { field: { fieldPath: "date" }, op: "GREATER_THAN_OR_EQUAL", value: { stringValue: from } } } } };
   const r = await fetch("https://firestore.googleapis.com/v1/projects/pat-dashboard-eb494/databases/(default)/documents/hockey/recaps:runQuery", { method: "POST", body: JSON.stringify(body) });
