@@ -238,3 +238,5 @@ Game recap skater cards show existing game-specific opponent difficulty on compa
 
 ### Mobile Overview controls
 On phones, sticky Yesterday/Today/Tomorrow chips independently toggle visible schedules and remember device preferences across reloads. Default Yesterday+Today; Tomorrow opt-in; all-off is supported. Skip/Back shortcuts let users bypass long schedules without restricting normal scrolling. Today shows the daily question first, with other stories behind More from Today. Question modal padding is consistent. Desktop game days and full Today edition remain visible. See `docs/mobile-overview-controls.md`.
+
+Current standings retain the complete mobile table (RW remains hidden per the existing mobile rule). Cell padding, logo sizes, status-pill spacing and numeric type scale to the division container width, fitting all displayed columns at 320–640px without clipping. Standard text size is retained from typical 360px phone widths upward; smaller screens use a bounded font reduction. Desktop styles and standings calculations are unchanged. Fit verified with current values and synthetic wider late-season numbers.
