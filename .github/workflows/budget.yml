@@ -12,6 +12,10 @@ on:
         description: "Only test that the cutoff can create rulesets (creates and deletes one; never releases it)"
         type: boolean
         default: false
+      test_hosting:
+        description: "Only list Hosting metrics and check Hosting access"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -34,4 +38,4 @@ jobs:
       - name: Check today's Firestore spend
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node scripts/budget.mjs ${{ inputs.test_rules && '--test-rules' || '' }}
+        run: node scripts/budget.mjs ${{ inputs.test_rules && '--test-rules' || '' }} ${{ inputs.test_hosting && '--test-hosting' || '' }}

@@ -145,6 +145,17 @@ export async function checkBudget({ log = console.log } = {}) {
   return doc;
 }
 
+if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--test-hosting")) {
+  // Lists the Hosting metrics Cloud Monitoring has for this project and checks access to Hosting releases
+  const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT), { cert } = await import("firebase-admin/app");
+  const token = (await cert(sa).getAccessToken()).access_token;
+  const q = new URLSearchParams({ filter: 'metric.type = starts_with("firebasehosting.googleapis.com")' });
+  try { const j = await google(token, `https://monitoring.googleapis.com/v3/projects/${sa.project_id}/metricDescriptors?${q}`); for (const d of j.metricDescriptors || []) console.log("metric", d.type, d.metricKind, d.valueType, d.unit); }
+  catch (e) { console.log("metrics:", e.message); }
+  try { const r = await google(token, `https://firebasehosting.googleapis.com/v1beta1/sites/${sa.project_id}/releases?pageSize=2`); for (const x of r.releases || []) console.log("release", x.type, x.version?.name, x.releaseTime); }
+  catch (e) { console.log("releases:", e.message); }
+  process.exit(0);
+}
 if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--test-rules")) {
   // Proves the cutoff would work: creates the lockdown ruleset (without releasing it) and deletes it again
   const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT), { cert } = await import("firebase-admin/app");
