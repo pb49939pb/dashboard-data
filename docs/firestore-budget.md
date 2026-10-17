@@ -65,7 +65,23 @@ The daily cap ($0.167) covers roughly 2,900 new visits past the free amount. Adm
 - Measurement is up to ~10 minutes behind, plus Monitoring's lag. A very fast runaway can overshoot the daily cap by
   what it does in that window.
 - Anyone can call Firestore with the site's public config, and that is how web Firebase works; the security rules
-  decide what they get. App Check (reCAPTCHA Enterprise) would limit requests to the real site. It is not set up yet.
+  decide what they get. App Check (below) narrows this to the real site once it is enforced.
+
+## App Check (2026-10-16)
+- reCAPTCHA Enterprise key `6Lcc3PItAAAAAP_FbJWyJNIeR6mQgU-hzXSOd_MT` (score-based, no challenge). Domains:
+  pat-dashboard-eb494.web.app, pat-dashboard-eb494.firebaseapp.com, patrickreidbaldwin.com.
+- Registered on the project's one web app (`pat-dash`), shared by the dashboard, Cadence, Momentum and Hockey Lab.
+  Each one sets `APP_CHECK_KEY` next to `initializeApp` (hockey-web/cloud.js, cadence-web/cloud.js,
+  pat-dashboard/public/dash.js). Hockey Lab's REST fallback sends the `X-Firebase-AppCheck` header.
+- Token time-to-live is 1 day, so reCAPTCHA runs about once per browser per day. That keeps it under the 10,000 free
+  checks a month. reCAPTCHA charges are not in the budget meter.
+- On localhost the SDK prints a debug token. Add it under App Check › Manage debug tokens to use the live database
+  while developing.
+- Data jobs use the service account, which App Check doesn't apply to. The injuries job used to read `capwages/live`
+  over public REST and now reads it with the service account. today.mjs's public-REST fallback only runs without the
+  service account.
+- Enforcement for Cloud Firestore: turn it on in the console once its metrics show nearly all requests verified.
+  After that, an unverified request is refused before it's billed.
 - Firestore storage (about 0.76 GiB, 1 GiB free) and Hosting storage (10 GB free) are billed separately and aren't
   metered here.
 
