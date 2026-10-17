@@ -55,6 +55,46 @@ async function google(token, url, opts = {}) {
   return text ? JSON.parse(text) : {};
 }
 
+// Hosting: 360 MB a day of downloads free, then $0.15 per GB
+export const HOSTING_FREE_BYTES = 360e6, HOSTING_PER_GB = 0.15;
+export const hostingCostOf = (bytes) => (Math.max(0, (bytes || 0) - HOSTING_FREE_BYTES) / 1e9) * HOSTING_PER_GB;
+
+/** Firestore rules: the live ruleset, a lockdown ruleset, and releasing one. */
+function rulesLock(token, project) {
+  const base = `https://firebaserules.googleapis.com/v1/projects/${project}`, rel = `${base}/releases/cloud.firestore`;
+  return {
+    live: async () => (await google(token, rel)).rulesetName,
+    makeLock: async () => (await google(token, `${base}/rulesets`, { method: "POST", body: JSON.stringify({ source: { files: [{ name: "firestore.rules", content: LOCKDOWN }] } }) })).name,
+    release: (name) => google(token, rel, { method: "PATCH", body: JSON.stringify({ release: { name: `projects/${project}/releases/cloud.firestore`, rulesetName: name } }) }),
+  };
+}
+
+const PAUSED = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Back tomorrow</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;color:#e8eef5;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:24px}</style></head>
+<body><main><h1>Back tomorrow</h1><p>This site is paused for the rest of the day. It comes back at midnight Pacific.</p></main></body></html>
+`;
+/** Firebase Hosting (the default site): the live version, a one-page "paused" version, and releasing one. */
+function hostingLock(token, project) {
+  const H = "https://firebasehosting.googleapis.com/v1beta1", site = `sites/${project}`;
+  return {
+    live: async () => (await google(token, `${H}/${site}/releases?pageSize=1`)).releases?.[0]?.version?.name || null,
+    async makeLock() {
+      const { gzipSync } = await import("node:zlib"), { createHash } = await import("node:crypto");
+      const v = await google(token, `${H}/${site}/versions`, { method: "POST", body: JSON.stringify({ config: {
+        rewrites: [{ glob: "**", path: "/index.html" }], headers: [{ glob: "**", headers: { "Cache-Control": "no-store" } }] }, labels: { purpose: "budget-pause" } }) });
+      const gz = gzipSync(Buffer.from(PAUSED)), h = createHash("sha256").update(gz).digest("hex");
+      const pf = await google(token, `${H}/${v.name}:populateFiles`, { method: "POST", body: JSON.stringify({ files: { "/index.html": h } }) });
+      if ((pf.uploadRequiredHashes || []).includes(h)) {
+        const r = await fetch(`${pf.uploadUrl}/${h}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/octet-stream" }, body: gz });
+        if (!r.ok) throw new Error(`hosting upload: ${r.status} ${(await r.text()).slice(0, 200)}`);
+      }
+      await google(token, `${H}/${v.name}?update_mask=status`, { method: "PATCH", body: JSON.stringify({ status: "FINALIZED" }) });
+      return v.name;
+    },
+    release: (version) => google(token, `${H}/${site}/releases?versionName=${encodeURIComponent(version)}`, { method: "POST", body: JSON.stringify({ message: "budget guard (scripts/budget.mjs)" }) }),
+  };
+}
+
 /** Sum of one Firestore metric since `start`. Monitoring trails by a few minutes. */
 async function metricSum(token, project, type, start, end) {
   const secs = Math.max(60, Math.ceil((end - start) / 1000 / 60) * 60);
@@ -93,53 +133,57 @@ export async function checkBudget({ log = console.log } = {}) {
   }
   const price = pricesFor(location);
 
-  // Today's counts
+  // Today's counts: Firestore documents and Hosting bytes sent
   const counts = {};
   const start = dayStart(now);
-  for (const [k, type] of [["reads", "document/read_count"], ["writes", "document/write_count"], ["deletes", "document/delete_count"]]) {
-    try { counts[k] = await metricSum(token, project, `firestore.googleapis.com/${type}`, start, now); }
+  for (const [k, type] of [["reads", "firestore.googleapis.com/document/read_count"], ["writes", "firestore.googleapis.com/document/write_count"],
+    ["deletes", "firestore.googleapis.com/document/delete_count"], ["hostingBytes", "firebasehosting.googleapis.com/network/sent_bytes_count"]]) {
+    try { counts[k] = await metricSum(token, project, type, start, now); }
     catch (e) { errors.push(`${k}: ${e.message}`); counts[k] = prev.day === day ? prev.counts?.[k] ?? null : null; }
   }
-  const cost = costOf(counts, price);
+  const firestoreCost = costOf(counts, price), hostingCost = hostingCostOf(counts.hostingBytes);
+  const cost = firestoreCost + hostingCost; // one budget for both
   const days = { ...(prev.days || {}) };
   days[day] = Math.round(cost * 1e4) / 1e4;
   for (const d of Object.keys(days)) if (d < quotaDay(new Date(now - 62 * 864e5))) delete days[d];
   const monthCost = Object.entries(days).filter(([d]) => d.startsWith(month)).reduce((s, [, c]) => s + c, 0);
 
-  // Rules: trip, hold, or restore
-  const releaseUrl = `https://firebaserules.googleapis.com/v1/projects/${project}/releases/cloud.firestore`;
-  let tripped = prev.tripped && prev.day === day, savedRuleset = prev.savedRuleset || null, lockRuleset = prev.lockRuleset || null, action = null;
+  // Cutoff. While tripped, every run makes sure both locks are live (a deploy in the meantime would have undone the
+  // Hosting one); on the first run of a new day under the limit, both are put back as they were.
   const over = cost >= DAILY_LIMIT || monthCost >= MONTHLY_LIMIT;
-  let rulesAccess = null; // can this account see the live rules? (checked every run, so a missing role shows before it's needed)
-  try { rulesAccess = !!(await google(token, releaseUrl)).rulesetName; } catch (e) { rulesAccess = false; errors.push(`rules access: ${e.message}`); }
-  try {
-    if (over && !tripped) {
-      const live = await google(token, releaseUrl);
-      if (prev.lockRuleset && live.rulesetName === prev.lockRuleset) { /* still locked from yesterday (month over): keep the saved rules */ }
-      else if (!dry) {
-        const rs = await google(token, `https://firebaserules.googleapis.com/v1/projects/${project}/rulesets`, { method: "POST", body: JSON.stringify({ source: { files: [{ name: "firestore.rules", content: LOCKDOWN }] } }) });
-        await google(token, releaseUrl, { method: "PATCH", body: JSON.stringify({ release: { name: `projects/${project}/releases/cloud.firestore`, rulesetName: rs.name } }) });
-        lockRuleset = rs.name;
+  const tripped = over || (prev.tripped && prev.day === day);
+  const L = { rules: rulesLock(token, project), hosting: hostingLock(token, project) };
+  const state = { rules: { ...(prev.locks?.rules || {}) }, hosting: { ...(prev.locks?.hosting || {}) } };
+  if (prev.savedRuleset && !prev.locks) state.rules = { saved: prev.savedRuleset, lock: prev.lockRuleset }; // older record
+  const access = {}, actions = [];
+  for (const k of ["rules", "hosting"]) {
+    try {
+      const live = await L[k].live(); access[k] = !!live;
+      const s = state[k];
+      if (tripped) {
+        if (live !== s.lock || !s.lock) {
+          if (!dry) { if (!s.lock) s.lock = await L[k].makeLock(); await L[k].release(s.lock); }
+          if (live && live !== s.lock && live !== s.prevLock) s.saved = live;
+          actions.push(`${k} locked`);
+        }
+      } else if (s.lock) { // not over any more: undo (retried each run until it works)
+        if (live === s.lock && s.saved) { if (!dry) await L[k].release(s.saved); actions.push(`${k} restored`); }
+        else actions.push(`${k} changed while cut off; left as is`);
+        state[k] = { prevLock: s.lock };
       }
-      if (live.rulesetName !== prev.lockRuleset) savedRuleset = live.rulesetName;
-      tripped = true; action = `cut off: $${cost.toFixed(3)} today, $${monthCost.toFixed(2)} this month`;
-    } else if (!over && prev.tripped && prev.day !== day && savedRuleset) {
-      const live = await google(token, releaseUrl);
-      if (live.rulesetName === prev.lockRuleset) { // still our lockdown: put the old rules back
-        if (!dry) await google(token, releaseUrl, { method: "PATCH", body: JSON.stringify({ release: { name: `projects/${project}/releases/cloud.firestore`, rulesetName: savedRuleset } }) });
-        action = `restored ${savedRuleset.split("/").pop()}`;
-      } else action = "new day; rules were changed while cut off, so they stay as they are";
-      tripped = false; savedRuleset = null; lockRuleset = null;
-    } else if (!over && prev.tripped && prev.day !== day) { tripped = false; action = "new day"; }
-  } catch (e) { errors.push(`rules: ${e.message}`); if (over) tripped = true; } // jobs still stop even if the rules call failed
+    } catch (e) { access[k] = false; errors.push(`${k}: ${e.message}`); }
+  }
+  const action = actions.length ? `${tripped ? `over: $${cost.toFixed(3)} today, $${monthCost.toFixed(2)} this month; ` : "new day; "}${actions.join(", ")}` : null;
 
   const doc = {
     day, at: now.toISOString(), project, location, price, free: FREE, counts, cost: Math.round(cost * 1e4) / 1e4,
+    firestoreCost: Math.round(firestoreCost * 1e4) / 1e4, hostingCost: Math.round(hostingCost * 1e4) / 1e4, hostingFree: HOSTING_FREE_BYTES, hostingPrice: HOSTING_PER_GB,
     dailyLimit: DAILY_LIMIT, monthlyLimit: MONTHLY_LIMIT, month, monthCost: Math.round(monthCost * 1e4) / 1e4, days,
     tripped, trippedAt: tripped ? (prev.tripped && prev.day === day ? prev.trippedAt : now.toISOString()) : null,
-    savedRuleset, lockRuleset, rulesAccess, measured: counts.reads != null, lastAction: action || (prev.day === day ? prev.lastAction : null), errors,
+    locks: state, rulesAccess: access.rules ?? null, hostingAccess: access.hosting ?? null, measured: counts.reads != null && counts.hostingBytes != null,
+    lastAction: action || (prev.day === day ? prev.lastAction : null), errors,
   };
-  log(`budget ${day}: reads ${counts.reads}, writes ${counts.writes}, deletes ${counts.deletes} → $${doc.cost.toFixed(4)} of $${DAILY_LIMIT.toFixed(4)} today; $${doc.monthCost.toFixed(2)} this month; ${location || "location unknown"}; rules access ${rulesAccess ? "ok" : "MISSING"}${tripped ? "; CUT OFF" : ""}${action ? ` (${action})` : ""}`);
+  log(`budget ${day}: reads ${counts.reads}, writes ${counts.writes}, deletes ${counts.deletes}, hosting ${counts.hostingBytes == null ? "?" : (counts.hostingBytes / 1e6).toFixed(1) + " MB"} → $${doc.cost.toFixed(4)} of $${DAILY_LIMIT.toFixed(4)} today; $${doc.monthCost.toFixed(2)} this month; ${location || "location unknown"}; access rules ${access.rules ? "ok" : "MISSING"}, hosting ${access.hosting ? "ok" : "MISSING"}${tripped ? "; CUT OFF" : ""}${action ? ` (${action})` : ""}`);
   for (const e of errors) log(`budget error: ${e}`);
   if (!dry) { const json = JSON.stringify(doc); await ref.set({ json, updatedAt: doc.at }); }
   return doc;
@@ -154,6 +198,11 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--
   catch (e) { console.log("metrics:", e.message); }
   try { const r = await google(token, `https://firebasehosting.googleapis.com/v1beta1/sites/${sa.project_id}/releases?pageSize=2`); for (const x of r.releases || []) console.log("release", x.type, x.version?.name, x.releaseTime); }
   catch (e) { console.log("releases:", e.message); }
+  try { // build the "paused" version without releasing it, then delete it
+    const v = await hostingLock(token, sa.project_id).makeLock();
+    await google(token, `https://firebasehosting.googleapis.com/v1beta1/${v}`, { method: "DELETE" });
+    console.log(`hosting lock test ok: built and deleted ${v.split("/").pop()} (never released)`);
+  } catch (e) { console.log("hosting lock test:", e.message); }
   process.exit(0);
 }
 if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--test-rules")) {
