@@ -248,3 +248,6 @@ On phones, Overview leaderboards share a horizontal carousel with a centered car
 
 ### Saved card visibility and scrolling corrections
 Content cards have independent Collapse/Expand controls with device preferences persisted in local storage (`hl-collapsed-cards:v1`), restored after reloads and live section refreshes. Mobile leaderboard lists fill the card width; native horizontal scrolling uses stable untransformed geometry without animated perspective. Projected standings always display all 32 teams, with no inner vertical scroller or ten-row mode; users can collapse the whole card instead. This supersedes the prior ten-row scroller and depth effect.
+
+### Mobile leaderboard deck: snapping and alignment
+On phones, leaderboard swipes use mandatory centered snap points with one active card and scroll-stop/idle settling, including trackpad input. Expanded cards share a height and measured heading/description rows so the first player aligns across leaderboards; measurements refresh on width, font and collapse changes. Decorative folded edge panels animate around the readable, untransformed cards and respect reduced motion. Saved collapse controls remain available; collapsed cards show only their headings. Desktop keeps the existing grid. This replaces the prior free/proximity scrolling behavior.
