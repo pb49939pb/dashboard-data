@@ -245,3 +245,6 @@ Current standings now use Atlantic, Metropolitan, Central and Pacific division t
 
 ### Mobile leaderboards and primary player stats
 On phones, Overview leaderboards share a horizontal carousel with a centered card, neighboring-card previews, subtle perspective, native swipe, arrow controls and keyboard navigation. All nine leaderboards retain rankings and player links; desktop retains its grid. No nested vertical scroll is introduced. Goals, Assists and Points lead skater profiles and compact/full recap cards; official plus/minus remains below. Goalies retain goalie-specific stats, and unavailable skater totals show dashes.
+
+### Saved card visibility and scrolling corrections
+Content cards have independent Collapse/Expand controls with device preferences persisted in local storage (`hl-collapsed-cards:v1`), restored after reloads and live section refreshes. Mobile leaderboard lists fill the card width; native horizontal scrolling uses stable untransformed geometry without animated perspective. Projected standings always display all 32 teams, with no inner vertical scroller or ten-row mode; users can collapse the whole card instead. This supersedes the prior ten-row scroller and depth effect.
