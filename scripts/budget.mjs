@@ -110,6 +110,8 @@ export async function checkBudget({ log = console.log } = {}) {
   const releaseUrl = `https://firebaserules.googleapis.com/v1/projects/${project}/releases/cloud.firestore`;
   let tripped = prev.tripped && prev.day === day, savedRuleset = prev.savedRuleset || null, lockRuleset = prev.lockRuleset || null, action = null;
   const over = cost >= DAILY_LIMIT || monthCost >= MONTHLY_LIMIT;
+  let rulesAccess = null; // can this account see the live rules? (checked every run, so a missing role shows before it's needed)
+  try { rulesAccess = !!(await google(token, releaseUrl)).rulesetName; } catch (e) { rulesAccess = false; errors.push(`rules access: ${e.message}`); }
   try {
     if (over && !tripped) {
       const live = await google(token, releaseUrl);
@@ -135,9 +137,9 @@ export async function checkBudget({ log = console.log } = {}) {
     day, at: now.toISOString(), project, location, price, free: FREE, counts, cost: Math.round(cost * 1e4) / 1e4,
     dailyLimit: DAILY_LIMIT, monthlyLimit: MONTHLY_LIMIT, month, monthCost: Math.round(monthCost * 1e4) / 1e4, days,
     tripped, trippedAt: tripped ? (prev.tripped && prev.day === day ? prev.trippedAt : now.toISOString()) : null,
-    savedRuleset, lockRuleset, lastAction: action || (prev.day === day ? prev.lastAction : null), errors,
+    savedRuleset, lockRuleset, rulesAccess, measured: counts.reads != null, lastAction: action || (prev.day === day ? prev.lastAction : null), errors,
   };
-  log(`budget ${day}: reads ${counts.reads}, writes ${counts.writes}, deletes ${counts.deletes} → $${doc.cost.toFixed(4)} of $${DAILY_LIMIT.toFixed(4)} today; $${doc.monthCost.toFixed(2)} this month${tripped ? "; CUT OFF" : ""}${action ? ` (${action})` : ""}`);
+  log(`budget ${day}: reads ${counts.reads}, writes ${counts.writes}, deletes ${counts.deletes} → $${doc.cost.toFixed(4)} of $${DAILY_LIMIT.toFixed(4)} today; $${doc.monthCost.toFixed(2)} this month; ${location || "location unknown"}; rules access ${rulesAccess ? "ok" : "MISSING"}${tripped ? "; CUT OFF" : ""}${action ? ` (${action})` : ""}`);
   for (const e of errors) log(`budget error: ${e}`);
   if (!dry) { const json = JSON.stringify(doc); await ref.set({ json, updatedAt: doc.at }); }
   return doc;
