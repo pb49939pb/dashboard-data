@@ -204,7 +204,7 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--
     console.log(`hosting lock test ok: built and deleted ${v.split("/").pop()} (never released)`);
     const H = hostingLock(token, sa.project_id), live = await H.live(); // release permission: re-release what's already live (no change)
     if (live) { await H.release(live); console.log(`hosting release test ok: re-released ${live.split("/").pop()}`); }
-  } catch (e) { console.log("hosting lock test:", e.message.replace(/[{}"]/g, " ")); }
+  } catch (e) { console.log("hosting lock test:", e.message.replace(/[{}"\s]+/g, " ")); }
   process.exit(0);
 }
 if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--test-rules")) {
