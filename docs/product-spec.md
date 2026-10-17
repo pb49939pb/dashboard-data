@@ -263,3 +263,6 @@ Hart, Norris, Vezina and Calder share the existing mobile swipe controller with 
 
 ### Division strength placement and mobile swipe deck
 Division strength sits immediately below Current standings, before projected standings. On phones its four ranked divisions use the same swipe controller, centered card widths, neighboring previews, arrows/status, one-card gestures and 220ms settle as leaders, awards and current divisions. Expanded strength cards share a height; saved parent collapse, division detail links, rankings, explanations, head-to-head table and sources remain. Desktop retains the division strength grid in the new location.
+
+### Mobile standings headers and division comparisons
+Current standings division cards use larger bold division titles and distinct East/West badges above the table on phones, with fit checked at 320, 390 and 430px. Division strength hides its complete Head to head comparison section (heading, explanation and matrix) on phones. Swipe decks, numeric data and desktop presentation remain intact.
