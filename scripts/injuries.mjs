@@ -23,8 +23,9 @@ const league = await readJson("public/hockey/league.json");
 const pv = (await readJson("model/playerValue.json")) || { players: [] };
 // CapWages roster status (public capwages/live, nightly): tells injured reserve from the minors for players who are out
 // now (the NHL roster feed can't). Missing = the older "off-roster" label stands.
-const cwStatus = await fetch("https://firestore.googleapis.com/v1/projects/pat-dashboard-eb494/databases/(default)/documents/capwages/live")
-  .then((r) => (r.ok ? r.json() : null)).then((d) => (d ? new Map(JSON.parse(d.fields.json.stringValue).players.map((x) => [Number(x.id), x.hits?.[0] == null && x.lastDeal ? "Unsigned" : x.s])) : null)).catch(() => null);
+// Read with the service account: with App Check enforced, Firestore refuses plain REST requests that don't come from the site.
+const cwDoc = await (async () => { const store = await (await import("./store.mjs")).openStore(); return store ? store.read("capwages/live") : null; })().catch(() => null);
+const cwStatus = cwDoc ? new Map(cwDoc.players.map((x) => [Number(x.id), x.hits?.[0] == null && x.lastDeal ? "Unsigned" : x.s])) : null;
 const REASON = { IR: "injured reserve", LTIR: "long-term injured reserve", SOIR: "injured reserve", SEIR: "injured reserve", Minor: "in the minors", Loan: "on loan", Suspended: "suspended", Unsigned: "unsigned (no contract this season)" };
 const pvById = new Map(pv.players.map((p) => [p.id, p]));
 const current = String(league.season), season = only || current;

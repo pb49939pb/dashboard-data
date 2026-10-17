@@ -28,7 +28,8 @@ async function recapsSince() {
     return s.docs.map((d) => JSON.parse(d.data().json));
   }
   if (process.env.TODAY_NO_REST) return []; // cut off: the public REST read would be refused too
-  // public REST (recaps are public): a structured query on the date field
+  // public REST (recaps are public): local runs without the service account only; with App Check enforced, Firestore refuses it
+  // (and the job then builds Today without recent recaps): a structured query on the date field
   const body = { structuredQuery: { from: [{ collectionId: season }], where: { fieldFilter: { field: { fieldPath: "date" }, op: "GREATER_THAN_OR_EQUAL", value: { stringValue: from } } } } };
   const r = await fetch("https://firestore.googleapis.com/v1/projects/pat-dashboard-eb494/databases/(default)/documents/hockey/recaps:runQuery", { method: "POST", body: JSON.stringify(body) });
   const rows = await r.json();
