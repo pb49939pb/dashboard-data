@@ -1,20 +1,21 @@
 {
- "builtAt": "2026-10-15T10:01:49+00:00",
+ "builtAt": "2026-10-17T04:43:54+00:00",
  "start": "2026-10-15",
  "seasons": [
+  "20232024",
   "20242025",
   "20252026"
  ],
- "games": 2624,
+ "games": 3936,
  "questions": [
   {
    "id": "pull",
    "q": "When is the ultimate time to pull the goalie?",
    "headline": "Down one, anywhere from 2:20 to 4:40 left; down two, about 3:45. Most teams wait too long, but it costs less than you'd think.",
    "body": [
-    "With an extra skater, a team down one late scored 7.4 goals per 60 minutes but allowed 22.2 into the empty net; with the goalie in, 2.4 for and 2.3 against.",
-    "Feeding those rates into a second-by-second model, the chance of tying a one-goal game is highest (42.3%) when the goalie comes out with 2:20 to 4:40 left: a wide, flat top. NHL teams typically pulled at 1:46, which gets 41.9%. Never pulling gets 40.0%.",
-    "Down two, the best time is about 3:45 left (14.8% to tie vs 14.7% at the usual 2:34). The empty-net goals against cost little: losing by two counts the same as losing by one."
+    "With an extra skater, a team down one late scored 7.4 goals per 60 minutes but allowed 21.7 into the empty net; with the goalie in, 2.4 for and 2.4 against.",
+    "Feeding those rates into a second-by-second model, the chance of tying a one-goal game is highest (42.5%) when the goalie comes out with 2:20 to 4:40 left: a wide, flat top. NHL teams typically pulled at 1:45, which gets 42.0%. Never pulling gets 40.2%.",
+    "Down two, the best time is about 3:45 left (14.0% to tie vs 13.9% at the usual 2:33). The empty-net goals against cost little: losing by two counts the same as losing by one."
    ],
    "chart": {
     "type": "line",
@@ -59,43 +60,43 @@
      "6:00"
     ],
     "y": [
-     40.0,
      40.2,
      40.5,
      40.7,
-     41.0,
+     40.9,
      41.1,
      41.3,
      41.5,
      41.6,
-     41.7,
+     41.8,
      41.9,
      42.0,
-     42.0,
      42.1,
      42.2,
      42.2,
      42.3,
      42.3,
-     42.3,
-     42.3,
-     42.3,
-     42.3,
-     42.3,
+     42.4,
+     42.4,
+     42.4,
+     42.4,
+     42.5,
+     42.5,
+     42.4,
+     42.4,
+     42.4,
+     42.4,
      42.3,
      42.3,
      42.3,
      42.2,
      42.2,
-     42.1,
      42.1,
      42.0,
      42.0,
      41.9,
      41.8,
-     41.8,
-     41.7,
-     41.6
+     41.8
     ],
     "unit": "%",
     "xlabel": "time left when pulled",
@@ -105,44 +106,44 @@
       "label": "best"
      },
      {
-      "x": "1:50",
+      "x": "1:40",
       "label": "NHL typical"
      }
     ],
     "yFrom": 38
    },
-   "method": "Third periods of 2024-25 and 2025-26 regular-season games. Goal rates for teams trailing by one (and two) measured at 5-on-5 with the goalie in and 6-on-5 with it pulled, then a second-by-second model of the race to a tying goal for every possible pull time. Assumes rates don't change with the clock; a goal against ends the chase.",
-   "sample": "1759 goalie pulls; 1957 minutes of 6-on-5",
+   "method": "Third periods of 2023-24 through 2025-26 regular-season games. Goal rates for teams trailing by one (and two) measured at 5-on-5 with the goalie in and 6-on-5 with it pulled, then a second-by-second model of the race to a tying goal for every possible pull time. Assumes rates don't change with the clock; a goal against ends the chase.",
+   "sample": "2571 goalie pulls; 2856 minutes of 6-on-5",
    "rates": {
-    "2_in": [
-     0.0007472,
-     0.000722
-    ],
-    "2_out": [
-     0.0019987,
-     0.0066563
-    ],
     "1_in": [
-     0.0006569,
-     0.0006416
+     0.0006695,
+     0.0006581
     ],
     "1_out": [
-     0.0020685,
-     0.0061566
+     0.002047,
+     0.0060391
+    ],
+    "2_in": [
+     0.0006948,
+     0.0007367
+    ],
+    "2_out": [
+     0.0018694,
+     0.0066454
     ]
    },
    "typicalPull": {
-    "1": 106,
+    "1": 105,
     "2": 154
    }
   },
   {
    "id": "faceoffs",
    "q": "How much do faceoff wins actually matter?",
-   "headline": "A little. Going from 50% to 55% on faceoffs is worth about 0.8 goals a season.",
+   "headline": "A little. Going from 50% to 55% on faceoffs is worth about 0.9 goals a season.",
    "body": [
-    "In the 30 seconds after a 5-on-5 faceoff, the winner's goal difference is +1.8 per 100 wins in the offensive zone, +0.3 at center and -0.5 in its own zone (still deep in its end, a win only limits the damage).",
-    "Spread over a season, a team winning 55% instead of 50% gains roughly 0.8 goals (about 0.1 wins). Across team-seasons, faceoff percentage and goal share correlate at r = 0.17.",
+    "In the 30 seconds after a 5-on-5 faceoff, the winner's goal difference is +1.9 per 100 wins in the offensive zone, +0.3 at center and -0.3 in its own zone (still deep in its end, a win only limits the damage).",
+    "Spread over a season, a team winning 55% instead of 50% gains roughly 0.9 goals (about 0.1 wins). Across team-seasons, faceoff percentage and goal share correlate at r = 0.28.",
     "The edge is real but short-lived: after half a minute, possession has usually changed hands several times."
    ],
    "chart": {
@@ -154,22 +155,22 @@
      "Defensive zone"
     ],
     "y": [
-     1.84,
+     1.86,
      0.27,
-     -0.49
+     -0.33
     ],
     "unit": " goals"
    },
-   "method": "Every 5-on-5 faceoff in 2024-25 and 2025-26 regular seasons: goals for minus against for the winning team until the next faceoff or 30 seconds, by zone (zone from the winner's side). Season estimate assumes ~58 faceoffs a game, 62% at 5-on-5.",
-   "sample": "115,180 faceoffs at 5-on-5; 64 team-seasons"
+   "method": "Every 5-on-5 faceoff in 2023-24 through 2025-26 regular seasons: goals for minus against for the winning team until the next faceoff or 30 seconds, by zone (zone from the winner's side). Season estimate assumes ~58 faceoffs a game, 62% at 5-on-5.",
+   "sample": "172,172 faceoffs at 5-on-5; 96 team-seasons"
   },
   {
    "id": "fights",
    "q": "Do fights change the momentum of a game?",
    "headline": "Not measurably. Teams losing the shot battle before a fight recover about as much as they do without one.",
    "body": [
-    "Before a fight, the team losing the shot battle had 38.2% of attempts over the previous 10 minutes. In the 10 minutes after, it had 50.5%.",
-    "That looks like a momentum swing, but random moments with the same starting share bounce back just as much (to 49.7%), because lopsided stretches rarely last. The fight's own effect: +0.7 points (90% range -0.4 to +1.7).",
+    "Before a fight, the team losing the shot battle had 38.5% of attempts over the previous 10 minutes. In the 10 minutes after, it had 50.5%.",
+    "That looks like a momentum swing, but random moments with the same starting share bounce back just as much (to 49.8%), because lopsided stretches rarely last. The fight's own effect: +0.7 points (90% range -0.2 to +1.6).",
     "So the swing fans see after a fight is mostly regression to the mean, not the fight."
    ],
    "chart": {
@@ -181,21 +182,21 @@
      "Expected anyway"
     ],
     "y": [
-     38.2,
+     38.5,
      50.5,
-     49.7
+     49.8
     ],
     "unit": "%"
    },
-   "method": "Fighting majors in 2024-25 and 2025-26 regular seasons (5th to 50th minute). Shot attempts (goals, shots, misses, blocks) 10 minutes before and after. Expected = what random non-fight moments in the same games did from the same starting share (a linear fit), so regression to the mean is removed.",
-   "sample": "417 fights; 6,749 control moments"
+   "method": "Fighting majors in 2023-24 through 2025-26 regular seasons (5th to 50th minute). Shot attempts (goals, shots, misses, blocks) 10 minutes before and after. Expected = what random non-fight moments in the same games did from the same starting share (a linear fit), so regression to the mean is removed.",
+   "sample": "638 fights; 10,051 control moments"
   },
   {
    "id": "twogoal",
    "q": "Is a two-goal lead the worst lead in hockey?",
-   "headline": "No. Teams that went up two won 88% of the time, vs 68% after going up one.",
+   "headline": "No. Teams that went up two won 87% of the time, vs 69% after going up one.",
    "body": [
-    "Once a team led by one, it won 68.4% of those games. Once it led by two, 87.5%. By three, 96.6%.",
+    "Once a team led by one, it won 68.7% of those games. Once it led by two, 87.3%. By three, 96.4%.",
     "The 'worst lead' line comes from how a blown two-goal lead feels: the comeback gets remembered and the many routine wins don't. Every extra goal of cushion raised the chance of winning."
    ],
    "chart": {
@@ -207,22 +208,22 @@
      "3 goals"
     ],
     "y": [
-     68.4,
-     87.5,
-     96.6
+     68.7,
+     87.3,
+     96.4
     ],
     "unit": "%"
    },
-   "method": "Every regular-season game in 2024-25 and 2025-26: the first time each team led by 1, 2 or 3 goals in regulation, and whether it won (including overtime and shootouts).",
-   "sample": "3,552 one-goal leads, 2,204 two-goal leads, 1,278 three-goal leads"
+   "method": "Every regular-season game in 2023-24 through 2025-26: the first time each team led by 1, 2 or 3 goals in regulation, and whether it won (including overtime and shootouts).",
+   "sample": "5,307 one-goal leads, 3,338 two-goal leads, 1,962 three-goal leads"
   },
   {
    "id": "b2b",
    "q": "How much does a back-to-back hurt?",
    "headline": "About 7 points of win probability: tired teams won 41% against rested ones, vs 48% expected.",
    "body": [
-    "On the second night of a back-to-back against a team that had rested, teams won 40.8% of the time. From their records in rested games and home ice, we'd have expected 48.1%.",
-    "The gap is -7.3 points (90% range -10.7 to -3.8), worth about 0.15 standings points per game. Part of it is the backup goalie who usually starts those nights."
+    "On the second night of a back-to-back against a team that had rested, teams won 41.5% of the time. From their records in rested games and home ice, we'd have expected 48.2%.",
+    "The gap is -6.8 points (90% range -9.5 to -3.9), worth about 0.14 standings points per game. Part of it is the backup goalie who usually starts those nights."
    ],
    "chart": {
     "type": "bar",
@@ -232,21 +233,21 @@
      "Actual"
     ],
     "y": [
-     48.1,
-     40.8
+     48.2,
+     41.5
     ],
     "unit": "%"
    },
-   "method": "2024-25 and 2025-26 regular seasons. A back-to-back = played the day before; the opponent had at least one day off. Expected = each team's win rate in its rested games (lightly shrunk) combined with the opponent's and league home-ice advantage (log5).",
-   "sample": "568 tired-vs-rested games"
+   "method": "2023-24 through 2025-26 regular seasons. A back-to-back = played the day before; the opponent had at least one day off. Expected = each team's win rate in its rested games (lightly shrunk) combined with the opponent's and league home-ice advantage (log5).",
+   "sample": "817 tired-vs-rested games"
   },
   {
    "id": "first",
    "q": "How much does scoring first matter?",
    "headline": "A lot: the team that scored first won 67% of games.",
    "body": [
-    "Scoring first, home teams won 69.6% and road teams 63.0%.",
-    "Timing matters: an opening goal in the first period led to a win 64.6% of the time; when the first goal came in the third, 90.3%.",
+    "Scoring first, home teams won 69.9% and road teams 63.1%.",
+    "Timing matters: an opening goal in the first period led to a win 65.2% of the time; when the first goal came in the third, 79.6%.",
     "Part of this is selection: better teams score first more often. But a one-goal head start is a real edge in a low-scoring game."
    ],
    "chart": {
@@ -259,23 +260,23 @@
      "3rd-period goal"
     ],
     "y": [
-     69.6,
-     63.0,
-     64.6,
-     90.3
+     69.9,
+     63.1,
+     65.2,
+     79.6
     ],
     "unit": "%"
    },
-   "method": "Every 2024-25 and 2025-26 regular-season game with a goal in regulation or overtime: did the team that scored first win (including overtime and shootouts)?",
-   "sample": "2,622 games"
+   "method": "Every 2023-24 through 2025-26 regular-season game with a goal in regulation or overtime: did the team that scored first win (including overtime and shootouts)?",
+   "sample": "3,933 games"
   },
   {
    "id": "aftertwo",
    "q": "How often does the team leading after two periods win?",
-   "headline": "86% of the time. Up one: 76%. Up two: 91%. Up three or more: 98%.",
+   "headline": "85% of the time. Up one: 75%. Up two: 91%. Up three or more: 98%.",
    "body": [
-    "Teams ahead after 40 minutes won 85.6% of games. A one-goal lead held 76.1% of the time, two goals 90.9%, three or more 98.1%.",
-    "Games tied after two went to overtime 39.2% of the time."
+    "Teams ahead after 40 minutes won 85.2% of games. A one-goal lead held 74.8% of the time, two goals 91.0%, three or more 97.8%.",
+    "Games tied after two went to overtime 38.5% of the time."
    ],
    "chart": {
     "type": "bar",
@@ -286,23 +287,23 @@
      "3+ goals"
     ],
     "y": [
-     76.1,
-     90.9,
-     98.1
+     74.8,
+     91.0,
+     97.8
     ],
     "unit": "%"
    },
-   "method": "Score after 40 minutes in every 2024-25 and 2025-26 regular-season game and the final result (overtime and shootouts included).",
-   "sample": "2,624 games"
+   "method": "Score after 40 minutes in every 2023-24 through 2025-26 regular-season game and the final result (overtime and shootouts included).",
+   "sample": "3,936 games"
   },
   {
    "id": "shots",
    "q": "What's the most dangerous kind of shot?",
-   "headline": "Anything from right on top of the goalie: 13% of shots within 10 feet go in, twice the average. Next: rebound (11%).",
+   "headline": "Anything from right on top of the goalie: 14% of shots within 10 feet go in, twice the average. Next: rebound (11%).",
    "body": [
-    "Of unblocked shots, 6.6% became goals. Within 10 ft shots went in 13.3% of the time, rebound 11.1%, 10 to 20 ft 10.6%.",
-    "A rebound from under 20 feet goes in 12.8% of the time. Distance dominates everything else, which is why our expected-goals model leans on it first, then on rebounds and how the puck moved just before the shot. (The play-by-play has no passes, so one-timers and cross-ice feeds can only be inferred.)",
-    "The least dangerous: from the point (over 50 ft) (1.4%)."
+    "Of unblocked shots, 6.6% became goals. Within 10 ft shots went in 13.6% of the time, rebound 11.3%, 10 to 20 ft 10.8%.",
+    "A rebound from under 20 feet goes in 13.1% of the time. Distance dominates everything else, which is why our expected-goals model leans on it first, then on rebounds and how the puck moved just before the shot. (The play-by-play has no passes, so one-timers and cross-ice feeds can only be inferred.)",
+    "The least dangerous: from the point (over 50 ft) (1.3%)."
    ],
    "chart": {
     "type": "bar",
@@ -319,21 +320,21 @@
      "From the point (over 50 ft)"
     ],
     "y": [
-     13.3,
-     11.1,
-     10.6,
+     13.6,
+     11.3,
+     10.8,
      7.9,
-     7.7,
+     7.9,
      6.6,
-     4.7,
-     4.7,
-     1.4
+     5.3,
+     4.8,
+     1.3
     ],
     "unit": "%",
     "ref": 6.6
    },
-   "method": "Unblocked, non-empty-net regulation shots in 2024-25 and 2025-26 (NHL play-by-play). Categories overlap (a rebound can also be from close in). Rebound = a shot within 3 seconds of the same team's previous shot; rush = within 4 seconds of an event in the neutral or defensive zone.",
-   "sample": "219,431 shots"
+   "method": "Unblocked, non-empty-net regulation shots in 2023-24 through 2025-26 (NHL play-by-play). Categories overlap (a rebound can also be from close in). Rebound = a shot within 3 seconds of the same team's previous shot; rush = within 4 seconds of an event in the neutral or defensive zone.",
+   "sample": "332,102 shots"
   },
   {
    "id": "goalieluck",
@@ -367,9 +368,9 @@
    "q": "When does a power play actually score?",
    "headline": "Not early. The first 15 seconds are the slowest; after that the pace is steady to the end.",
    "body": [
-    "Scoring pace in the first 15 seconds of a 5-on-4: 0.20 goals per two minutes, -19% vs the power play's average (0.24). From 30 seconds on it stays within a narrow band; the busiest slice is 105\u2013120s.",
+    "Scoring pace in the first 15 seconds of a 5-on-4: 0.20 goals per two minutes, -17% vs the power play's average (0.24). From 30 seconds on it stays within a narrow band; the busiest slice is 45\u201360s.",
     "The first 30 seconds produce 25% of power-play goals while taking up 29% of power-play time. The opening faceoff has to be won and the set-up established before the chances come.",
-    "Overall, 19.3% of these power plays scored."
+    "Overall, 19.4% of these power plays scored."
    ],
    "chart": {
     "type": "bar",
@@ -385,19 +386,19 @@
      "105\u2013120s"
     ],
     "y": [
-     0.197,
-     0.23,
-     0.254,
-     0.266,
+     0.202,
+     0.228,
      0.255,
-     0.252,
-     0.237,
-     0.278
+     0.275,
+     0.256,
+     0.249,
+     0.244,
+     0.264
     ],
     "unit": ""
    },
-   "method": "Two-minute minors that created a 5-on-4 in 2024-25 and 2025-26 regular seasons (not in the last minute). Time on the power play and power-play goals counted in 15-second slices until a goal, two minutes, or a change in strength.",
-   "sample": "12,691 power plays, 2,449 goals"
+   "method": "Two-minute minors that created a 5-on-4 in 2023-24 through 2025-26 regular seasons (not in the last minute). Time on the power play and power-play goals counted in 15-second slices until a goal, two minutes, or a change in strength.",
+   "sample": "19,497 power plays, 3,781 goals"
   }
  ]
 }

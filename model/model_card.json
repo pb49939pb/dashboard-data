@@ -1,35 +1,35 @@
 {
- "trained_on": "20242025,20252026",
+ "trained_on": "20232024,20242025,20252026",
  "tested_on": "20262027",
- "train_shots": 222403,
- "train_goals": 14955,
+ "train_shots": 336462,
+ "train_goals": 22594,
  "results": [
   {
    "model": "Baseline (league avg)",
-   "shots": 7023,
-   "goals": 493,
-   "xG": 472.2,
-   "log_loss": 0.2542,
+   "shots": 9847,
+   "goals": 706,
+   "xG": 661.2,
+   "log_loss": 0.2582,
    "auc": 0.5,
-   "brier": 0.0653
+   "brier": 0.0666
   },
   {
    "model": "Logistic regression",
-   "shots": 7023,
-   "goals": 493,
-   "xG": 497.9,
-   "log_loss": 0.2271,
-   "auc": 0.7503,
-   "brier": 0.0617
+   "shots": 9847,
+   "goals": 706,
+   "xG": 711.2,
+   "log_loss": 0.2327,
+   "auc": 0.7419,
+   "brier": 0.0633
   },
   {
    "model": "Gradient boosting",
-   "shots": 7023,
-   "goals": 493,
-   "xG": 498.1,
-   "log_loss": 0.2201,
-   "auc": 0.7722,
-   "brier": 0.0602
+   "shots": 9847,
+   "goals": 706,
+   "xG": 712.5,
+   "log_loss": 0.225,
+   "auc": 0.7678,
+   "brier": 0.0616
   }
  ],
  "published": "Gradient boosting",
@@ -37,125 +37,125 @@
   "Logistic regression": [
    {
     "pred": 0.0045,
-    "actual": 0.0034,
-    "n": 586
+    "actual": 0.0049,
+    "n": 821
    },
    {
-    "pred": 0.0118,
-    "actual": 0.0103,
-    "n": 585
+    "pred": 0.0119,
+    "actual": 0.0122,
+    "n": 820
    },
    {
-    "pred": 0.0199,
-    "actual": 0.0154,
-    "n": 585
+    "pred": 0.02,
+    "actual": 0.0146,
+    "n": 821
    },
    {
-    "pred": 0.0291,
-    "actual": 0.0239,
-    "n": 585
+    "pred": 0.0292,
+    "actual": 0.028,
+    "n": 821
    },
    {
-    "pred": 0.0383,
-    "actual": 0.0342,
-    "n": 585
+    "pred": 0.0387,
+    "actual": 0.0378,
+    "n": 820
    },
    {
-    "pred": 0.0483,
-    "actual": 0.058,
-    "n": 586
+    "pred": 0.0486,
+    "actual": 0.0572,
+    "n": 821
    },
    {
-    "pred": 0.0593,
-    "actual": 0.0598,
-    "n": 585
+    "pred": 0.0602,
+    "actual": 0.0585,
+    "n": 820
    },
    {
-    "pred": 0.0724,
-    "actual": 0.0684,
-    "n": 585
+    "pred": 0.0734,
+    "actual": 0.0805,
+    "n": 820
    },
    {
-    "pred": 0.0887,
-    "actual": 0.0923,
-    "n": 585
+    "pred": 0.0907,
+    "actual": 0.0987,
+    "n": 821
    },
    {
-    "pred": 0.1108,
-    "actual": 0.1214,
-    "n": 585
+    "pred": 0.1135,
+    "actual": 0.1181,
+    "n": 821
    },
    {
-    "pred": 0.1449,
-    "actual": 0.1624,
-    "n": 585
+    "pred": 0.1481,
+    "actual": 0.1695,
+    "n": 820
    },
    {
-    "pred": 0.2226,
-    "actual": 0.1928,
-    "n": 586
+    "pred": 0.2278,
+    "actual": 0.1803,
+    "n": 821
    }
   ],
   "Gradient boosting": [
    {
-    "pred": 0.0021,
-    "actual": 0.0017,
-    "n": 586
+    "pred": 0.0022,
+    "actual": 0.0024,
+    "n": 821
    },
    {
-    "pred": 0.0084,
-    "actual": 0.0051,
-    "n": 585
+    "pred": 0.0085,
+    "actual": 0.0073,
+    "n": 820
    },
    {
-    "pred": 0.0142,
-    "actual": 0.012,
-    "n": 585
+    "pred": 0.0149,
+    "actual": 0.0195,
+    "n": 821
    },
    {
-    "pred": 0.0221,
-    "actual": 0.0255,
-    "n": 588
+    "pred": 0.0228,
+    "actual": 0.0232,
+    "n": 820
    },
    {
-    "pred": 0.031,
-    "actual": 0.0309,
-    "n": 582
+    "pred": 0.0322,
+    "actual": 0.028,
+    "n": 821
    },
    {
-    "pred": 0.042,
-    "actual": 0.041,
-    "n": 586
+    "pred": 0.0432,
+    "actual": 0.0451,
+    "n": 821
    },
    {
-    "pred": 0.0557,
-    "actual": 0.0632,
-    "n": 585
+    "pred": 0.0571,
+    "actual": 0.0659,
+    "n": 820
    },
    {
-    "pred": 0.0719,
-    "actual": 0.0718,
-    "n": 585
+    "pred": 0.0733,
+    "actual": 0.0756,
+    "n": 820
    },
    {
-    "pred": 0.091,
-    "actual": 0.0887,
-    "n": 586
+    "pred": 0.0944,
+    "actual": 0.078,
+    "n": 821
    },
    {
-    "pred": 0.1161,
-    "actual": 0.1182,
-    "n": 584
+    "pred": 0.1193,
+    "actual": 0.1267,
+    "n": 821
    },
    {
-    "pred": 0.1521,
-    "actual": 0.1607,
-    "n": 585
+    "pred": 0.1568,
+    "actual": 0.1573,
+    "n": 820
    },
    {
-    "pred": 0.2444,
-    "actual": 0.2235,
-    "n": 586
+    "pred": 0.2434,
+    "actual": 0.2314,
+    "n": 821
    }
   ]
  },
@@ -165,129 +165,97 @@
   "Angle change on a rebound",
   "Off-wing shooter (one-timer side)"
  ],
- "validation": {
-  "trained_on": "20242025",
-  "tested_on": "20252026",
-  "results": [
-   {
-    "model": "Baseline (league avg)",
-    "shots": 111099,
-    "goals": 7578,
-    "xG": 7363.4,
-    "log_loss": 0.249,
-    "auc": 0.5,
-    "brier": 0.0636
-   },
-   {
-    "model": "Logistic regression",
-    "shots": 111099,
-    "goals": 7578,
-    "xG": 7950.2,
-    "log_loss": 0.2237,
-    "auc": 0.749,
-    "brier": 0.0605
-   },
-   {
-    "model": "Gradient boosting",
-    "shots": 111099,
-    "goals": 7578,
-    "xG": 7836.3,
-    "log_loss": 0.2178,
-    "auc": 0.7678,
-    "brier": 0.059
-   }
-  ]
- },
+ "validation": null,
  "effects": [
   {
    "feature": "Distance",
-   "coef": -1.14
+   "coef": -1.112
   },
   {
    "feature": "Angle (sharp)",
-   "coef": -0.524
+   "coef": -0.461
   },
   {
    "feature": "Puck speed before the shot",
-   "coef": -0.425
+   "coef": -0.391
   },
   {
    "feature": "Distance \u00d7 angle",
-   "coef": -0.387
-  },
-  {
-   "feature": "Angle",
-   "coef": 0.247
+   "coef": -0.379
   },
   {
    "feature": "Shot type: snap",
-   "coef": 0.214
-  },
-  {
-   "feature": "Shot type: tip in",
-   "coef": -0.206
+   "coef": 0.228
   },
   {
    "feature": "Shot type: slap",
-   "coef": 0.206
+   "coef": 0.224
+  },
+  {
+   "feature": "Angle",
+   "coef": 0.191
+  },
+  {
+   "feature": "Shot type: tip in",
+   "coef": -0.183
   },
   {
    "feature": "After a faceoff",
-   "coef": -0.174
+   "coef": -0.177
   },
   {
    "feature": "Puck movement before shot",
-   "coef": 0.167
+   "coef": 0.166
   },
   {
    "feature": "Quick follow-up",
-   "coef": 0.107
+   "coef": 0.11
   },
   {
-   "feature": "After a hit",
-   "coef": -0.103
+   "feature": "Shot type: wrist",
+   "coef": 0.109
   }
  ],
  "distance_curve": [
   {
    "dist": 5,
-   "p": 0.2324
+   "p": 0.2423
   },
   {
    "dist": 10,
-   "p": 0.168
+   "p": 0.1787
   },
   {
    "dist": 15,
-   "p": 0.1627
+   "p": 0.1728
   },
   {
    "dist": 20,
-   "p": 0.1627
+   "p": 0.1663
   },
   {
    "dist": 25,
-   "p": 0.1468
+   "p": 0.1532
   },
   {
    "dist": 30,
-   "p": 0.112
+   "p": 0.1155
   },
   {
    "dist": 35,
-   "p": 0.0832
+   "p": 0.0745
   },
   {
    "dist": 40,
-   "p": 0.0565
+   "p": 0.0557
   },
   {
    "dist": 45,
-   "p": 0.0351
+   "p": 0.0359
   },
   {
    "dist": 50,
-   "p": 0.0239
+   "p": 0.0259
   },
   {
    "dist": 55,
@@ -295,11 +263,11 @@
   },
   {
    "dist": 60,
-   "p": 0.0164
+   "p": 0.0153
   },
   {
    "dist": 65,
-   "p": 0.0018
+   "p": 0.0026
   }
  ]
 }
