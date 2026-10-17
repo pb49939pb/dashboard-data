@@ -203,7 +203,8 @@ if (import.meta.url === `file://${process.argv[1]}` && process.argv.includes("--
     await google(token, `https://firebasehosting.googleapis.com/v1beta1/${v}`, { method: "DELETE" });
     console.log(`hosting lock test ok: built and deleted ${v.split("/").pop()} (never released)`);
     const H = hostingLock(token, sa.project_id), live = await H.live(); // release permission: re-release what's already live (no change)
-    if (live) { await H.release(live); console.log(`hosting release test ok: re-released ${live.split("/").pop()}`); }
+    // Hosting refuses to re-release the active version with FAILED_PRECONDITION, which it only checks after permission
+    if (live) await H.release(live).catch((e) => { if (!/current active version/.test(e.message)) throw e; console.log("hosting release test ok: access granted (the live version can't be re-released, as expected)"); });
   } catch (e) { console.log("hosting lock test:", e.message.replace(/[{}"\s]+/g, " ")); }
   process.exit(0);
 }
