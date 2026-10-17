@@ -230,3 +230,6 @@ Team stats moves from Overview to Teams. Milestone Watch leads with four player 
 
 ### Compact game cards and ten-row projections
 Game cards place model-inclusion badges in their top-center gutter and favorite labels at top left; outcomes are centered below the symmetric score. Tighter mobile spacing retains both odds sources. The projected standings chart uses a native vertical scroll region showing ten compact rows with persistent column labels and axis; scrolling chains normally to the page at the edges. A Show all teams control removes the inner scroll area. Team ranks, expandable details, Chart/Table switching and projection values remain available.
+
+### Recap difficulty and Teams player profiles
+Game recap skater cards show existing game-specific opponent difficulty on compact and full cards, explicitly distinguished from season percentiles; missing data is labeled. Player names across Teams core, position strength, absences, prospects and recommended moves open profile modals in place. Goalies and players without current NHL stats have appropriate summary profiles. See `docs/player-profile-links.md`.
