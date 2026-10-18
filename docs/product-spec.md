@@ -338,3 +338,11 @@ Mobile modal swipe decks now give the active panel the full horizontal width, wi
 - Mobile recap How it unfolded shows chronological goals, running scores, assists and available NHL highlight links; desktop retains the chart. Three stars is the third recap panel, after Battle and Period by period.
 - Overview final-game winners use bright text, score emphasis and a muted winner label rather than green text.
 - Browser checks cover 320/390/430-pixel Teams layouts, favorites/Detroit fallback, manual selection, explainer dialogs and desktop, plus mobile/desktop recap deck navigation and goal links.
+
+
+### 2026-10-18 — Stable recap carousel height
+Recap carousel panels share the tallest natural height at the current screen width. Changing panels keeps the roster below at the same position and no longer automatically scrolls the modal. Content remains fully visible without an added inner vertical scroll area. Verified all eight panels at 320, 390 and 1280 pixels.
+
+
+### 2026-10-18 — Teams mobile layout audit
+Keep collapse controls within Teams header rows so they cannot squeeze following style panels or tables. Move descriptions after tabbed headers into their existing mobile info dialogs, including lazy-loaded cards. Stack core-player metadata and availability labels; use readable absence metrics and a bounded scrolling absence table with room for names and statuses. Desktop layouts remain unchanged. Checked rendered cards and browser behavior at 320, 390 and 430 pixels.
