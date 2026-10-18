@@ -71,3 +71,11 @@ test("validation blocks placeholders, non-finite numbers and private fields", ()
   assert.ok(validateEdition({ ...ed, items: [{ ...ed.items[0], facts: { capHit: 1 } }] }).length);
   assert.ok(validateEdition({ ...ed, items: [{ ...ed.items[0], facts: { p: NaN } }] }).length);
 });
+
+test("question bank wraps and First to Three is next on October 19", async () => {
+ const {readFile}=await import('node:fs/promises');
+ const qotd=JSON.parse(await readFile(new URL('../model/qotd.json',import.meta.url),'utf8'));
+ for(const [day,id] of [['2026-10-19','first-three'],['2026-10-26',qotd.questions[0].id],['2026-11-06',qotd.questions[0].id]]){
+  assert.equal(selectQuestionStory(ctx({qotd,editionDateET:day})).item.facts.questionId,id);
+ }
+});

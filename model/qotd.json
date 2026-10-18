@@ -218,6 +218,31 @@
    "sample": "5,307 one-goal leads, 3,338 two-goal leads, 1,962 three-goal leads"
   },
   {
+   "id": "first-three",
+   "q": "Is the NHL a \"First to Three\" league?",
+   "headline": "The first team to three goals won 88.1% of those games.",
+   "body": [
+    "Across 3,936 completed regular-season games, 3,450 had a team reach three goals in regulation or overtime. That team won 3,039 times and lost 411 times.",
+    "In 486 games, neither team reached three before a shootout. Those games are excluded from the win-rate calculation; a shootout-deciding goal does not count as reaching three.",
+    "Three goals is a useful milestone, not a guarantee or a causal rule. Teams that score three first are already leading, and stronger teams reach that mark more often."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Outcome for the first team to three goals",
+    "x": [
+     "Won",
+     "Lost"
+    ],
+    "y": [
+     88.1,
+     11.9
+    ],
+    "unit": "%"
+   },
+   "method": "Walk actual goals chronologically in each 2023\u201324 through 2025\u201326 regular-season game. Identify the first team to score its third goal in regulation or overtime, then check the eventual winner, including shootouts. Exclude shootout attempts and games where neither team reaches three.",
+   "sample": "3,450 qualifying games out of 3,936 completed games"
+  },
+  {
    "id": "b2b",
    "q": "How much does a back-to-back hurt?",
    "headline": "About 7 points of win probability: tired teams won 41% against rested ones, vs 48% expected.",

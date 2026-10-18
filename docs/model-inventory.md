@@ -159,3 +159,8 @@ Flow: NHL shifts + PBP → cached per-game 5v5 overlaps → nightly WAR-lite wei
 
 ## Award-race pace display (2026-10-18)
 `hockey-web/lab.js:awardRacesCard` computes display-only pace from published league totals, appearances and team games; it does not add a forecasting model or backend job. Skaters: total + per-appearance rate × remaining team games. Goalies: GSAx per team game × season games, preserving current workload. Jennings: team GA per game × season games, ranked on current total GA rather than rate. Rocket Richard ranks current goals. Use 84 games from 2026–27, 82 for earlier supported seasons; final-season views omit forward pace. Existing player value supplies WAR context and approximate rookie eligibility.
+
+
+### 2026-10-18 — Award context and daily question
+Award cards show the actual previous season trophy recipient and relevant totals with NHL source links. These are context, not thresholds for voted awards. WAR pace explicitly extrapolates measured current-season WAR per modeled appearance over 84 games (82 in earlier seasons); its tooltip states measured WAR, coverage and date. Vezina adds standard NHL SV% and GAA per 60 minutes from actual goalie shots and playing seconds, separate from model unblocked-shot rates. Nightly builds reuse the existing quality-starts goalie-log request: no additional nightly external API calls. A one-time refresh seeds official rates.
+The First to Three question is next on October 19, 2026, computed offline from 3,936 cached regular-season games: first team to three won 88.1% of 3,450 qualifying games. Shootout attempts and games with neither team reaching three are excluded. The 11-question bank repeats automatically after its last entry.

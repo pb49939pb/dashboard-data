@@ -1,6 +1,7 @@
 // League-wide data for Hockey Lab: every regular-season game of the current season scored with our xG model.
 // Publishes public/hockey/league.json (leaderboards) and public/hockey/teams/{TEAM}.json (shots for shot maps).
 // Incremental: last night's games (restored from Firestore) are the cache; only newly finished games are fetched from the NHL.
+import { officialGoalieRates } from "./goalieRates.mjs";
 import { htmlShifts } from "./htmlShifts.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
@@ -200,7 +201,7 @@ async function qualityStarts(season, get) {
     if (sv >= lg || (r.shotsAgainst <= 20 && sv >= 0.885)) b.qs++;
     if (sv < 0.85) b.rbs++;
   }
-  return { leagueSv: Math.round(lg * 1000) / 1000, by };
+  return { leagueSv: Math.round(lg * 1000) / 1000, by, official: officialGoalieRates(rows) };
 }
 
 export { scoreGame };
@@ -290,6 +291,8 @@ export async function buildLeague({ season, get, nhl, model, loadPrevious, cache
   for (const k of agg.skaters) { const x = scoring.get(k.id); if (x) Object.assign(k, { assists: x.a, points: x.pts, plusMinus: x.pm, ppPoints: x.ppp, toiGp: x.toi ? Math.round(x.toi / 6) / 10 : null, gpOfficial: x.gpOff }); }
   for (const gk of qs ? agg.goalies : []) {
     const q = qs.by[gk.id];
+    const official=qs.official[gk.id];
+    if(official&&official.officialGp>=gk.gp)Object.assign(gk,official);
     Object.assign(gk, q ? { gs: q.gs, qs: q.qs, qsPct: q.gs ? Math.round((q.qs / q.gs) * 1000) / 1000 : null, rbs: q.rbs } : { gs: 0, qs: 0, qsPct: null, rbs: 0 });
   }
   const stamp = new Date().toISOString();
