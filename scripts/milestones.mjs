@@ -4,7 +4,8 @@
 // Pace = per game over this season and last (this season counted double), games = his team's remaining schedule (he
 // plays every game unless he's been missing them; a goalie by his share of starts). Projection only: "if he keeps his
 // pace and plays", never a promise.   node scripts/milestones.mjs  -> public/hockey/milestones.json
-import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import {careerLanding} from "./careerLanding.mjs";
 
 const UA = { "User-Agent": "hockey-lab/1.0 (personal, non-commercial)" };
 const read = (p) => readFile(p, "utf8").then(JSON.parse, () => null);
@@ -16,20 +17,7 @@ const SK = { goals: [200, 300, 400, 500, 600, 700, 800, 900, 1000], assists: [30
 const GK = { wins: [200, 250, 300, 350, 400, 450, 500, 550], shutouts: [40, 50, 60, 70], gamesPlayed: [500, 600, 700, 800, 900, 1000] };
 const LABEL = { goals: "goals", assists: "assists", points: "points", gamesPlayed: "games", wins: "wins", shutouts: "shutouts" };
 await mkdir(".cache/careers", { recursive: true });
-let fetched = 0;
-async function landing(id, fresh) {
-  const f = `.cache/careers/${id}.json`;
-  const age = await stat(f).then((s) => Date.now() - s.mtimeMs, () => Infinity);
-  if (age < (fresh ? 20 : 6 * 24) * 3600e3) return read(f);
-  for (let i = 0; i < 3; i++) {
-    const r = await fetch(`https://api-web.nhle.com/v1/player/${id}/landing`, { headers: UA }).catch(() => null);
-    if (r?.ok) { const d = await r.json(); const slim = { id, name: `${d.firstName?.default} ${d.lastName?.default}`, team: d.currentTeamAbbrev, pos: d.position, career: d.careerTotals?.regularSeason || null,
-      seasons: (d.seasonTotals || []).filter((s) => s.leagueAbbrev === "NHL" && s.gameTypeId === 2).slice(-3).map((s) => ({ season: s.season, gp: s.gamesPlayed, g: s.goals ?? 0, a: s.assists ?? 0, w: s.wins ?? 0, so: s.shutouts ?? 0, gs: s.gamesStarted ?? null })) };
-      await writeFile(f, JSON.stringify(slim)); fetched++; await pause(120); return slim; }
-    await pause(1500 * (i + 1));
-  }
-  return read(f);
-}
+async function landing(id,fresh){return careerLanding(id,{fresh});}
 const near = (v, list) => list.some((m) => v < m && v >= m * 0.8);
 const season = Number(String(league.season));
 const left = Object.fromEntries(proj.teams.map((t) => [t.team, proj.schedule.filter((g) => g.home === t.team || g.away === t.team).sort((a, b) => (a.date < b.date ? -1 : 1))]));
@@ -61,4 +49,4 @@ for (const p of players) {
 }
 rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.need - b.need));
 await writeFile("public/hockey/milestones.json", JSON.stringify({ builtAt: new Date().toISOString(), season: String(league.season), upcoming: rows.slice(0, 40), reached }));
-console.log(`milestones: ${rows.length} within reach this season, ${reached.length} reached this season; ${fetched} player pages fetched`);
+console.log(`milestones: ${rows.length} within reach this season, ${reached.length} reached this season; shared cached player pages`);

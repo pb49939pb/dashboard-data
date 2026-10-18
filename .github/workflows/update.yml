@@ -101,12 +101,17 @@ jobs:
         if: steps.hour.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
-          path: .cache/careers
+          path: |
+            .cache/careers
+            .cache/playoff-achievements
           key: careers-${{ github.run_id }}
           restore-keys: careers-
       - name: Milestone watch
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/milestones.mjs || echo "milestone watch failed; last night's list is kept"
+      - name: Player career achievements
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/buildCareerAchievements.mjs || echo "career achievements failed; previous publication retained"
       - name: Data checks (invariants)
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/invariants.mjs || echo "some data checks failed; see the Admin page"

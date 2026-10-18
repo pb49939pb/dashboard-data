@@ -1,0 +1,35 @@
+name: Refresh player career achievements
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+jobs:
+  careers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/careers
+            .cache/playoff-achievements
+          key: careers-${{ github.run_id }}
+          restore-keys: careers-
+      - run: node --test scripts/careerAchievements.test.mjs
+      - name: Build and publish career history
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/buildCareerAchievements.mjs --bootstrap --publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: career-achievements
+          path: public/hockey/careerAchievements.json
