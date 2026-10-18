@@ -131,6 +131,9 @@ Its promise is that every number names its source and date, and every model is t
   - season simulation at frozen dates;
   - "How good are the forecasts?" from the prospective log.
 
+### Signed-out view (owner only, 2026-10-18)
+A **Signed-out view** button under Sign out (only for the owner's account, recognized by the database letting it read the admin documents; nothing about the account is in the site's code) reloads the page as a signed-out visitor sees it: public tabs only, no contract figures, public GM moves and trade search, no saved edits. The owner stays signed in; **Back to my view** returns. Visits made in it still count as the owner's.
+
 ### Admin (owner only)
 Sub-tabs (since 2026-10-16), the last one used remembered:
 - **Visitors:** unique visitors, visits, tab views, time per visit, visits per day, each tab's visits and time (and how many visits landed there), devices, where visits came from, busiest hours and the 25 most recent visits, over 7, 30 or 90 days, with or without your own visits. From our own anonymous visit log (`visits/{id}` in Firestore): a random id per browser (no cookie), tabs and visible time, device class, referring site; no IP address, account or email; Do Not Track honored; readable by the owner only. Counted per browser, so one person on two devices counts twice.
