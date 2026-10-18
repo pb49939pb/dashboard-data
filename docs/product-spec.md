@@ -131,6 +131,14 @@ Its promise is that every number names its source and date, and every model is t
   - season simulation at frozen dates;
   - "How good are the forecasts?" from the prospective log.
 
+### Feed (signed-in readers, 2026-10-18)
+The first tab and the default page when signed in (links to a tab still open that tab). It starts empty, with directions.
+- **Add anything:** a **+** beside every card's title adds the card; grouped cards (League leaders, Award races, Standings) also have a **+** on each panel; repeated tiles inside a card (a team's box in Do the points match the chances?, a milestone, a goalie's panel) have a small **+** in their corner to add just that piece. ✓ = in the feed; tap again to remove.
+- **Live, with context:** a widget is a pointer to a card, saved with the team and settings it had (e.g. Teams · DET), and is drawn from the tab's own code, so it always shows the latest numbers.
+- **Watch teams:** pick any number of teams at the top of the Feed; every game card of theirs (yesterday, today, tomorrow; win odds always shown; live scores) appears as one movable block.
+- **Watch players:** ☆ Watch this player on a skater's card or a goalie's profile adds a simple season card (rating, G/A/P, expected goals, goals vs expected, ice time; goalies: save %, goals saved above expected, shots, goals).
+- **Rearrange:** drag any item by its ⋮⋮ handle, or use ↑ ↓; Remove takes it off. Order and contents are saved per account (`apps/hockey/users/{uid}/feed`).
+
 ### Signed-out view (owner only, 2026-10-18)
 A **Signed-out view** button under Sign out (only for the owner's account, recognized by the database letting it read the admin documents; nothing about the account is in the site's code) reloads the page as a signed-out visitor sees it: public tabs only, no contract figures, public GM moves and trade search, no saved edits. The owner stays signed in; **Back to my view** returns. Visits made in it still count as the owner's.
 
