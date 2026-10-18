@@ -189,8 +189,12 @@ export function leagueDoc(players, years, meta) {
     // no contract this season: keep his last deal's end and status, so the site can say "unsigned (RFA)" instead of "unknown"
     const lastDeal = !cur ? (() => { const c = p.contracts.slice().sort((u, v) => u.index - v.index)[0]; return c ? { end: Math.max(...c.seasons.map(seasonStart)), expiry: c.expiry ?? null } : null; })() : null;
     const retBy = cur ? cur.retention.filter((x) => x.abbr && x.abbr !== p.team).map((x) => x.abbr) : [];
+    // the current contract's first season and the cap hits of its seasons before this one (The Inside Scoop values a
+    // contract over every season it has run, 2026-10-18)
+    const from = contract ? Math.min(...contract.seasons.map(seasonStart)) : null;
+    const past = contract ? contract.seasons.map(seasonStart).filter((y) => y < years[0]).map((y) => [y, [].concat(p.seasons[y] ?? []).find((r) => r.contract === cur.contract && !r.buyout)?.capHit ?? null]).sort((u, v) => u[0] - v[0]) : [];
     P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, retBy: retBy.length ? retBy : undefined, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
-      elc: /entry/i.test(contract?.type || ""), lastDeal: lastDeal || undefined, anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
+      elc: /entry/i.test(contract?.type || ""), from: from ?? undefined, past: past.length ? past : undefined, lastDeal: lastDeal || undefined, anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};
   for (const y of years) { const T = teamCharges(players, y); for (const [a, t] of Object.entries(T)) (teams[a] ??= {})[y] = { players: t.totals.players, buyouts: t.totals.buyouts, retained: t.totals.retained, all: t.totals.all, ltir: t.totals.ltir, retainedN: new Set(t.retained.map((x) => x.id)).size, overlapAlt: t.totals.overlapAlt, overlaps: (t.overlaps || []).map((x) => x.id), n: t.players.filter((x) => x.capHit > 0).length, unverified: t.unverified.map((u) => u.id) }; }
