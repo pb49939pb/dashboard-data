@@ -1,8 +1,8 @@
-# Hockey Lab: product spec
+# The Other Score: product spec
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-16 (CapWages)
+Last reviewed: 2026-10-18 (Feed with press and hold, the public rename, Overview and recap redesigns, award races, player profiles)
 
 ## 1. What it is
 
@@ -32,42 +32,33 @@ Its promise is that every number names its source and date, and every model is t
 ## 4. Features
 
 ### Overview
-- **Hockey Lab / Today** (top of Overview): "What do the numbers say?", up to three short rows built nightly by fixed, tested rules:
-  - last night's biggest scoreboard-vs-chances surprise;
-  - a team winning more than its 5-on-5 chances suggest, or an honest "too early" note;
-  - the Question of the day.
-  
-  Each row links to the evidence. Never generated text, never a prediction.
-- **Recent games:** scores with pre-game model odds vs the Polymarket moneyline. During games:
-  - the clock, score and strength update about every 20 seconds;
-  - live win odds update every 5 minutes;
-  - a **goalie-pull advisor** appears for a team down one or two late in the third: too early, in the window, or past it, with the chance to tie. It's a decision aid from league-wide rates, not a prediction.
-
-  Each game opens a full **game recap**.
-- **Projected final standings:** 10,000 simulated seasons, with playoff, division and Cup odds (with simulation errors), the projected playoff bracket and strength of schedule. Past seasons show the final standings and bracket instead.
-- **Current standings, Team stats and division strength.**
-- **Points from the chances** (shot-quality standings): each team's points if every shot had gone in at its expected rate, with the shots held fixed.
-  - Shows a 90% range and a plain read (in line, ahead of or behind the chances).
-  - Deliberately not "deserved" and not a forecast; the half-season test is published on the card.
-- **Shooting and save luck at 5-on-5:** PDO, finishing and goaltending vs expected for every team, next to 5v5 chance share.
-  - Read as running hot, normal or running cold.
-  - Shows how much each piece repeated from the first half of a season to the second, instead of "who's due" claims.
-- **Who's controlling play:** xG share.
-- **Award races:** the leaderboards each award is argued on (Hart, Norris, Vezina, Calder). Leaderboards only; no award predictions.
-- **Milestone watch:** the next round-number career milestones in reach (500 goals, 1,000 points, 300 wins, 1,000 games…) with the projected game at each player's pace, plus milestones reached this season.
-- **Leaderboards:** best goaltending (GSAx), hot finishers, the snakebitten, most dangerous shooters, best forwards, defensemen and top defenders.
-- **Question of the day** (footer link, every tab): a pop-up answering one hockey question a day from our own play-by-play, starting Oct 15, 2026. Ten questions rotate in order: pulling the goalie, faceoffs, fights, two-goal leads, back-to-backs, scoring first, leads after two, the most dangerous shots, goalie luck, power-play timing. Each shows a headline, one chart, a few sentences, the method and the sample. It's built to screenshot, and earlier questions can be paged back.
+A compact, question-led headlines page (2026-10-17). Every section is a card that can be collapsed to a one-line data summary (favorite-team standings and projections included); Collapse all / Expand all, and each choice, are remembered per device. On phones, grouped cards (League leaders, Award races, Standings divisions) are swipe decks with neighbouring previews, arrows, progress dots and one-card gestures; desktop keeps grids.
+- **Games** (first): Yesterday, Today and Tomorrow, with sticky day chips that toggle each day (remembered) and Skip/Back shortcuts on long schedules.
+  - Score rows read TEAM score – score TEAM, highlight and lead with your **favorite team** (saved on the device, or to your account when signed in; changed behind a compact Team settings control), and show In models / Not in models yet.
+  - Win chances (The Other Score's pre-game model vs the Polymarket moneyline) show for your favorite (and watched) teams; **Show predicted winners** shows them on every game (remembered).
+  - **Per-game projection impact:** a finished game shows how many projected season points it moved each team (a cached nightly replay of the team model with that game included vs still unplayed, everything else fixed).
+  - During games: the clock, score and strength update about every 20 seconds, live win odds every 5 minutes, and a **goalie-pull advisor** appears for a team down one or two late in the third (too early, in the window, or past it, with the chance to tie): a decision aid from league-wide rates, not a prediction.
+  - Each game opens a full **game recap**.
+- **Question of the day** has its own card; the other **Today** rows (built nightly by fixed, tested rules: last night's biggest scoreboard-vs-chances surprise; a team winning more than its 5-on-5 chances suggest, or an honest "too early" note) unlock after opening the answer. Never generated text, never a prediction. The daily question is also a footer pop-up on every tab (ten questions rotate from Oct 15, 2026; headline, one chart, method and sample; three seasons of our play-by-play).
+- **Standings** (one card, tabs): **Current** (official NHL standings carried by the score feed, refreshed between model builds; one division at a time, favorite's division first, bold division names and an East/West badge), **Projected** (10,000 simulated seasons: projected points with 80% ranges, playoff, division and Cup odds with simulation errors, division seed / wild card / just-out tags; a ten-row chart or table; desktop keeps the complete views), **Play control** (who's controlling play: xG share, adjusted or raw) and **Divisional strength** (four ranked divisions; desktop adds the head-to-head comparison). The **projected playoff bracket** shows both conferences narrowing to the Cup Final. Past seasons show the final standings and bracket instead.
+- **League leaders** (one parent card): best defensemen, top defenders, best forwards, controlling play, best goaltending (GSAx), hot finishers, the snakebitten, most dangerous shooters, leakiest defense.
+- **Award races:** Hart, Norris (with ice time), Vezina (GSAx with workload, plus official NHL SV% and GAA kept separate from model rates), Calder, Rocket Richard (goals) and William M. Jennings (team goals allowed, 25-GP goalie rule explained). Rows show current totals, per-game rates and season pace (a rate extrapolation, not a forecast), current-season WAR pace with coverage, and last season's actual winner as a benchmark. Leaderboards only; no award predictions.
+- **Milestone watch** (after Award races): player-first panels with the next round-number career milestones in reach, the conditional projected date at each player's pace, and milestones reached this season.
+- **Do the points match the chances?** (shot-replay points): each team's Actual Pts vs Expected Pts if every shot had gone in at its expected rate, shots held fixed, with a 90% range and a plain read; compact team comparisons lead, the full league is behind a disclosure. Deliberately not "deserved" and not a forecast.
+- **Finishing and goaltending:** net goals vs expected at 5-on-5 (finishing and saves on shared-scale signed bars, helped/hurt labels, a team takeaway, the biggest net boost and drag), with how much each piece repeated from one half-season to the next.
+- **About the model.** Team stats moved to Teams (2026-10-16).
 
 ### Game recaps
-- **Deserved-to-win odds:** every shot replayed 10,000 times.
-- **Game flow:** xG flow, the turning point (the goal that moved win odds most) and three stars by game score.
-- **The story of the game** (tap to open): the game in order, mobile-first.
-  - Every goal, with the score, scorer and assists, power play or shorthanded, the scoring team's win odds before → after, and both teams' five skaters on the ice.
-  - Each team's best five-minute stretch and a line at the end of each period.
-  - The on-ice data loads only when the section is opened.
+A full-screen modal with a pinned close control, section shortcuts (players, flow, lines, box score) and these parts:
+- **Deserved-to-win odds:** every shot replayed 10,000 times; the result is explained against the pre-game forecast, and the game's projection impact follows.
+- **Who showed up:** compact player cards (goals, assists and points first; plus/minus; game-specific opponent difficulty) with one sticky tab per team (your favorite first), a sort menu, and tap-to-expand full hockey cards.
+- **The game breakdown deck** (swipe or arrows, progress dots; every card change opens at the top of the new card): The Battle, Period by period, How it unfolded, Story of the game, Three stars, Goalie duel, 5-on-5 lines, Style & shot map.
+  - **How it unfolded:** chances in two-minute buckets pushing out to each side, goals and the turning point; on phones it's drawn at the card's size (goal dots and the ★, no side labels, so swipes move the deck) and lists the scoring with goal videos.
+  - **Story of the game:** one timeline: each goal's time and running score, the scorer (power play / shorthanded / empty net / ★ turning point tags), assists, the scoring team's win odds before → after and both teams' skaters on the ice; each team's best five-minute stretch; a line at the end of each period. The on-ice data loads only when opened.
 - **Lines and storylines:** who was on the ice for each goal, matchup difficulty from shift charts, storylines (including "rough nights" judged by expected ±), and box scores with an expected ± column.
 
 ### Teams (pick any of 32)
+Defaults to your favorite team (else Detroit). On phones the team and season picker sits behind a small Change team / season button, and long card explanations move behind ⓘ buttons. Player names anywhere on Teams open the player's profile in a pop-up.
 - **Cap space tile:** each team's room under the ceiling from CapWages (roster and injured lists, buried minor-league deals, buyouts, retained salary; LTIR flagged).
 - **Team breakdowns:** where the team wins and loses (a goal-differential ledger: 5v5 chances, finishing, goaltending, special teams), team phase (inferred, or the owner's objective) with Polymarket as a comparator, and playoff odds.
 - **Player strength:** core players, the team's best players, and strength by position (C, LW, RW, LD, RD, G) ranked league-wide.
@@ -93,7 +84,7 @@ Its promise is that every number names its source and date, and every model is t
 ### Skaters
 - **Ratings and stats:** ratings (offense, defense, usage, overall, 40–99 within position) and stats (xG, goals above expected, expected ±, ice time).
 - **Contracts in lists:** every player list shows his current contract beside him (cap hit, final season, clause, extension; "Contract data: CapWages"): Teams (best players, core players, strength by position, style fits, GM moves), the trade explorer's player lists, and sortable Cap hit / Thru columns on the Skaters and Goalies tables.
-- **Player cards:** ratings, WAR-lite value, system fit, the contract line (cap hit, years left, UFA/RFA, clause; "Contract data: CapWages") and the owner's private scouting note. Goalie profiles carry the same contract line.
+- **Player profiles** open in a pop-up wherever a player is named (skaters and goalies alike, without leaving the tab): the contract first (cap hit, years left, UFA/RFA, clause; "Contract data: CapWages"; unsigned players say so), goals, assists and points, ratings, WAR-lite value, cached career achievements, opponent difficulty (time-weighted opponent strength, minutes against top players, most-faced opponents from 5-on-5 shifts), system fit, the owner's private scouting note, and **☆ Watch this player** for signed-in readers.
 
 ### Goalies
 - **Goalie stats:** GSAx and shooter-aware GSAx, ratings by shot type, with fewer-than-100-shot cells faded and 90% intervals.
@@ -124,7 +115,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Age of scoring.**
 
 ### Model (public)
-- **Explainers:** "How Hockey Lab works", and each model's when, inputs, what it does and where it's used.
+- **Explainers:** "How The Other Score works", and each model's when, inputs, what it does and where it's used.
 - **Scorecards:**
   - xG folds (train 2023-24 + 2024-25 → test 2025-26; all three → this season), calibration and walk-forward game odds;
   - RAPM vs WAR-lite, the WAR ledger, goalie forecasts, styles and fatigue;
@@ -133,11 +124,11 @@ Its promise is that every number names its source and date, and every model is t
 
 ### Feed (signed-in readers, 2026-10-18)
 The first tab and the default page when signed in (links to a tab still open that tab). It starts empty, with directions.
-- **Add anything:** a **+** beside every card's title adds the card; grouped cards (League leaders, Award races, Standings) also have a **+** on each panel; repeated tiles inside a card (a team's box in Do the points match the chances?, a milestone, a goalie's panel) have a small **+** in their corner to add just that piece. ✓ = in the feed; tap again to remove.
+- **Press and hold to add** (iPhone style): hold any card, panel or tile for about half a second; it shrinks a little, then lifts while the page blurs and dims, and a menu springs out with what applies there: add this tile (a team's box, a milestone, a goalie's panel), this panel (one of League leaders, Award races or Standings divisions) or the whole card; watch the team or player it's about. ✓ in the menu = already in the Feed (choose it to remove). Right-click does the same with a mouse; keyboard and screen-reader users get an Add to Feed button when a card's title is focused. No buttons sit on the cards at rest.
 - **Live, with context:** a widget is a pointer to a card, saved with the team and settings it had (e.g. Teams · DET), and is drawn from the tab's own code, so it always shows the latest numbers.
 - **Watch teams:** pick any number of teams at the top of the Feed; every game card of theirs (yesterday, today, tomorrow; win odds always shown; live scores) appears as one movable block.
-- **Watch players:** ☆ Watch this player on a skater's card or a goalie's profile adds a simple season card (rating, G/A/P, expected goals, goals vs expected, ice time; goalies: save %, goals saved above expected, shots, goals).
-- **Rearrange:** drag any item by its ⋮⋮ handle, or use ↑ ↓; Remove takes it off. Order and contents are saved per account (`apps/hockey/users/{uid}/feed`).
+- **Watch players:** ☆ Watch this player in a player's profile (or a hold on his name) adds a simple season card (rating, G/A/P, expected goals, goals vs expected, ice time; goalies: save %, goals saved above expected, shots, goals).
+- **Rearrange like the home screen:** hold any item until everything jiggles; keep holding and drag it, and the others slide out of the way; − removes; Done (or a tap outside) finishes. Items show as short previews while rearranging. Each item's ⋯ menu has Move to top, Move up, Move down, Rearrange and Remove. Order and contents are saved per account (`apps/hockey/users/{uid}/feed`). No haptics on iPhone (Safari doesn't allow them); Android gives a short tick.
 
 ### Signed-out view (owner only, 2026-10-18)
 A **Signed-out view** button under Sign out (only for the owner's account, recognized by the database letting it read the admin documents; nothing about the account is in the site's code) reloads the page as a signed-out visitor sees it: public tabs only, no contract figures, public GM moves and trade search, no saved edits. The owner stays signed in; **Back to my view** returns. Visits made in it still count as the owner's.
@@ -151,7 +142,7 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 - **Forecasts:** your forecasts and the trade-engine self-tests.
 - **Docs & models:** the methods dossier and this product spec (Copy and Download) and the model list.
 - **Architecture:** the full diagram of sources, jobs, stores, models and pages.
-- **Brand preview:** the Center ice masthead preview (Phase 2), on or off for your header.
+- **Brand preview:** the masthead is public; this switch turns the owner-only later-phase previews (section headers, tabular figures, Today as flagship) on or off.
 
 ### Ideas & bugs (owner; testers see "Report a bug")
 - **Ideas:** the owner files ideas, and Claude answers each one by building it, asking a question or declining with a reason. Statuses: new, in progress, needs input, needs approval, approved and queued, done, won't do.
@@ -162,7 +153,8 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 
 ### Elsewhere
 - **Red Wings widget:** on the personal dashboard, with xG and shots.
-- **Usability:** remembered picks per browser, deep links per tab and a back gesture that closes pop-ups. Works on phones.
+- **Usability:** remembered picks per browser, deep links per tab and a back gesture that closes pop-ups. Works on phones: mobile pop-ups keep one always-visible close control; swipe decks share one interaction (220 ms settle, vertical scrolling stays native, reduced motion respected).
+- **Name:** The Other Score (formerly Hockey Lab) everywhere since 2026-10-18, from the first paint; same `/hockey/` address. The later redesign phases (editorial section headers, tabular figures, Today as flagship, the After the Horn recap) are owner previews (Admin → Brand preview). The dashboard launcher button was removed from the site (2026-10-18).
 - **Spend cap:** Firestore and Hosting spend together are held to $5 a month. Past $5/30 in a Pacific day (or $5 in a month), the whole site shows a one-page "Back tomorrow" notice, the database is cut off to everyone but the owner, and the data jobs skip Firestore until midnight Pacific. A fresh visit costs about 20 reads, ~7 writes and ~0.22 MB: about 0.6¢ per 100 page loads past the free quotas.
 - **Speed:** Teams, Goalies and Overview load slim nightly versions of the two largest documents first (playersLite, injuriesLite); the full ones load only for the Skaters tab, player cards and last season's man-games lost.
 
@@ -221,7 +213,7 @@ Open feature requests and their status live on the Ideas & bugs tab (owner). As 
 - **Done:** a learned-weights retest of the "tested, not adopted" ideas. Learned weights came out at zero, so they stay out. A backfill of earlier seasons for more statistical power is a possible next step.
 
 ## 7a. Brand direction
-Hockey Lab is gradually becoming **The Other Score**. Phase 0 (baseline and guardrails) and Phase 1 (copy: a helper line on every tab, official/estimated/projected labels) are done; every later phase waits for the owner's review, and the public rename needs a separate go/no-go. The plan, voice, UI inventory, checklist and baseline are in `docs/brand/`. Brand work never changes models, data, permissions or routes.
+Hockey Lab became **The Other Score** publicly on 2026-10-18 (Phase 7's name switch, on the owner's go: masthead from the first paint, title, app manifest, attributions; same routes). Done: Phase 0 (baseline and guardrails), Phase 1 (copy), Phase 2 (Center ice masthead; now public), Phase 3 (Today as flagship, approved; its layout is still an owner preview). Phase 4 (After the Horn recap) is built on a branch and waits for the owner's test; Phases 5–6 are next; the domain/trademark check and any domain move are separate decisions. The plan, voice, UI inventory, checklist and baseline are in `docs/brand/`. Brand work never changes models, data, permissions or routes.
 
 ## 8. How this spec stays current
 
