@@ -361,3 +361,7 @@ Per owner feedback, undo the tallest-panel reserved height: recap panels again s
 
 ### 2026-10-18 — Revert inner recap panel scrolling
 Per owner request, recap panels return to their natural active-content height and the modal handles vertical scrolling. Remove the bounded panel height and inner-scroll hint. Preserve the Teams headline logo and named desktop carousel navigation. Supersedes the bounded recap reading surface above.
+
+
+### 2026-10-18 — Teams logo simplification
+Remove the foreground team logo from the Teams win/lose card header. Keep the team background logo and the full-width metrics layout.
