@@ -47,6 +47,8 @@ const CURRENT = new Set(["nextGames", "wildcardRace", "divisionLeaders", "r1", "
 /** Deep merge: `next` wins wherever it has a value; null/undefined never erase; keyed rows merge by id/team. */
 export function merge(prev, next, key = "") {
   if (next === null || next === undefined) return prev;
+  // This is an authoritative rolling window, not an accumulating season-long dictionary.
+  if (key === "gameImpacts") return next;
   if (Array.isArray(next) && CURRENT.has(key)) return next.length || !Array.isArray(prev) ? next : prev;
   if (Array.isArray(next)) {
     const keyed = Array.isArray(prev) && next.length && next.every((r) => rowKey(r) !== null) && prev.every((r) => rowKey(r) !== null);

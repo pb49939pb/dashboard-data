@@ -28,3 +28,9 @@ test('isolates a game, reports finite changes and permits a positive points effe
 test('paired simulations are reproducible and schedule ordering does not shift random draws',()=>{
  const R=teamRatings(played,ratings);const a=simulate({R,standings,remaining:remaining.slice(0,16),paired:true});const b=simulate({R,standings,remaining:remaining.slice(0,16).reverse(),paired:true});assert.deepEqual(a.teams,b.teams);
 });
+
+test('publication replaces the rolling impact window rather than accumulating old games',async()=>{
+ const {merge}=await import('./store.mjs');
+ assert.deepEqual(merge({gameImpacts:{old:{id:1}},other:'keep'},{gameImpacts:{recent:{id:2}}}),{gameImpacts:{recent:{id:2}},other:'keep'});
+ assert.deepEqual(merge({gameImpacts:{old:{id:1}}},{gameImpacts:{}}).gameImpacts,{});
+});
