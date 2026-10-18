@@ -357,3 +357,7 @@ Per owner feedback, undo the tallest-panel reserved height: recap panels again s
 - Desktop leaders, awards, divisional strength and recap panels have named navigation buttons and previous/next controls. Mobile keeps swipe/snap and progress dots; standings retain their desktop division tabs.
 - Recap panels use a tall bounded reading area (65% of viewport, 360–660px). Longer panels scroll vertically with an overflow hint, while horizontal swipes switch panels. The roster position stays stable without reserving the longest story height. Switching panels starts the new panel at its top without scrolling the whole modal.
 - Verify phone/desktop dimensions, all recap panels and access to their full content, desktop panel selection, and touch scrolling inside long panels.
+
+
+### 2026-10-18 — Revert inner recap panel scrolling
+Per owner request, recap panels return to their natural active-content height and the modal handles vertical scrolling. Remove the bounded panel height and inner-scroll hint. Preserve the Teams headline logo and named desktop carousel navigation. Supersedes the bounded recap reading surface above.
