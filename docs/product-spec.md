@@ -330,3 +330,11 @@ On phones the four large sort pills are replaced by one native dropdown in the s
 Period by period is the second breakdown panel, immediately after The Battle. The deck now has seven panels; flow/story handling and game-flow/line jump links identify sections by name so insertion does not misroute them. Validated 320/390/430px sticky controls, selected-team labels, sort/redraw behavior, desktop presentation and all seven snap positions, including active-panel sizing and jump links. No data/model changes or additional API calls.
 
 Mobile modal swipe decks now give the active panel the full horizontal width, with no resting preview of neighboring cards. Overview carousel peeks and desktop modal spacing are unchanged. Validated full-width alignment and seven-panel snapping alongside the compact team-aware sort controls.
+
+
+### 2026-10-18 — Mobile Teams and recap clarity
+- Teams: default to the favorite team (Detroit without a favorite); on phones reveal team/year controls from a compact button. Explicit team links and manual choices remain respected.
+- Mobile Teams header descriptions, including inferred phase, move behind tappable info icons. Existing measurement explainers remain available; desktop keeps inline descriptions. Fit the hero ratings within narrow screens.
+- Mobile recap How it unfolded shows chronological goals, running scores, assists and available NHL highlight links; desktop retains the chart. Three stars is the third recap panel, after Battle and Period by period.
+- Overview final-game winners use bright text, score emphasis and a muted winner label rather than green text.
+- Browser checks cover 320/390/430-pixel Teams layouts, favorites/Detroit fallback, manual selection, explainer dialogs and desktop, plus mobile/desktop recap deck navigation and goal links.
