@@ -77,7 +77,7 @@ Its promise is that every number names its source and date, and every model is t
 - **Assets:** draft picks (next three drafts, including traded and conditional picks) and prospects, valued in wins.
 - **Lines and pairs:** most-used units, their minutes and on-ice results.
 - **Style:** style fingerprint and archetype, matchups (descriptive only) and player types that fit the system.
-- **Recommended GM moves** (everyone; the owner's version also uses contracts, cap space and saved edits). The three best deals that could all be made (no shared player), with a plain-English why, playoff odds before → after and a feasibility chip. They're searched server-side nightly and re-checked on the page.
+- **Recommended GM moves** (everyone; the owner's version also uses contracts, cap space and saved edits). The three best deals that could all be made (no shared player), with a plain-English why, playoff odds before → after and a feasibility chip. They're searched server-side nightly and re-checked on the page; when the overnight search is out of date the page searches itself, but only once every input (contracts or public terms, CapWages, the cap table) has loaded, and it redoes the list whenever an input changes, so the card always matches How it's valued.
 - **Explore trades** (owner gets the full version): build any deal (players, picks, prospects, from several teams) and see:
   - wins this season and long-term value by each team's window;
   - the other team's verdict and EA-style value bars;
@@ -126,7 +126,7 @@ Its promise is that every number names its source and date, and every model is t
 ### Model (public)
 - **Explainers:** "How Hockey Lab works", and each model's when, inputs, what it does and where it's used.
 - **Scorecards:**
-  - xG folds, calibration and walk-forward game odds;
+  - xG folds (train 2023-24 + 2024-25 → test 2025-26; all three → this season), calibration and walk-forward game odds;
   - RAPM vs WAR-lite, the WAR ledger, goalie forecasts, styles and fatigue;
   - season simulation at frozen dates;
   - "How good are the forecasts?" from the prospective log.
@@ -224,8 +224,8 @@ Overview shows Yesterday, Today and Tomorrow using Eastern calendar dates. The s
 ### Nightly player opponent difficulty
 Player profiles show current-season, 5v5 shared-ice-time opponent strength, same-position percentile, time against top players, most-faced opponents and data coverage. Computed in the nightly pipeline from cached shift overlaps, published in the existing players document. Percentiles need 60 tracked minutes and at least 80% known opponent values. Missing data stays unavailable. Underlying player ratings are unchanged; model-inventory.md documents the calculation and architecture.
 
-### Docket: historical training expansion
-Add cached 2023–24 history, then retrain offline and compare against the existing models on identical chronological holdouts. 2024–25 already participates in current xG training and player values. No extra nightly external API calls: fetch historical inputs once and reuse cached data. Plan and season-boundary detail: `docs/research/historical-training-expansion.md`. Do not change production model coefficients without validation.
+### Historical training expansion (done 2026-10-17)
+All of 2023-24 (1,312 games: play-by-play and shift charts) was fetched once and cached. Adding it to xG training improved the held-out 2025-26 season (log loss 0.21779 → 0.21664, 95% CI of the difference −0.0017 to −0.0007; AUC 0.768 → 0.772; calibration slope 0.90 → 0.95) and tied on 2026-27 so far, so production xG now trains on 2023-24 through 2025-26. Shooter-aware xG, the question-of-the-day answers and the goalie-pull rates moved to the same three seasons. 2022-23 was tested on top and made both held-out seasons worse (+0.0009 log loss), so it isn't used; 2020-21 (the COVID season) is excluded. No extra nightly API calls: history is fetched once, offline. Test code: hockey-models `hockey/xg_history.py`; results in `models/xgHistory*.json`; previous artifacts in `models/archive/`.
 
 ### Overview presentation cleanup
 Team stats moves from Overview to Teams. Milestone Watch leads with four player panels (career target, current count, distance and conditional projected date), with remaining and achieved milestones expandable. Shot-replay points lead with the favorite and largest positive/negative point gaps, using explicit Actual / Shot replay / Difference labels, uncertainty ranges and an expandable full comparison. Finishing and goaltending use goals-versus-expected labels, chance share and expandable full league comparisons. Calculations remain unchanged; hypothetical past-shot replay is clearly distinct from a standings forecast.
