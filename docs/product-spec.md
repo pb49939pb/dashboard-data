@@ -404,3 +404,7 @@ Validation: pure tests for participation, duplicate games, losses, qualifiers, i
 
 ### 2026-10-18 — Compact career badges
 Player modals display only icons and ×counts for earned Cups, playoff series wins played in, and individual honors near the identity. Touch/click, keyboard focus and hover reveal labels without adding permanent text. Zero and unavailable achievements add no badge row. The full Career highlights section remains intact, moved to the bottom immediately before footer actions, after stats and analysis. Contract information remains near the top. Async career loading updates both representations.
+
+
+### 2026-10-18 — Feed controls and deck behavior
+Feed omits the global team/year picker entirely. Watched teams start as one compact horizontally scrollable logo row, expanding to reveal team management and the add selector; management stays expanded through add/remove redraws. Feed decks share Overview swipe styling, initialize every instance, scope arrows and division selection to the containing card, and retain active panels per saved widget through redraws. Add/action menus are measured at their final width and centered in the visual viewport, updating on viewport changes; long lists scroll within visible bounds. Lifted previews use the space above the menu without displacing it.
