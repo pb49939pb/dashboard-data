@@ -346,3 +346,7 @@ Recap carousel panels share the tallest natural height at the current screen wid
 
 ### 2026-10-18 — Teams mobile layout audit
 Keep collapse controls within Teams header rows so they cannot squeeze following style panels or tables. Move descriptions after tabbed headers into their existing mobile info dialogs, including lazy-loaded cards. Stack core-player metadata and availability labels; use readable absence metrics and a bounded scrolling absence table with room for names and statuses. Desktop layouts remain unchanged. Checked rendered cards and browser behavior at 320, 390 and 430 pixels.
+
+
+### 2026-10-18 — Revert reserved recap carousel height
+Per owner feedback, undo the tallest-panel reserved height: recap panels again size to the active content, avoiding excess blank vertical space. Restore the prior panel-switch scroll behavior. Keep the Teams mobile layout fixes. Supersedes the stable recap carousel height entry above.
