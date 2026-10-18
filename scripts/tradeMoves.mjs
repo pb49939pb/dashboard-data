@@ -89,7 +89,8 @@ const json = JSON.stringify(out);
 // Public versions for signed-out visitors (no contract or cap data, no owner edits): the news-only trade block, and the
 // same search run as a visitor's page runs it (no contracts list, no cap table)
 const tradeBlock = { builtAt: new Date().toISOString(), block: (docs.contracts.block || []).filter((b) => b.auto).map((b) => ({ id: b.id ?? null, name: b.name, team: b.team, status: b.status,
-  since: b.since ?? null, firstSeen: b.firstSeen ?? null, lastSeen: b.lastSeen ?? null, reports: b.reports ?? null, sources: (b.sources || []).map((x) => ({ site: x.site, url: x.url, date: x.date, title: x.title, quote: x.quote })) })) };
+  since: b.since ?? null, firstSeen: b.firstSeen ?? null, lastSeen: b.lastSeen ?? null, reports: b.reports ?? null, sources: (b.sources || []).map((x) => ({ site: x.site, url: x.url, date: x.date, title: x.title, quote: x.quote, kind: x.kind ?? null, by: x.by ?? null, via: x.via ?? null, teams: x.teams ?? [] })),
+  tradeList: b.tradeList ?? null, linked: b.linked ?? [] })) }; // The Inside Scoop: credits, teams named, reported trade list
 await db.doc("hockey/tradeBlock").set({ json: JSON.stringify(tradeBlock), updatedAt: new Date().toISOString() });
 // public contract terms: years, status, entry-level, signing date, extension years. No cap hits, sources or owner edits.
 const contractTerms = publicTerms(docs.contracts);
