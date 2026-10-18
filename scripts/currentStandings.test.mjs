@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {normalizeStandings,refreshStandings} from './currentStandings.mjs';
+const codes='ANA BOS BUF CAR CBJ CGY CHI COL DAL DET EDM FLA LAK MIN MTL NJD NSH NYI NYR OTT PHI PIT SEA SJS STL TBL TOR UTA VAN VGK WPG WSH'.split(' ');
+const payload=()=>({standingsDateTimeUtc:'2026-10-18T01:00:00Z',standings:codes.map(team=>({teamAbbrev:{default:team},seasonId:20262027,gamesPlayed:4,wins:2,losses:1,otLosses:1,points:5,regulationWins:1,goalFor:10,goalAgainst:9,goalDifferential:1}))});
+test('normalize complete official records with source timestamp',()=>{const result=normalizeStandings(payload());assert.equal(result.teams.length,32);assert.equal(result.teams.find(t=>t.team==='DET').pts,5);assert.equal(result.asOf,'2026-10-18T01:00:00Z');});
+test('reject partial, duplicate, mixed season and inconsistent records',()=>{for(const change of [p=>p.standings.pop(),p=>p.standings[1]=p.standings[0],p=>p.standings[0].seasonId=20252026,p=>p.standings[0].points=6,p=>p.standings[0].otLosses=null,p=>p.standings[0].goalDifferential=5]){const p=payload();change(p);assert.throws(()=>normalizeStandings(p));}});
+test('failed or regressing refresh retains exact last good snapshot',async()=>{const previous=normalizeStandings(payload());for(const fetcher of [async()=>{throw Error('offline')},async()=>({ok:false,status:503}),async()=>({ok:true,json:async()=>({standings:[]})}),async()=>({ok:true,json:async()=>({...payload(),standingsDateTimeUtc:'2026-10-17T01:00:00Z'})})])assert.equal(await refreshStandings(previous,{fetcher}),previous);});

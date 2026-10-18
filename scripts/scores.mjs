@@ -5,6 +5,7 @@
 //     moneyline price (read-only public market data), frozen at puck drop so the recap can say which was closer
 //   - game recaps (scripts/recap.mjs) for live and finished games, plus a backfill of the season's earlier games
 //   node scripts/scores.mjs            (STORE_DRY_RUN=1 to run without saving)
+import { refreshStandings } from "./currentStandings.mjs";
 import { readFile } from "node:fs/promises";
 import { openStore } from "./store.mjs";
 import { buildRecap, RECAP_VERSION } from "./recap.mjs";
@@ -81,6 +82,8 @@ async function want(date, isToday) {
   return { date, checkedAt: new Date().toISOString(), games };
 }
 const days = [await want(yesterday, false), await want(today, true), await want(tomorrow, true)];
+// Shared by every visitor; no browser calls to the NHL, and no model rebuild.
+const standings=await refreshStandings(prev?.standings);
 
 // predictions for games that haven't started: our model (nightly) and Polymarket (now); frozen once the puck drops
 const upcoming = days.flatMap((d) => d.games).filter((g) => !done(g) && !live(g) && g.state !== "PPD");
@@ -237,8 +240,8 @@ if (store) {
   if (backfilled || recaps || metaDoc.done.length === 0) await store.put("hockey/recapMeta", { done: [...doneIds].sort((a, b) => a - b), version: RECAP_VERSION, updatedAt: new Date().toISOString() }, {}, { replace: true });
 }
 
-if (!fetched && !recaps && !backfilled && !predsFilled) { console.log("scores: nothing live or starting soon; no NHL call"); process.exit(0); }
-const doc = { updatedAt: new Date().toISOString(), days };
+if (!fetched && !recaps && !backfilled && !predsFilled && standings===prev?.standings) { console.log("scores: nothing live or starting soon; no NHL call"); process.exit(0); }
+const doc = { updatedAt: new Date().toISOString(), days, ...(standings?{standings}:{}) };
 if (!store) { console.log(JSON.stringify(doc).slice(0, 600)); process.exit(0); }
 await store.put("public/scores", doc, {}, { replace: true });
 console.log(`scores: fetched ${fetched} day(s); ${days.map((d) => `${d.date} ${d.games.length} games`).join(", ")}; recaps ${recaps}, backfilled ${backfilled}`);

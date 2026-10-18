@@ -72,7 +72,7 @@ for (;;) {
   const pending = gs.filter((g) => !["FINAL", "OFF"].includes(g.state) && g.start > now - 6 * 3600e3);
   const next = pending.filter((g) => g.start > now).sort((a, b) => a.start - b.start)[0];
   const elapsed = now - started;
-  if (!pending.length) { if (rounds === 0) runScores(); await liveTick(); /* clears hockey/live */ console.log(`No games left to play or finish today; done after ${rounds} rounds.`); break; }
+  if (!pending.length) { runScores(); await liveTick(); /* clears hockey/live */ console.log(`No games left to play or finish today; done after ${rounds} rounds.`); break; }
   if (elapsed > BUDGET) {
     console.log(`${pending.length} games still to finish; handing off to a fresh run.`);
     const h = spawnSync("gh", ["workflow", "run", "live.yml", "--ref", process.env.GITHUB_REF_NAME || "main"], { stdio: "inherit", env: process.env });
