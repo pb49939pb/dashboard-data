@@ -398,3 +398,7 @@ The First to Three question is next on October 19, 2026, computed offline from 3
 
 ### 2026-10-18 — Make game impact interpretable
 Projection impact is the second recap panel. It explicitly separates earned standings points from the net full-season forecast change; winners whose outlook falls and losers whose outlook rises receive a visible explanation. Ratings changes affect the remaining schedule, so they can outweigh the benefit or cost of the result; actual standings points are never replaced by xG. Lower expected goals against is better. Checked saved DET–SJS 2026020127: DET won 4–3 SO, raw xG DET 3.353 / SJS 4.448, net projected points DET −1.20 / SJS +2.12.
+
+
+### 2026-10-18 — Norris ice time and goalie WAR pace
+Norris rows show average TOI in minutes per game; prior winners use archived season TOI/GP (Werenski 2025–26: 26.6, Makar 2024–25: 25.7). All five individual trophy races show current-season WAR pace where measured WAR and modeled appearances are available. Skaters use a full-season appearance rate; Vezina uses WAR per modeled appearance times projected appearances at the goalie’s current share of team games, capped at season length. Missing WAR stays unavailable. Jennings remains a team goals-allowed race without an invented team WAR. No additional external API calls.
