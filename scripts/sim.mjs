@@ -11,6 +11,8 @@ function rng(seed) {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
 }
 
+function mixSeed(x) { x=Math.imul(x^(x>>>16),0x85ebca6b);x=Math.imul(x^(x>>>13),0xc2b2ae35);return (x^(x>>>16))>>>0; }
+
 /** Per-team ratings from this season's games plus last season's prior. */
 export function teamRatings(games, ratings, saLookup) {
   const w = ratings.weights;
@@ -110,7 +112,7 @@ export function winProbability(R, home, away, adj = { home: 1, away: 1 }) {
 // teamSd: shared season risk: in each simulated season every team's true strength is off by a normal draw with this
 // SD (goals of margin per game), the same for all its games (independent per-game Poisson draws understate how far a
 // season can go; audit 7.4). 0 = off. Monte Carlo standard errors of every probability are reported (…Se fields).
-export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0.635, roster = null, teamSd = 0 }) {
+export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0.635, roster = null, teamSd = 0, paired = false }) {
   const rand = rng(seed);
   const info = {};
   for (const s of standings) {
@@ -173,12 +175,14 @@ export function simulate({ R, standings, remaining, seed = 20261012, otShare = 0
     let z = null;
     if (teamSd) { z = {}; for (const t of teams) { const u1 = Math.max(1e-12, rand()), u2 = rand(); z[t] = teamSd * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2); } }
     for (const g of games) {
+      // Counterfactual replays share draws by season/game, unaffected by inserting one game.
+      const draw=paired?rng(mixSeed(seed ^ Math.imul(n+1,2654435761) ^ mixSeed(g.id))):rand;
       let p = g;
       if (st || z) { const m = (st ? st.margin(g, rand) : 0) + (z ? z[g.home] - z[g.away] : 0); p = g.tab[Math.max(0, Math.min(60, Math.round((m + 1.2) / 0.04)))]; }
-      const r = rand();
+      const r = draw();
       if (r < p.h) { pts[g.home] += 2; rw[g.home]++; row[g.home]++; w[g.home]++; }
       else if (r < p.h + p.a) { pts[g.away] += 2; rw[g.away]++; row[g.away]++; w[g.away]++; }
-      else { const ot = rand() < p.otH ? g.home : g.away; pts[ot] += 2; w[ot]++; if (rand() < otShare) row[ot]++; pts[ot === g.home ? g.away : g.home] += 1; }
+      else { const ot = draw() < p.otH ? g.home : g.away; pts[ot] += 2; w[ot]++; if (draw() < otShare) row[ot]++; pts[ot === g.home ? g.away : g.home] += 1; }
     }
     const table = teams.map((t) => ({ team: t, pts: pts[t], rw: rw[t], row: row[t], w: w[t], coin: rand() })).sort((a, b) => b.pts - a.pts || b.rw - a.rw || b.row - a.row || b.w - a.w || b.coin - a.coin);
     table.forEach((r) => acc[r.team].pts.push(r.pts));

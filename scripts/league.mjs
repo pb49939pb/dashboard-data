@@ -59,7 +59,7 @@ function scoreGame(pbp, model, shifts = null) {
  * Shooter-aware xG: each unblocked shot's xG adjusted for the shooter's finishing record before that game
  * (priors through last season from hockey-models, plus this season's earlier games). Returns a per-shot lookup.
  */
-function shooterAware(games, sa) {
+export function shooterAware(games, sa) {
   if (!sa) return null;
   const totals = new Map(Object.entries(sa.priors).map(([id, [g, x]]) => [Number(id), { g, x }]));
   const out = new Map();

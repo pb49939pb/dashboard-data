@@ -24,3 +24,6 @@ if (league) {
   }
   console.log(`restored ${games.length} games for ${Object.keys(byTeam).length} teams`);
 }
+
+const impactMeta=await store.read("hockey/impactMeta");
+if(impactMeta)await writeFile(`${out}/hockey/impactMeta.json`,JSON.stringify(impactMeta));

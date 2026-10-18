@@ -103,6 +103,11 @@ if (proj) {
   const day = proj.updatedAt.slice(0, 10);
   await store.put(`hockey/history/${proj.season}/${day}`, { date: day, teams: proj.teams.map((t) => ({ team: t.team, pts: t.pts, gp: t.gp, projPts: t.projPts, playoffs: t.playoffs, cup: t.cup })) }, { date: day });
 }
+const impacts=await load("public/hockey/gameImpacts.json");
+if(impacts&&String(impacts.season)===String(proj?.season)){
+  await store.putMany(Object.values(impacts.docs).map(d=>({path:`hockey/impacts/${impacts.season}/${d.id}`,data:d})),{replace:true});
+  const meta=await load("public/hockey/impactMeta.json");if(meta)await store.put("hockey/impactMeta",meta,{}, {replace:true});
+}
 const players = await load("public/hockey/players.json");
 if (players) await store.put("hockey/players", players, {}, { replace: true }); // rebuilt in full each night (only written when MoneyPuck answered)
 const lines = await load("public/hockey/lines.json");

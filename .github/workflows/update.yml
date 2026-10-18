@@ -120,6 +120,9 @@ jobs:
       - name: Roster-aware simulation
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/rosterSim.mjs || echo "roster simulation failed; team-only projections are published"
+      - name: Per-game season projection impact (cached inputs only)
+        if: steps.hour.outputs.skip != 'true'
+        run: node --test scripts/gameImpact.test.mjs && node scripts/buildGameImpacts.mjs || echo "Game impacts unavailable; no guessed changes published"
       # Drift alarms (live calibration and input distributions vs the scorecards) and the champion/challenger record
       - name: Drift alarms
         if: steps.hour.outputs.skip != 'true'

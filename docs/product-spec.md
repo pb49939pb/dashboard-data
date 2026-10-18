@@ -365,3 +365,12 @@ Per owner request, recap panels return to their natural active-content height an
 
 ### 2026-10-18 — Teams logo simplification
 Remove the foreground team logo from the Teams win/lose card header. Keep the team background logo and the full-width metrics layout.
+
+
+### 2026-10-18 — Per-game season projection impact
+- Overview: final, model-included games show each team's signed projected season-points change as an absolute-positioned micro-label beneath the team abbreviation. Card dimensions are unchanged, including favorite-team and predictions modes.
+- Recap: Projection impact panel shows both teams' before/after season points, wins, shot xG for/against, scoring projection, playoff, division, Cup Final and Stanley Cup chances.
+- Attribution is an isolated game replay from one nightly build: remove this game's result and shots, treat it as still unplayed, and hold all other results fixed. This is not a stored pre-game forecast or the entire night's change. A loss can improve ratings enough to raise expected points.
+- Points/wins/scoring means are calculated directly from game probabilities. Future scoring/xG uses regulation-time rates; shootout tallies are excluded. Postseason games do not receive regular-season impact values. Odds use 10,000 paired simulations; tiny changes can be Monte Carlo noise.
+- Backend uses already cached scored games, model inputs and remaining schedule: no added NHL or other external data-source calls. Reject incomplete schedules or standings mismatches. Team-model basis only; do not silently mix roster-model projections.
+- Build up to 32 new/corrected games per nightly run, newest first; older recaps backfill progressively. Save durable per-game comparisons at hockey/impacts/{season}/{id}, with recent comparisons embedded in projections for previews and a compact incremental index restored nightly. Missing comparisons show an explicit pending/unavailable state.
