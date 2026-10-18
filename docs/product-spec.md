@@ -6,7 +6,7 @@ Last reviewed: 2026-10-16 (CapWages)
 
 ## 1. What it is
 
-Hockey Lab is an NHL analytics site built on public data. It has expected goals, player and team ratings, season projections, live win odds, game recaps, shot maps, front-office grades and an owner-only GM workbench (contracts, cap, trade valuation and recommended moves).
+The Other Score (formerly Hockey Lab; renamed publicly 2026-10-18, same address `/hockey/`) is an NHL analytics site built on public data. It has expected goals, player and team ratings, season projections, live win odds, game recaps, shot maps, front-office grades and an owner-only GM workbench (contracts, cap, trade valuation and recommended moves).
 
 Its promise is that every number names its source and date, and every model is tested out of sample before it goes live. A new or changed model is promoted only if it beats the current one (or a simple baseline) on held-out data, with an interval that excludes zero. Otherwise it's published as a test result, run in shadow, or held for the owner's decision.
 

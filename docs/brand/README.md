@@ -7,12 +7,12 @@ The plan is `rollout.md`: the owner's phased plan, copied verbatim. The creative
 |---|---|---|
 | 0 | Baseline & guardrails | **Done 2026-10-14**, approved by the owner 2026-10-15 |
 | 1 | Editorial voice (copy only) | **Done 2026-10-15** (`phase1-copy.md`), approved by the owner 2026-10-16 |
-| 2 | Brand signature (scoped masthead) | **Done 2026-10-16 on Center ice, owner preview** (`phase2-masthead.md`): masthead, section header, tabular figures; public switch-over waits for Phase 7 |
-| 3 | Today as flagship | **Prototype live, owner preview, 2026-10-16** (`phase3-today.md`): awaiting the owner's review |
-| 4 | "After the Horn" recap | After Phase 3 review |
+| 2 | Brand signature (scoped masthead) | **Done 2026-10-16 on Center ice** (`phase2-masthead.md`). The masthead is public since 2026-10-18 (Phase 7); section headers and tabular figures stay an owner preview |
+| 3 | Today as flagship | **Done 2026-10-16, owner preview** (`phase3-today.md`), approved by the owner ("Phase 3 looks good"); public switch-over not yet decided |
+| 4 | "After the Horn" recap | **Built on branch `phase4-recap`** (hockey-web worktree `../hw-recap`), not merged: waits for the owner's test on real recaps. main's recap layout changed since (2026-10-17), so the branch needs a rebase |
 | 5 | Teams → Skaters → Goalies → Model | One page family at a time |
 | 6 | Charts, shared primitives, owner Workbench | Last |
-| 7 | Optional public rename | Owner go/no-go after brand, domain and trademark clearance |
+| 7 | Public rename | **Name public since 2026-10-18, on the owner's go**: masthead (in index.html, so there's no Hockey Lab flash), page title, app manifest, attributions and labels; same `/hockey/` routes. Still open: domain and trademark check (owner), a domain move (separate project), social-preview metadata, a brand-colored icon |
 
 Each phase stops for the owner's review before the next one starts (plan, section 5).
 
