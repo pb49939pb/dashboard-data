@@ -27,11 +27,12 @@ export function seasonMeans(R,standings,remaining,played){
       out[t].goals+=home?p.xgHome:p.xgAway;out[t].ga+=home?p.xgAway:p.xgHome;
     }}return out;
 }
-export function validateInputs({standings,played,remaining}){
+export function validateInputs({standings,played,remaining,season}){
   if(standings.length!==32||new Set(standings.map(s=>s.teamAbbrev.default)).size!==32)throw Error('Need all 32 standings rows');
   const ids=[...played,...remaining].map(g=>g.id);if(new Set(ids).size!==ids.length)throw Error('Duplicate/overlapping games');
+  const seasonGames=Number(String(season||"20252026").slice(0,4))>=2026?84:82;
   for(const s of standings){const t=s.teamAbbrev.default,gs=played.filter(g=>g.home===t||g.away===t),left=remaining.filter(g=>g.home===t||g.away===t);
-    if(gs.length!==s.gamesPlayed||gs.length+left.length!==82)throw Error(`Incomplete model/schedule for ${t}`);
+    if(gs.length!==s.gamesPlayed||gs.length+left.length!==seasonGames)throw Error(`Incomplete model/schedule for ${t}: ${gs.length} scored, ${s.gamesPlayed} in standings, ${left.length} remaining; expected ${seasonGames}`);
     const pts=gs.reduce((n,g)=>n+((g.hs>g.as?g.home:g.away)===t?2:g.end!=='REG'?1:0),0);
     if(pts!==s.points)throw Error(`Standings/model points mismatch for ${t}`);
   }

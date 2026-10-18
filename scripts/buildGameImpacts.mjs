@@ -11,7 +11,7 @@ if(!proj?.standingsRows||!ratings)throw Error('Projection inputs missing');
 if(proj.simModel&&proj.simModel!=='team')throw Error('Game impacts currently require the team simulation; skip rather than mix model bases');
 const map=new Map();for(const f of await readdir(`${root}/teams`)){const d=await read(`${root}/teams/${f}`);if(String(d?.season)!==String(proj.season))continue;for(const g of d.games||[])if(String(g.id).slice(4,6)==='02')map.set(g.id,g);}
 const played=[...map.values()].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id),standings=proj.standingsRows,remaining=proj.schedule;
-validateInputs({standings,played,remaining});
+validateInputs({standings,played,remaining,season:proj.season});
 const old=String(prior?.season)===String(proj.season)&&prior?.version===IMPACT_VERSION?prior:{hashes:{},recent:{}};
 const hash=g=>createHash('sha256').update(JSON.stringify(g)).digest('hex');
 const hashes={...old.hashes};

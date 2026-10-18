@@ -34,3 +34,9 @@ test('publication replaces the rolling impact window rather than accumulating ol
  assert.deepEqual(merge({gameImpacts:{old:{id:1}},other:'keep'},{gameImpacts:{recent:{id:2}}}),{gameImpacts:{recent:{id:2}},other:'keep'});
  assert.deepEqual(merge({gameImpacts:{old:{id:1}}},{gameImpacts:{}}).gameImpacts,{});
 });
+
+test('2026–27 validation uses the expanded 84-game schedule',()=>{
+ const extra=remaining.slice(0,32).map((g,i)=>({...g,id:2026022000+i}));
+ validateInputs({standings,played,remaining:[...remaining,...extra],season:'20262027'});
+ assert.throws(()=>validateInputs({standings,played,remaining,season:'20262027'}),/expected 84/);
+});
