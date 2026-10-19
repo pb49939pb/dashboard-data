@@ -105,6 +105,16 @@ for (const t of empty) {
   }
 }
 
+// Fill positions missing from fallback draftees with official draft metadata.
+// Require draft slot AND normalized name so a changed feed cannot attach another player's position.
+for(const year of [...new Set(prospects.filter(p=>!p.pos&&p.draftYear).map(p=>p.draftYear))]) {
+  const data=await fetch(`https://api-web.nhle.com/v1/draft/picks/${year}/all`,{headers:UA}).then(r=>r.ok?r.json():null).catch(()=>null);
+  for(const p of prospects.filter(p=>!p.pos&&p.draftYear===year)) {
+    const pick=data?.picks?.find(x=>x.overallPick===p.draftOverall&&normName(`${x.firstName?.default} ${x.lastName?.default}`)===normName(p.name));
+    if(pick?.positionCode){p.pos=pick.positionCode;p.positionSource="NHL draft picks";}
+  }
+}
+
 // handedness (left / right D for positional depth) from the NHL stats API's skater bios, this season and last
 const hands = {};
 const prevSeason = `${Number(season.slice(0, 4)) - 1}${season.slice(0, 4)}`;

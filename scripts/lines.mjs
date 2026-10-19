@@ -126,6 +126,10 @@ export function buildLines(games, teams) {
       const t5 = team5Of(list);
       // a unit needs 4% of the team's 5v5 time (about 10 minutes after five games) to count as one of its lines
       const F = pickUnits(agg("F", list), 4, 0.04 * t5).map((u) => describe(u, list, t5)), D = pickUnits(agg("D", list), 3, 0.04 * t5).map((u) => describe(u, list, t5));
+      // depth order (bug B77): by the members' own 5v5 ice time per game, not minutes as a unit, so a top trio that gets
+      // split up often is still the 1st line; time together breaks ties
+      const depth = (u) => u.ids.reduce((a, i) => a + (toi[i]?.ev5 || 0) / Math.max(1, toi[i]?.gp || 1), 0) / u.ids.length;
+      F.sort((x, y) => depth(y) - depth(x) || y.toi5 - x.toi5); D.sort((x, y) => depth(y) - depth(x) || y.toi5 - x.toi5);
       label(F, "F"); label(D, "D");
       return { F, D };
     };

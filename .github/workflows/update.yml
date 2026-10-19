@@ -109,9 +109,6 @@ jobs:
       - name: Milestone watch
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/milestones.mjs || echo "milestone watch failed; last night's list is kept"
-      - name: Player career achievements
-        if: steps.hour.outputs.skip != 'true'
-        run: node scripts/buildCareerAchievements.mjs || echo "career achievements failed; previous publication retained"
       - name: Data checks (invariants)
         if: steps.hour.outputs.skip != 'true'
         run: node scripts/invariants.mjs || echo "some data checks failed; see the Admin page"
@@ -120,6 +117,9 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}  # CapWages roster status (capwages/live)
         run: node scripts/injuries.mjs || echo "injury build failed; last night's numbers are kept"
+      - name: Player career achievements
+        if: steps.hour.outputs.skip != 'true'
+        run: node scripts/buildCareerAchievements.mjs || echo "career achievements failed; previous publication retained"
       # Roster-aware season simulation (lineups, starting goalies, injuries): shadow next to the team-only one unless
       # model/config.json says "simModel": "roster"
       - name: Roster-aware simulation

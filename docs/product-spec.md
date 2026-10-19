@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-18 (Feed with press and hold, the public rename, Overview and recap redesigns, award races, player profiles)
+Last reviewed: 2026-10-19 (bug triage B55-B80: Players skaters only, line depth order, past-season Coaches, Inside Scoop clauses and list notes, official goalie rates fallback)
 
 ## 1. What it is
 

@@ -5,8 +5,11 @@ import {openStore} from './store.mjs';
 const publish=process.argv.includes('--publish'),bootstrap=process.argv.includes('--bootstrap');
 const store=publish?await openStore():null;if(publish&&!store)throw Error('Server storage unavailable');
 const league=await readJson('public/hockey/league.json')||await store?.read('hockey/league');if(!league)throw Error('League required');
-const ids=[...new Set([...league.skaters,...league.goalies].map(p=>p.id))],players=[];
-for(let i=0;i<ids.length;i+=4){players.push(...(await Promise.all(ids.slice(i,i+4).map(id=>bootstrap?careerLanding(id,{migrate:true}):readJson(`.cache/careers/${id}.json`)))).filter(p=>p?.schema===2));if(bootstrap&&i%100===0)console.log(`Career pages: ${i}/${ids.length}`);}
+// players out all season so far (injured, suspended: e.g. Hellebuyck, bug B79) have no league row yet; take them from tonight's absences
+const injuries=await readJson('public/hockey/injuries.json')||await store?.read('hockey/injuries');
+const absent=injuries?.current?.season===league.season?Object.values(injuries.current.teams||{}).flatMap(t=>t.players||[]):[];
+const ids=[...new Set([...league.skaters,...league.goalies,...absent].map(p=>p.id).filter(Boolean))],players=[];
+for(let i=0;i<ids.length;i+=4){players.push(...(await Promise.all(ids.slice(i,i+4).map(id=>bootstrap?careerLanding(id,{migrate:true}):readJson(`.cache/careers/${id}.json`).then(c=>c||careerLanding(id))))).filter(p=>p?.schema===2));if(bootstrap&&i%100===0)console.log(`Career pages: ${i}/${ids.length}`);}
 await mkdir('.cache/playoff-achievements',{recursive:true});const seasons=[...new Set(players.flatMap(p=>p.playoffSeasons))].sort(),results={};
 async function allStats(kind,season){const d=await nhlJson(`https://api.nhle.com/stats/rest/en/${kind}/summary?isAggregate=false&isGame=true&limit=-1&cayenneExp=seasonId=${season}%20and%20gameTypeId=3`);if(!Array.isArray(d.data)||d.data.length!==d.total)throw Error(`Incomplete ${kind} logs ${season}`);return d.data;}
 for(const season of seasons){const file=`.cache/playoff-achievements/${season}.json`;let cached=await readJson(file);const finished=Number(String(season).slice(0,4))<Number(String(league.season).slice(0,4));
