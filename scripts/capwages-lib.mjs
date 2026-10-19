@@ -193,7 +193,7 @@ export function leagueDoc(players, years, meta) {
     // contract over every season it has run, 2026-10-18)
     const from = contract ? Math.min(...contract.seasons.map(seasonStart)) : null;
     const past = contract ? contract.seasons.map(seasonStart).filter((y) => y < years[0]).map((y) => [y, [].concat(p.seasons[y] ?? []).find((r) => r.contract === cur.contract && !r.buyout)?.capHit ?? null]).sort((u, v) => u[0] - v[0]) : [];
-    P.push({ id: p.nhlId, team: p.team, s: p.leagueStatus ?? null, hits, end: last, retBy: retBy.length ? retBy : undefined, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
+    P.push({ id: p.nhlId, name: p.name ?? undefined, pos: p.pos ?? undefined, team: p.team, s: p.leagueStatus ?? null, hits, end: last, retBy: retBy.length ? retBy : undefined, endLast, expLast: newest?.expiry ?? null, expiry: cur?.expiry ?? null, clause: cur?.clause ?? null,
       elc: /entry/i.test(contract?.type || ""), from: from ?? undefined, past: past.length ? past : undefined, lastDeal: lastDeal || undefined, anomaly: [].concat(p.seasons[years[0]] ?? []).some((r) => r.retentionAnomaly) || undefined });
   }
   const teams = {};
