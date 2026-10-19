@@ -100,10 +100,13 @@ const pub = await lab.headlessTradeMoves({ ...docs, contracts: null, teamCap: nu
 const pubJson = JSON.stringify(pub);
 if (Buffer.byteLength(pubJson) > 1_000_000) throw new Error("hockey/tradeMovesPublic is over Firestore's 1 MB limit");
 await db.doc("hockey/tradeMovesPublic").set({ json: pubJson, updatedAt: new Date().toISOString() });
+// The Inside Scoop's proposed trades for every reported player, in the same public inputs (re-checked on the page)
+const scoop = lab.headlessScoopTrades ? await lab.headlessScoopTrades() : null;
+if (scoop) await db.doc("hockey/scoopTrades").set({ json: JSON.stringify(scoop), updatedAt: new Date().toISOString() });
 if (Buffer.byteLength(json) > 1_000_000) throw new Error("hockey/tradeMoves is over Firestore's 1 MB limit");
 await db.doc("hockey/tradeMoves").set({ json, updatedAt: new Date().toISOString() });
 const n = Object.values(out.teams).reduce((a, l) => a + l.length, 0), teams = Object.keys(out.teams).length;
 run.check(teams === 32, "every team searched", `${teams} teams`);
-run.finish({ outputs: ["hockey/tradeMoves", "hockey/tradeMovesPublic", "hockey/tradeBlock", "hockey/contractTerms"], notes: { teams, deals: n, kb: Math.round(json.length / 1024), key: out.key } });
+run.finish({ outputs: ["hockey/tradeMoves", "hockey/tradeMovesPublic", "hockey/tradeBlock", "hockey/contractTerms", "hockey/scoopTrades"], notes: { teams, deals: n, kb: Math.round(json.length / 1024), key: out.key } });
 console.log(`${teams} teams, ${n} deals stored (${(json.length / 1024).toFixed(0)} KB) in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
 process.exit(0);
