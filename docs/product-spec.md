@@ -69,7 +69,7 @@ Defaults to your favorite team (else Detroit). On phones the team and season pic
 - **Lines and pairs:** most-used units, their minutes and on-ice results.
 - **Style:** style fingerprint and archetype, matchups (descriptive only) and player types that fit the system.
 - **Recommended GM moves** (everyone; the owner's version also uses contracts, cap space and saved edits). The three best deals that could all be made (no shared player), with a plain-English why, playoff odds before → after and a feasibility chip. They're searched server-side nightly and re-checked on the page; when the overnight search is out of date the page searches itself, but only once every input (contracts or public terms, CapWages, the cap table) has loaded, and it redoes the list whenever an input changes, so the card always matches How it's valued.
-- **Explore trades** (owner gets the full version): build any deal (players, picks, prospects, from several teams) and see:
+- **Explore trades** (everyone; the owner's version also uses the private contract list and edits): build any deal (players, picks, prospects, from several teams) and see:
   - wins this season and long-term value by each team's window;
   - the other team's verdict and EA-style value bars;
   - the "How?" sheet with every input (projection ranges, roster fit, contract bonus, cap shadow price, availability and premium);
@@ -98,7 +98,8 @@ Defaults to your favorite team (else Detroit). On phones the team and season pic
 - **Maps:** a heat map (for or against, by strength, xG or goals) and every shot as dots, by team, player or game.
 - **Shot-danger explainers:** "What makes a shot dangerous" and "Distance matters most".
 
-### Cap & trades (owner only)
+### Cap & trades (everyone since 2026-10-18; the owner gets the editable list)
+For every reader, from CapWages (public cap fields only: cap hits, terms, clauses, roster status, cap space; no salaries or bonuses): the team's cap space today and next season with buyouts, retained salary and LTIR; every contract CapWages lists for the team (cap hit, what counts now, last season, UFA/RFA, clause, roster status, retained by); cap space for every team; the trade block and The Inside Scoop; the deadline war room and buyers and sellers. The trade explorer's best-trades search is open to everyone. The owner's version adds what follows.
 - **Contracts:** every contract (term, cap hit, extensions, with provenance), editable on the site. Edits are saved privately and never overwrite the source.
 - **Cap space:** every team's cap space from CapWages (since 2026-10-16): today and next season, with buyouts, retained salary and LTIR shown; the owner's pasted PuckPedia table is a fallback, still editable, shown beside CapWages. The contracts list shows CapWages' cap hit and last season beside each row and flags differences.
 - **Trade block:** from news feeds that allow it, plus the owner's edits.
