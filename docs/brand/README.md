@@ -50,6 +50,24 @@ Each phase stops for the owner's review before the next one starts (plan, sectio
 
 \* Teams' 0.6 s in the baseline measured the footer, which used to be the largest thing on screen early. With space now reserved for the header and loading placeholder, the footer is off-screen, so the number is the real content, which on Teams still waits for the large documents (player value, ratings, lines, styles, assets, injuries). Teams also loads more since 2026-10-14: the public GM moves, contract terms and trade block (about 240 KB). Next step: split the large documents or load them per card (queued). Layout shift is fixed everywhere measured.
 
+## Rebaseline (2026-10-19, live site after the bug-triage deploy; `baseline/2026-10-19/`)
+Same profile and machine as above (390x844, 1.6 Mbps / 150 ms, CPU 4x, median of 3 cold loads), current tabs only (Skaters and Goalies are now Players; Shot maps and Cap & trades live inside Teams). Screenshots at 320, 360, 390, 430 and 1280 px, signed out.
+
+| Tab | Content ready | LCP | CLS | Requests | Transfer |
+|---|---|---|---|---|---|
+| Overview | 10.7 s | 10.5 s | **1.53** | 85 | 1,315 KB |
+| Teams | 39.5 s* | 10.1 s | 0.07 | 77 | 1,413 KB |
+| Players | 8.6 s | 8.7 s | 0.07 | 59 | 2,327 KB |
+| Coaches | 9.1 s | 8.7 s | 0.49 | 50 | 1,210 KB |
+| Front office | 11.6 s | 8.7 s | 0.42 | 57 | 1,587 KB |
+| Model | 9.0 s | 8.8 s | 0.07 | 47 | 1,170 KB |
+
+\* Teams hit the tool's 40 s cap: a lazily filled section keeps a loading placeholder, so "no skeleton left" never comes true. Treat its LCP as the useful number.
+
+**Compared with 2026-10-15:** first loads are much slower. Overview LCP went 0.8 s → 10.5 s, its layout shift 0 → 1.53, and transfer roughly doubled on every tab (lab.js is now about 1 MB, plus more documents loaded up front). The cause is mostly script size and parse time under the 4x CPU slowdown: the page's first content waits for the whole script. This confirms the open queue item (Overview CLS regression, lab.js size) and should be the next performance step.
+
+**Tool change:** "content ready" is now one test for every tab (#view has 800+ characters and no loading skeleton), and the tool waits up to 40 s for it before reading metrics. Before this change, a quiet network ended the measurement while the throttled CPU was still running the script, so every non-Overview tab reported about 1.0 s with no content. Numbers before 2026-10-19 used per-tab selectors that no longer exist for the redesigned pages, so compare LCP, CLS and transfer only, not "ready".
+
 ## How to test the three kinds of visitor
 1. **Signed out:** a private window, or `baseline.mjs`. Expect the public tabs; no Cap & trades, Admin or Ideas & bugs; GM moves from the public search; no contract or cap figures anywhere.
 2. **Allowed tester** (the account allowed in the Firestore rules; don't put its address in public files): expect an extra "Report a bug" tab and nothing else private.

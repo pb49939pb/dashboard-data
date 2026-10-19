@@ -7,7 +7,8 @@
 //     outDir   default docs/brand/baseline/<YYYY-MM-DD>
 //
 // Profile ("cellular"): 1.6 Mbps down / 750 kbps up / 150 ms RTT, CPU slowed 4x, 390x844 at DPR 3, touch, cold cache,
-// 3 runs per page (median reported). readyMs = when the tab's main content is in the page (Teams: the team header;
+// 3 runs per page (median reported). readyMs = when the tab's main content is in the page (since 2026-10-19 the same
+// test for every tab: #view has 800+ characters of text and no loading skeleton) (Teams: the team header;
 // Goalies, Overview, Skaters: a filled table), added 2026-10-16 because LCP can be the header's loading text instead.
 // These are lab measurements on this Mac, not field data; compare runs only with
 // the same machine and profile. Owner and tester views need a signed-in browser and are captured by hand (see README).
@@ -63,10 +64,14 @@ for (const page of PAGES) {
     await s.send("Emulation.setCPUThrottlingRate", { rate: 4 });
     await s.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
     await s.send("Emulation.setTouchEmulationEnabled", { enabled: true });
-    await s.send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__lcp=0;window.__cls=0;window.__ready=0;new MutationObserver(()=>{const sel={teams:".team-hero2",goalies:"#view table tbody tr:nth-child(5)",overview:"#view table tbody tr:nth-child(5)",skaters:"#view table tbody tr:nth-child(5)"}[location.hash.slice(1)]||"#view .card:not(.skeleton)";if(!window.__ready&&document.querySelector(sel))window.__ready=performance.now()}).observe(document,{subtree:true,childList:true});new PerformanceObserver(l=>{for(const e of l.getEntries())window.__lcp=e.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:"layout-shift",buffered:true});` });
+    await s.send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__lcp=0;window.__cls=0;window.__ready=0;new MutationObserver(()=>{const v=document.querySelector("#view");if(!window.__ready&&v&&!v.querySelector(".skeleton")&&v.innerText.length>800)window.__ready=performance.now()}).observe(document,{subtree:true,childList:true});new PerformanceObserver(l=>{for(const e of l.getEntries())window.__lcp=e.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:"layout-shift",buffered:true});` });
     const t0 = Date.now();
     await s.send("Page.navigate", { url: `${BASE}#${page}` });
     await settle(s);
+    // 2026-10-19: the tab is ready when #view has real content and no loading skeletons (same test for every tab);
+    // wait for it (up to 40 s), since a quiet network can come before the throttled CPU has finished the script
+    for (let i = 0; i < 160; i++) { const r = (await s.send("Runtime.evaluate", { expression: "window.__ready", returnByValue: true })).result?.result?.value; if (r) break; await sleep(250); }
+    await settle(s, 2000);
     const ev = (await s.send("Runtime.evaluate", { expression: `JSON.stringify({lcp:window.__lcp,cls:window.__cls,dcl:performance.getEntriesByType("navigation")[0]?.domContentLoadedEventEnd,cards:document.querySelectorAll(".card").length,ready:window.__ready})`, returnByValue: true })).result?.result?.value;
     const m = JSON.parse(ev || "{}");
     const done = s.events.filter((e) => e.method === "Network.loadingFinished");
