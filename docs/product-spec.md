@@ -148,7 +148,7 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 - **Data jobs:** every data job with run history, sources and "Run now" (nightly build, contracts, contract news, CapWages, trade search, models).
 - **Model health:** model switches (WAR-lite vs RAPM, team-only vs roster-aware simulation), drift alarms, nightly data checks, model artifacts (versions and hashes, with a field dictionary) and the roster-aware simulation in shadow.
 - **Forecasts:** your forecasts and the trade-engine self-tests.
-- **Docs & models:** the methods dossier and this product spec (Copy and Download) and the model list.
+- **Docs & models:** the methods dossier, this product spec and the **deployments log** (each with Copy and Download .md) and the model list. The deployments log lists every deploy of the last 7 days, newest first: the date and time (Eastern and UTC), who deployed, any notes, and what changed in each repository that shipped since the deploy before it (commit subjects); written automatically by `pat-dashboard/scripts/log-deploy.mjs`, which both deploy scripts run, and published as `/hockey/deployments.md`.
 - **Architecture:** the full diagram of sources, jobs, stores, models and pages.
 - **Brand preview:** the masthead is public; this switch turns the owner-only later-phase previews (section headers, tabular figures, Today as flagship) on or off.
 
