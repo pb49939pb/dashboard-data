@@ -30,6 +30,7 @@ define("MutationObserver", class { observe() {} disconnect() {} });
 for (const k of ["addEventListener", "removeEventListener", "scrollTo", "requestAnimationFrame"]) define(k, () => 0);
 define("scrollY", 0);
 define("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} })); // lab.js reads media queries (mobile layouts)
+for (const k of ["IntersectionObserver", "ResizeObserver"]) define(k, class { observe() {} unobserve() {} disconnect() {} }); // layout observers do nothing here
 
 async function loadLab() {
   const given = process.argv.slice(2).find((a) => a.endsWith(".js"));
