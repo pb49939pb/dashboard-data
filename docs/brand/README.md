@@ -68,6 +68,18 @@ Same profile and machine as above (390x844, 1.6 Mbps / 150 ms, CPU 4x, median of
 
 **Tool change:** "content ready" is now one test for every tab (#view has 800+ characters and no loading skeleton), and the tool waits up to 40 s for it before reading metrics. Before this change, a quiet network ended the measurement while the throttled CPU was still running the script, so every non-Overview tab reported about 1.0 s with no content. Numbers before 2026-10-19 used per-tab selectors that no longer exist for the redesigned pages, so compare LCP, CLS and transfer only, not "ready".
 
+## After perf steps D and C1 (2026-10-19, live; `baseline/2026-10-19-after-d-c1/`)
+| Tab | Layout shift (rebaseline → now) | LCP |
+|---|---|---|
+| Overview | 1.53 → **0.07** | 10.1 s |
+| Teams | 0.07 → **0.03** | 9.3 s |
+| Players | 0.07 → **0.03** | 8.6 s |
+| Coaches | 0.49 → **0.03** | 8.6 s |
+| Front office | 0.42 → **0.03** | 8.8 s |
+| Model | 0.07 → **0.03** | 8.7 s |
+
+Layout shift now meets the ≤ 0.1 target everywhere. Load time is unchanged, as expected: it is dominated by public data waiting for App Check (steps A and B of `docs/perf/first-load-proposal.md`, awaiting the owner's go). `lab.js` went from 1.05 MB to 0.90 MB; the long text (`lab-docs.js`, about 157 KB) loads in the background after the page is up, so it still shows in this tool's transfer total.
+
 ## How to test the three kinds of visitor
 1. **Signed out:** a private window, or `baseline.mjs`. Expect the public tabs; no Cap & trades, Admin or Ideas & bugs; GM moves from the public search; no contract or cap figures anywhere.
 2. **Allowed tester** (the account allowed in the Firestore rules; don't put its address in public files): expect an extra "Report a bug" tab and nothing else private.

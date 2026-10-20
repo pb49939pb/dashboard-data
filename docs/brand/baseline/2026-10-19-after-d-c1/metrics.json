@@ -1,0 +1,73 @@
+{
+ "base": "https://patrickreidbaldwin.com/hockey/",
+ "takenAt": "2026-10-20T00:15:36.123Z",
+ "profile": "390x844 DPR3 mobile, 1.6Mbps/750kbps/150ms, CPU 4x, cold cache, median of 3",
+ "pages": [
+  {
+   "page": "overview",
+   "readyMs": 10116,
+   "lcpMs": 10084,
+   "cls": 0.072,
+   "dclMs": 2136,
+   "requests": 86,
+   "transferKB": 1323,
+   "cards": 20,
+   "runs": 3
+  },
+  {
+   "page": "teams",
+   "readyMs": 38576,
+   "lcpMs": 9272,
+   "cls": 0.032,
+   "dclMs": 1992,
+   "requests": 77,
+   "transferKB": 1420,
+   "cards": 19,
+   "runs": 3
+  },
+  {
+   "page": "players",
+   "readyMs": 8449,
+   "lcpMs": 8616,
+   "cls": 0.032,
+   "dclMs": 1987,
+   "requests": 60,
+   "transferKB": 2333,
+   "cards": 0,
+   "runs": 3
+  },
+  {
+   "page": "coaches",
+   "readyMs": 9074,
+   "lcpMs": 8572,
+   "cls": 0.032,
+   "dclMs": 1994,
+   "requests": 51,
+   "transferKB": 1217,
+   "cards": 1,
+   "runs": 3
+  },
+  {
+   "page": "office",
+   "readyMs": 11716,
+   "lcpMs": 8820,
+   "cls": 0.032,
+   "dclMs": 1984,
+   "requests": 59,
+   "transferKB": 1594,
+   "cards": 3,
+   "runs": 3
+  },
+  {
+   "page": "model",
+   "readyMs": 9025,
+   "lcpMs": 8732,
+   "cls": 0.032,
+   "dclMs": 1984,
+   "requests": 48,
+   "transferKB": 1177,
+   "cards": 6,
+   "runs": 3
+  }
+ ]
+}
