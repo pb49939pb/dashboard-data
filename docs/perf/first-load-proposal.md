@@ -77,7 +77,7 @@ Same Mac and profile as every baseline: 390×844, 1.6 Mbps / 150 ms, CPU slowed 
 
 Target: main content ≤ 2.5 s and layout shift ≤ 0.1 on this profile.
 
-#### What causes it (request timeline of one cold Overview load, ms after navigation)
+### What causes it (request timeline of one cold Overview load, ms after navigation)
 | When | What |
 |---|---|
 | 0.4 → 2.3 s | `lab.js` downloads: **275 KB compressed (1.07 MB)**, up from 179 KB on Oct 16. DOMContentLoaded at 2.4 s. |
@@ -100,7 +100,7 @@ So the three causes, biggest first:
 
 **A separate root cause behind the stale data in B78:** the public `/data/hockey/*.json` files are only rebuilt when someone runs `deploy.sh` on a laptop. The nightly job writes only to Firestore. So those files can be days old, or built from an out-of-date checkout (which is what happened on Oct 19). They're also the files that would make the site fast. Fixing their freshness is what makes step A safe.
 
-#### Proposal (separately approvable, in order)
+### Proposal (separately approvable, in order)
 
 #### A. Fresh public data that doesn't need App Check (pipeline + rules) — recommended first
 The nightly job (and the 10-minute game-night job for scores) also writes each public document as JSON to **Firebase Storage under `public/hockey/`**. Storage isn't under App Check enforcement: the Oct 16 rollout enforced it on Firestore only. I'll confirm that in the console before building. It needs one rule, `allow read: if true` for that path only, and a CORS setting on the bucket.
@@ -134,7 +134,7 @@ The nightly job (and the 10-minute game-night job for scores) also writes each p
 - **Signed out, one Teams section keeps its loading skeleton forever** (the baseline's 40 s "ready"). Find it and show an empty state.
 - **The 32 team-logo SVGs** load on every Overview visit. They're cached after the first visit; leave them unless they show up as a problem.
 
-#### Recommendation
+### Recommendation
 - **Order:** D (quick, no risk) together with C1, then A + B together, then C2.
 - **After each step:** rerun `node docs/brand/tools/baseline.mjs` and compare with `baseline/2026-10-19`.
 - **What I need from you to start:**
@@ -142,7 +142,7 @@ The nightly job (and the 10-minute game-night job for scores) also writes each p
   2. Go-ahead on A: a new public Storage path and rule, a CORS setting on the bucket (one command, which I can prepare), and adding Storage to the budget guard.
   3. Go-ahead on esbuild for C2 (it adds a build step to `deploy-hockey.sh`).
 
-#### Not proposed
+### Not proposed
 - **Removing or loosening App Check.** It protects Firestore writes and the budget. The fix is to stop putting public reads behind it.
 - **A service worker.** Same reason as before: earlier cache problems.
 
