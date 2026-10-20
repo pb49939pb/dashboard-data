@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-10-17T04:43:54+00:00",
+ "builtAt": "2026-10-20T18:09:51+00:00",
  "start": "2026-10-15",
  "seasons": [
   "20232024",
@@ -265,6 +265,57 @@
    },
    "method": "2023-24 through 2025-26 regular seasons. A back-to-back = played the day before; the opponent had at least one day off. Expected = each team's win rate in its rested games (lightly shrunk) combined with the opponent's and league home-ice advantage (log5).",
    "sample": "817 tired-vs-rested games"
+  },
+  {
+   "id": "pp-intermission",
+   "q": "Does an intermission make a power play less dangerous?",
+   "headline": "After the break, scoring pace is 26% lower than uninterrupted power plays at the same stage.",
+   "body": [
+    "After an intermission, these 5-on-4 power plays scored at 0.187 goals per two minutes of power-play time. Uninterrupted power plays, weighted to the same elapsed penalty time, scored at 0.252.",
+    "The relative difference is -26.1% (90% game-bootstrap range -38.9% to -13.0%). Only time after the break is counted for the split power plays; this is a scoring pace, not the chance a full power play scores.",
+    "A carryover power play has already survived without scoring before the horn. Comparing with the same stage of uninterrupted power plays helps account for that. Team quality, score, period and faceoff location are not matched, so this comparison cannot establish that the intermission caused the difference."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Scoring pace: goals per 2 minutes of 5-on-4 time",
+    "x": [
+     "After intermission",
+     "Uninterrupted (time-matched)"
+    ],
+    "y": [
+     0.187,
+     0.252
+    ],
+    "unit": ""
+   },
+   "method": "2023-24 through 2025-26 regular-season NHL play-by-play. Clean two-minute minors from 5-on-5 to 5-on-4, both goalies present. Carryovers start in the final 119 seconds of period 1 or 2; only their next-period exposure and goals count. Controls fit entirely within one regulation period. Stop at a power-play goal, another penalty, a strength/goalie change or 120 elapsed game seconds. Count exposure and goals in 15-second elapsed-penalty bins; weight uninterrupted scoring rates by carryover exposure in each bin. 90% percentile intervals resample games 1,000 times (seed 42). Descriptive, not causal.",
+   "sample": "3,936 games; 995 carryover power plays with post-break exposure, 91 post-break goals, 975.7 post-break minutes; 14,102 uninterrupted power plays",
+   "analysis": {
+    "seasons": [
+     "20232024",
+     "20242025",
+     "20252026"
+    ],
+    "counts": [
+     995,
+     14102
+    ],
+    "totals": [
+     [
+      58540.0,
+      91.0
+     ],
+     [
+      1430276.0,
+      2909.0
+     ]
+    ],
+    "relativeDifferencePct": -26.063016663384087,
+    "ci90": [
+     -38.87333469077229,
+     -13.026104566889794
+    ]
+   }
   },
   {
    "id": "first",
