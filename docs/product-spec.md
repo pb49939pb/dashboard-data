@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-19 (bug triage B55-B80: Players skaters only, line depth order, past-season Coaches, Inside Scoop clauses and list notes, official goalie rates fallback)
+Last reviewed: 2026-10-19 (career outlook on skater cards: experimental seven-season career projections)
 
 ## 1. What it is
 
@@ -85,6 +85,8 @@ Defaults to your favorite team (else Detroit). On phones the team and season pic
 - **Ratings and stats:** ratings (offense, defense, usage, overall, 40–99 within position) and stats (xG, goals above expected, expected ±, ice time).
 - **Contracts in lists:** every player list shows his current contract beside him (cap hit, final season, clause, extension; "Contract data: CapWages"): Teams (best players, core players, strength by position, style fits, GM moves), the trade explorer's player lists, and sortable Cap hit / Thru columns on the Skaters and Goalies tables.
 - **Player profiles** open in a pop-up wherever a player is named (skaters and goalies alike, without leaving the tab): the contract first (cap hit, years left, UFA/RFA, clause; "Contract data: CapWages"; unsigned players say so), goals, assists and points, ratings, WAR-lite value, cached career achievements, opponent difficulty (time-weighted opponent strength, minutes against top players, most-faced opponents from 5-on-5 shifts), system fit, the owner's private scouting note, and **☆ Watch this player** for signed-in readers.
+
+- **Career outlook (experimental, 2026-10-19)** at the very bottom of every skater profile: seven seasons ahead (to age 40), from 4,000 simulated careers per player (hockey-models career.py). Metric tabs for season WAR, WAR/82 if playing, points, goals and games; actual seasons as a solid line, the median as a dashed line with an 80% band; the chance of 20+ NHL games each season; next-3/5-season totals with ranges; a season-by-season table; how it's built and how it tested (beats the current projection model one season ahead, even at three and five). Goalies and players with no 2025-26 NHL games aren't covered. Trade values keep using the player projection model.
 
 ### Goalies
 - **Goalie stats:** GSAx and shooter-aware GSAx, ratings by shot type, with fewer-than-100-shot cells faded and 90% intervals.
