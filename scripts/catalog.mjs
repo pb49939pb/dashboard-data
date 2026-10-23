@@ -66,6 +66,8 @@ export const CATALOG = {
         { name: "Wikipedia NHL entry draft articles", host: "en.wikipedia.org", what: "who owns each traded pick in the next three drafts, with conditions (CC BY-SA)" },
         { name: "NHL prospects", host: "api-web.nhle.com", what: "each team's prospect list" },
         { name: "Hockey Lab draft model", host: "local", what: "draft slots for prospects, expected value by slot, fallback prospect lists" },
+        { name: "NHL player pages", host: "api-web.nhle.com", what: "prospects' season totals in every league (shared cache with milestone watch, about weekly)" },
+        { name: "Hockey Lab prospect model", host: "local", what: "league equivalency factors and slot + scoring coefficients (model/prospects.json)" },
       ],
       outputs: [{ doc: "hockey/assets", pages: ["Hockey Lab · Teams (assets card, trade explorer)"] }],
     },

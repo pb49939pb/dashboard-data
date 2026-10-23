@@ -7,8 +7,13 @@
 //   market: Polymarket odds to make the playoffs and win the Cup (public Gamma API), for team phases
 //   prospects: the NHL's /v1/prospects/{team}; draft slot joined from our draft history (model/draft.json); teams whose
 //          list comes back empty fall back to their recent draftees who haven't become NHL regulars
+//   production: skaters on the NHL's list with a draft slot get expected wins from their slot plus their scoring since the
+//          draft in every league (model/prospects.json from hockey-models prospects.py; scripts/prospectValue.mjs), from
+//          their NHL player pages (careerLanding.mjs: the same cache as milestone watch, refreshed about weekly)
 //   node scripts/assets.mjs     → public/hockey/assets.json
 import { readFile, writeFile } from "node:fs/promises";
+import { careerLanding } from "./careerLanding.mjs";
+import { prospectExpected } from "./prospectValue.mjs";
 
 const UA = { "User-Agent": "hockey-lab/1.0 (+https://patrickreidbaldwin.com/hockey; personal, non-commercial)" };
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -105,6 +110,22 @@ for (const t of empty) {
   }
 }
 
+// production: slot + scoring since the draft (skaters on the NHL's list with a draft slot)
+const prospectModel = JSON.parse(await readFile("model/prospects.json", "utf8").catch(() => "null"));
+let scored = 0;
+if (prospectModel?.status === "promoted") {
+  const curStart = Number(season.slice(0, 4));
+  for (const p of prospects.filter((x) => x.source === "nhl" && x.draftOverall && x.pos !== "G")) {
+    const L = await careerLanding(p.id, { leagues: true });
+    if (!L?.leagues) continue;
+    if (Date.now() - Date.parse(L.fetchedAt) < 5000) await pause(300); // just fetched: space out requests
+    const r = prospectExpected(prospectModel, L.leagues, { draftYear: p.draftYear, overall: p.draftOverall, pos: p.pos, birthDate: L.birthDate, curStart });
+    if (!r) continue;
+    p.prod = { wins: +r.wins.toFixed(3), slotWins: +r.slotWins.toFixed(3), k: r.k, nhle: r.nhle, season: r.season, lines: r.lines };
+    scored++;
+  }
+}
+
 // Fill positions missing from fallback draftees with official draft metadata.
 // Require draft slot AND normalized name so a changed feed cannot attach another player's position.
 for(const year of [...new Set(prospects.filter(p=>!p.pos&&p.draftYear).map(p=>p.draftYear))]) {
@@ -149,4 +170,4 @@ const out = { builtAt: new Date().toISOString(), season, draftYears: years, pick
   curve: draft.curve.map((c) => [c.overall, c.war]), curveWindow: draft.window,
   sources: { picks: "Wikipedia NHL entry draft articles (CC BY-SA), traded picks", prospects: "NHL prospects (api-web.nhle.com) + Hockey Lab draft history" } };
 await writeFile("public/hockey/assets.json", JSON.stringify(out));
-console.log(`assets: ${Object.keys(hands).length} skater hands, last season ${prevStandings ? "found" : "missing"}, market odds ${market ? `${Object.keys(market.playoffs).length} teams` : "missing"}; ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects; fallback for ${empty.join(", ") || "none"}`);
+console.log(`assets: ${Object.keys(hands).length} skater hands, last season ${prevStandings ? "found" : "missing"}, market odds ${market ? `${Object.keys(market.playoffs).length} teams` : "missing"}; ${picks.filter((p) => p.owner !== p.original).length} traded picks (${pages.map((p) => `${p.year}: ${p.traded}`).join(", ")}), ${prospects.length} prospects (${scored} valued with scoring since the draft); fallback for ${empty.join(", ") || "none"}`);
