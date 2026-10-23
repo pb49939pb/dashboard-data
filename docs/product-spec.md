@@ -517,3 +517,7 @@ Front office draft lists label each pick: "developing (no penalty yet)", "on pac
 ### Defensemen's defense credit (2026-10-22)
 
 WAR-lite counts 50% of a defenseman's 5v5 goals prevented (forwards 30%), after an out-of-season test showed it predicts next-season games better. Every WAR-based view moves with it: player cards, award races, trade values and market comps inputs, strength by position, core players, roster simulation, draft grades (rebuilt now) and the monthly front-office models (next run). WAR explainers and the methods dossier state the split.
+
+### Market card default rights (2026-10-22)
+
+The contract card's market scenario opens on the rights the player will have when his current deal (or signed extension) ends: entry-level → RFA; otherwise CapWages' expiry status; otherwise age at the end of the deal (26 or younger → RFA). Then it prefers re-signing, comp-supported prices, and the term closest to his remaining years. Viewers can switch rights, term and club context.
