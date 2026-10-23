@@ -509,3 +509,7 @@ Player profiles and Inside Scoop share the comparable-signing market card. Reade
 ### Market value never blank (2026-10-22)
 
 Contract sheets always show a market AAV. When the comparable-signing model has too few close comps for the chosen rights/term/club scenario, the card is titled "Modeled market AAV" and shows the league-wide model's price with an 80% range, a sentence explaining why comps weren't used and the typical term for similar players, and "Show the N nearest signings (too few to price on their own)". The stale-comps coverage warning is shown only for comp-based prices. Model and data details report the fallback's out-of-time error against a position-and-term median baseline. The default scenario prefers a comp-supported one when available. Details: model inventory, "Market value fallback: never blank".
+
+### Draft statuses (2026-10-22)
+
+Front office draft lists label each pick: "developing (no penalty yet)", "on pace", or "left the NHL (final)". "Biggest misses" lists only final picks (window complete or left the NHL), so prospects still developing — e.g. defensemen and goalies inside their longer 8- and 9-season windows — never appear as misses. Caveat text explains the windows and the no-penalty rule.
