@@ -513,3 +513,7 @@ Contract sheets always show a market AAV. When the comparable-signing model has 
 ### Draft statuses (2026-10-22)
 
 Front office draft lists label each pick: "developing (no penalty yet)", "on pace", or "left the NHL (final)". "Biggest misses" lists only final picks (window complete or left the NHL), so prospects still developing — e.g. defensemen and goalies inside their longer 8- and 9-season windows — never appear as misses. Caveat text explains the windows and the no-penalty rule.
+
+### Defensemen's defense credit (2026-10-22)
+
+WAR-lite counts 50% of a defenseman's 5v5 goals prevented (forwards 30%), after an out-of-season test showed it predicts next-season games better. Every WAR-based view moves with it: player cards, award races, trade values and market comps inputs, strength by position, core players, roster simulation, draft grades (rebuilt now) and the monthly front-office models (next run). WAR explainers and the methods dossier state the split.
