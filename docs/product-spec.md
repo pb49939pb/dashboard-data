@@ -541,3 +541,7 @@ Guided options must be acceptable to the partner (package ≥ their price, headl
 ### Prospects valued from their scoring (2026-10-22)
 
 A drafted skater on the NHL's prospect list is valued in trades and on the Teams prospects list from his draft slot plus his scoring since the draft in every league (translated to NHL-equivalent points per game), his age at the draft and position (hockey-models prospects.py; tested against slot only, see the model inventory). Trade options show his last completed season ("2025–26: SHL 52 GP, 40 PTS · 0.38 NHL-equivalent points per game"), the resulting expected wins over his first seven seasons (eight for defensemen) and what his slot alone would give. Goalies, undrafted players and draftees not on the NHL's list keep the slot-only value and the old wording. The How? sheet shows the same line. Data: assets.json `prospects[].prod`, refreshed nightly from NHL player pages cached about a week.
+
+### Feed and Teams speed (2026-10-22)
+
+The Feed keeps each saved card's drawn HTML between visits and redraws it only when something it could show may have changed: a data-change counter goes up on every database answer (reads, listeners incl. live scores, sign-in), every data file loaded, and every redraw that isn't a plain tab switch (edits, settings, data landing); cards also expire after five minutes. Each source tab is drawn and parsed once per Feed redraw and shared by its cards. Teams' goalie shot-type profiles are computed once per goalie list instead of once per goalie. Display is unchanged.
