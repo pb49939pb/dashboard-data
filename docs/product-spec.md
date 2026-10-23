@@ -525,3 +525,7 @@ The contract card's market scenario opens on the rights the player will have whe
 ### Trade explorer player facts (2026-10-22)
 
 Every player piece in the manual trade explorer and in guided trade options shows: age; this season's production and last season's (skaters GP, G, A, P; goalies GP, SV%, GSAx); and the contract — cap hit (CapWages when available, else the contracts list, "(est.)" when estimated), last season of the deal, years left, entry-level, and any signed extension. An expired deal reads "last deal ended … no contract on file". Last season's numbers come from the archived league file, loaded once when the explorer opens. Picks and prospects keep their existing descriptions.
+
+### Star premium in trade value (2026-10-22)
+
+Trade value treats elite players as worth more than their WAR adds up to: each season's WAR above 3 counts 1.5× and above 4.5 counts 2× (owner judgment; on by default). The Admin Model switches card has a Star premium on/off control with a note that it's a judgment rather than a measured result. The How? sheet shows "★ +x star" under projected wins for each season it applies. Playoff odds, expected wins and the cap bonus are unaffected.
