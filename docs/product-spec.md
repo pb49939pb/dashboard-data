@@ -521,3 +521,7 @@ WAR-lite counts 50% of a defenseman's 5v5 goals prevented (forwards 30%), after 
 ### Market card default rights (2026-10-22)
 
 The contract card's market scenario opens on the rights the player will have when his current deal (or signed extension) ends: entry-level → RFA; otherwise CapWages' expiry status; otherwise age at the end of the deal (26 or younger → RFA). Then it prefers re-signing, comp-supported prices, and the term closest to his remaining years. Viewers can switch rights, term and club context.
+
+### Trade explorer player facts (2026-10-22)
+
+Every player piece in the manual trade explorer and in guided trade options shows: age; this season's production and last season's (skaters GP, G, A, P; goalies GP, SV%, GSAx); and the contract — cap hit (CapWages when available, else the contracts list, "(est.)" when estimated), last season of the deal, years left, entry-level, and any signed extension. An expired deal reads "last deal ended … no contract on file". Last season's numbers come from the archived league file, loaded once when the explorer opens. Picks and prospects keep their existing descriptions.
