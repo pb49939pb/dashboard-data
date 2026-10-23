@@ -88,11 +88,20 @@ export function normalizePlayer(d) {
 }
 
 const rowsOf = (p, y) => [].concat(p.seasons?.[y] ?? []);
+/** Contracts that ended early (terminated after unconditional waivers) but that CapWages still lists beside the
+    player's new deal. Source-backed, owner-maintained; each drops the stale row instead of flagging the season as an
+    unverified overlap. Remove an entry once CapWages corrects it. */
+export const TERMINATED = [
+  { nhlId: 8475184, name: "Chris Kreider", capHit: 6500000, fromYear: 2026,
+    why: "Anaheim terminated his 7-year $6.5M AAV contract after unconditional waivers (Sept. 2026); he signed a one-year deal with Montreal",
+    source: "https://www.nhl.com/news/chris-kreider-signs-with-montreal-canadiens-after-anaheim-ducks-terminate-contract" },
+];
+const terminatedRow = (p, r) => TERMINATED.some((t) => t.nhlId === p.nhlId && r.year >= t.fromYear && r.capHit === t.capHit && !r.buyout);
 /** A season's cap rows with overlaps resolved: buyout rows as they are, and of two or more ordinary contracts covering
     the same season (bad data, e.g. Kreider 2026-27) only the newest (CapWages lists contracts newest first), with
     `alt` = how much the total would change if another one were the right one. */
 function resolved(p, y) {
-  const rs = rowsOf(p, y), bo = rs.filter((r) => r.buyout), plain = rs.filter((r) => !r.buyout).sort((u, v) => u.contract - v.contract);
+  const all = rowsOf(p, y), rs = all.length > 1 ? all.filter((r) => !terminatedRow(p, r)) : all, bo = rs.filter((r) => r.buyout), plain = rs.filter((r) => !r.buyout).sort((u, v) => u.contract - v.contract);
   if (plain.length <= 1) return { rows: rs, alt: 0 };
   const keep = plain[0], alt = Math.max(...plain.map((r) => r.capHit || 0)) - (keep.capHit || 0);
   return { rows: [...bo, keep], alt, overlap: true };

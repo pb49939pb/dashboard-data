@@ -91,3 +91,6 @@ The Other Score's Trade Explorer currently labels its results "cap compliance un
 1. GitHub secrets `CAPWAGES_API_KEY` (and `CAPWAGES_API_USER`) on pb49939pb/dashboard-data. Until then the nightly step logs "not configured" and skips.
 2. Copy the three fixture files to `scripts/fixtures/capwages/` (they weren't with the brief).
 3. Visibility: owner-only (matches the existing rule for salaries and cap tables) or public cap hits on player and team pages (needs CapWages' terms to allow public display). Then the matching Firestore rule and the app changes (Trade Explorer verdict, player/team contract lines, Model source credit), and closing B27 after a validated import.
+
+## Terminated contracts still listed by CapWages (2026-10-22)
+`scripts/capwages-lib.mjs` `TERMINATED`: source-backed list of contracts ended early (terminated after unconditional waivers) that CapWages still shows beside the player's new deal. Matching rows (player, cap hit, from season) are dropped instead of flagging the season as an unverified overlap. First entry: Chris Kreider's $6.5M AAV contract, terminated by Anaheim in Sept. 2026 before his one-year $2.15M deal with Montreal (NHL.com). Remove an entry once CapWages corrects its data. Fixes bug "MTL GM moves cite a duplicate CapWages contract".

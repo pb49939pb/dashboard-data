@@ -127,3 +127,15 @@ test("real fixture: Ekman-Larsson buyout schedule and retention anomaly", { skip
 test("real fixture: Detroit lineup has 23 players", { skip: !fx("lineup-detroit-red-wings.json") && "fixture not added yet" }, () => {
   assert.equal(body(fx("lineup-detroit-red-wings.json")).players.length, 23);
 });
+
+test("a source-backed terminated contract is dropped, not flagged as an overlap (Kreider 2026-27)", () => {
+  const contracts = [{ contractType: "35+ Contract", seasons: [season("2026-27", { capHit: 2_150_000 })] }, { contractType: "Standard Contract (Extension)", seasons: [season("2026-27", { capHit: 6_500_000 })] }];
+  const k = normalizePlayer(player("chris-kreider", "montreal_canadiens", contracts, { nhlId: 8475184 }));
+  const c = teamCharges([k], 2026).MTL;
+  assert.equal(c.totals.players, 2_150_000);
+  assert.equal(c.totals.overlapAlt, 0);
+  assert.equal(c.overlaps, undefined);
+  // the same overlap for a player with no correction still flags
+  const x = normalizePlayer(player("someone", "montreal_canadiens", contracts));
+  assert.equal(teamCharges([x], 2026).MTL.totals.overlapAlt, 4_350_000);
+});
