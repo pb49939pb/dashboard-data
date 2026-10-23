@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-19 (career outlook on skater cards: experimental seven-season career projections)
+Last reviewed: 2026-10-22 (Players tab team filter)
 
 ## 1. What it is
 
@@ -82,6 +82,7 @@ Defaults to your favorite team (else Detroit). On phones the team and season pic
   - Each deal is valued against today's rosters; free agents and lines aren't built yet.
 
 ### Skaters
+- **Players tab team filter (2026-10-22):** a Team picker (All teams plus all 32 clubs by full name, your favorite starred) narrows the skater and goalie lists to one team, ranked within that team. It defaults to your favorite team (device or account preference) when one is set, otherwise All teams; a manual pick is remembered for the browser session and carries across Skaters/Goalies. Clear search and filters resets it to All teams. On phones the picker takes its own row above Position and Sort.
 - **Ratings and stats:** ratings (offense, defense, usage, overall, 40–99 within position) and stats (xG, goals above expected, expected ±, ice time).
 - **Contracts in lists:** every player list shows his current contract beside him (cap hit, final season, clause, extension; "Contract data: CapWages"): Teams (best players, core players, strength by position, style fits, GM moves), the trade explorer's player lists, and sortable Cap hit / Thru columns on the Skaters and Goalies tables.
 - **Player profiles** open in a pop-up wherever a player is named (skaters and goalies alike, without leaving the tab): the contract first (cap hit, years left, UFA/RFA, clause; "Contract data: CapWages"; unsigned players say so), goals, assists and points, ratings, WAR-lite value, cached career achievements, opponent difficulty (time-weighted opponent strength, minutes against top players, most-faced opponents from 5-on-5 shifts), system fit, the owner's private scouting note, and **☆ Watch this player** for signed-in readers.
