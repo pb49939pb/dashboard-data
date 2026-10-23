@@ -529,3 +529,7 @@ Every player piece in the manual trade explorer and in guided trade options show
 ### Star premium in trade value (2026-10-22)
 
 Trade value treats elite players as worth more than their WAR adds up to: each season's WAR above 3 counts 1.5× and above 4.5 counts 2× (owner judgment; on by default). The Admin Model switches card has a Star premium on/off control with a note that it's a judgment rather than a measured result. The How? sheet shows "★ +x star" under projected wins for each season it applies. Playoff odds, expected wins and the cap bonus are unaffected.
+
+### Trade explorer prospect and pick facts (2026-10-22)
+
+Prospects in trade options show position, age, draft year and slot, and their source: on the NHL's official prospect list, or "not on the NHL's prospect list: rights assumed from his draft, he may be unsigned or released". Both say the value comes from the draft slot only (expected wins over a typical pick's first seven seasons, arrival in seasons), with no junior, European or AHL stats or scouting. Picks show the projected slot and expected wins. In the manual list the basics stay on the first line and only the source and valuation line is added.
