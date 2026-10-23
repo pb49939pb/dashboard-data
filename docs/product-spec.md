@@ -549,3 +549,7 @@ The Feed keeps each saved card's drawn HTML between visits and redraws it only w
 ### Players tab: search all teams; rostered players who haven't played (2026-10-22)
 
 A typed search (2+ characters) looks across all teams even when the team filter is set (the filter defaults to the favorite team); a line says the filter applies again when the search is cleared. The list also includes anyone on a current NHL roster or injured list who hasn't played this season (from the nightly NHL rosters in hockey/injuries), marked "hasn't played this season (injured reserve / hasn't dressed yet)" with last season's GP, goals and points (goalies: GP, SV%, GSAx). Players on no NHL roster stay off. The count line notes how many are yet to play.
+
+### Standings when games end (2026-10-23)
+
+The current standings update within about a minute of a game ending: the game-night live job runs the scores job (final score and the NHL's official standings) as soon as a game leaves live play and again ~3 minutes later, and the Overview re-reads them ~45 seconds after the game drops out of the live feed. Projected standings, playoff odds and models still update with the nightly build.
