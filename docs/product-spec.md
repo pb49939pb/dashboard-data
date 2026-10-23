@@ -505,3 +505,7 @@ The resultDrivers card is titled “PDO benders · finishing & saves,” with an
 ### Contract market scenarios (experimental, October 19, 2026)
 
 Player profiles and Inside Scoop share the comparable-signing market card. Readers can choose term, UFA/RFA-equivalent rights and re-signing/new-team context, inspect up to five actual signings, and see a market discount only for a supported matching-term comparison with known actual cost. Uncovered players and weak scenarios explicitly show unavailable estimates. The card labels its limited retrospective evidence and model/signing dates. This release replaces public fixed-WAR letter grades and the old Inside Scoop lifetime dollar-surplus display; it does not replace the trade engine or add a future contract-quality model.
+
+### Market value never blank (2026-10-22)
+
+Contract sheets always show a market AAV. When the comparable-signing model has too few close comps for the chosen rights/term/club scenario, the card is titled "Modeled market AAV" and shows the league-wide model's price with an 80% range, a sentence explaining why comps weren't used and the typical term for similar players, and "Show the N nearest signings (too few to price on their own)". The stale-comps coverage warning is shown only for comp-based prices. Model and data details report the fallback's out-of-time error against a position-and-term median baseline. The default scenario prefers a comp-supported one when available. Details: model inventory, "Market value fallback: never blank".
