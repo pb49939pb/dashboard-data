@@ -31,6 +31,10 @@ async function games() {
 const FAST = 20e3;
 const pullRates = (() => { try { return JSON.parse(readFileSync("model/qotd.json", "utf8")).questions.find((q) => q.id === "pull")?.rates || null; } catch { return null; } })();
 let store = null, budgetAt = 0, cut = false;
+// Standings as soon as a game ends (2026-10-23): when a game drops out of LIVE/CRIT, run scores.mjs (final score + the
+// NHL's official standings) right away, and once more ~3 minutes later because the NHL standings feed can trail the
+// final horn. No projections rerun; the page's standings card reads these official standings.
+let liveIds = new Set(), recheckAt = 0;
 async function liveTick() {
   // Game nights are when the site is busiest, and GitHub's 10-minute schedule (budget.yml) can lag for hours, so the
   // long-running live job checks the Firestore budget itself every 10 minutes and stops writing if it's passed.
@@ -56,6 +60,10 @@ async function liveTick() {
     }
   }
   await store.put("hockey/live", { games: rows, at: new Date().toISOString() }, {}, { replace: true }).catch((e) => console.log("live write failed:", e.message));
+  const now = new Set(rows.map((r) => r.id)), ended = [...liveIds].filter((id) => !now.has(id));
+  liveIds = now;
+  if (ended.length) { console.log(`${ended.length} game(s) ended (${ended.join(", ")}); refreshing scores and standings now.`); runScores(); recheckAt = Date.now() + 180e3; }
+  else if (recheckAt && Date.now() >= recheckAt) { recheckAt = 0; console.log("Re-checking standings after a final."); runScores(); }
 }
 async function fastUntil(ms) { const end = Date.now() + ms; while (Date.now() < end) { await liveTick(); await sleep(Math.min(FAST, Math.max(0, end - Date.now()))); } }
 
@@ -72,7 +80,11 @@ for (;;) {
   const pending = gs.filter((g) => !["FINAL", "OFF"].includes(g.state) && g.start > now - 6 * 3600e3);
   const next = pending.filter((g) => g.start > now).sort((a, b) => a.start - b.start)[0];
   const elapsed = now - started;
-  if (!pending.length) { runScores(); await liveTick(); /* clears hockey/live */ console.log(`No games left to play or finish today; done after ${rounds} rounds.`); break; }
+  if (!pending.length) {
+    runScores(); await liveTick(); /* clears hockey/live */
+    if (recheckAt) { await sleep(Math.max(0, recheckAt - Date.now())); recheckAt = 0; console.log("Final standings re-check."); runScores(); }
+    console.log(`No games left to play or finish today; done after ${rounds} rounds.`); break;
+  }
   if (elapsed > BUDGET) {
     console.log(`${pending.length} games still to finish; handing off to a fresh run.`);
     const h = spawnSync("gh", ["workflow", "run", "live.yml", "--ref", process.env.GITHUB_REF_NAME || "main"], { stdio: "inherit", env: process.env });
