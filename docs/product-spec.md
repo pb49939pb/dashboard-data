@@ -533,3 +533,7 @@ Trade value treats elite players as worth more than their WAR adds up to: each s
 ### Trade explorer prospect and pick facts (2026-10-22)
 
 Prospects in trade options show position, age, draft year and slot, and their source: on the NHL's official prospect list, or "not on the NHL's prospect list: rights assumed from his draft, he may be unsigned or released". Both say the value comes from the draft slot only (expected wins over a typical pick's first seven seasons, arrival in seasons), with no junior, European or AHL stats or scouting. Picks show the projected slot and expected wins. In the manual list the basics stay on the first line and only the source and valuation line is added.
+
+### Guided trades: fair for both sides (2026-10-22)
+
+Guided options must be acceptable to the partner (package ≥ their price, headliner, cap) and fair for the focus team (long-term value ≥ −0.5 wins), including when the user names the player to move or acquire. Moving a player out searches one-, two- and three-piece returns (three from each partner's best five eligible pieces). If no fair deal exists for a named player, the page says "No fair deal found", gives his trade value to the focus team, and shows up to three closest offers, each labelled "Below his value to DET: −x wins long term".
