@@ -553,3 +553,7 @@ A typed search (2+ characters) looks across all teams even when the team filter 
 ### Standings when games end (2026-10-23)
 
 The current standings update within about a minute of a game ending: the game-night live job runs the scores job (final score and the NHL's official standings) as soon as a game leaves live play and again ~3 minutes later, and the Overview re-reads them ~45 seconds after the game drops out of the live feed. Projected standings, playoff odds and models still update with the nightly build.
+
+### Traded players' current team (2026-10-24)
+
+A player's team resolves the same way on every view: CapWages (nightly, follows trades the next morning), then the NHL's current rosters (nightly), then game data and player values (which can trail a trade until he plays for his new team or the monthly rebuild). Applies to player values, player details, the Players list, the trade explorer pool and profiles. Profiles of players with no games this season show last season's numbers (skaters GP/G/P; goalies GP/SV%/GSAx).
