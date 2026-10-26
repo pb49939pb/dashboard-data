@@ -95,15 +95,25 @@ await db.doc("hockey/tradeBlock").set({ json: JSON.stringify(tradeBlock), update
 // public contract terms: years, status, entry-level, signing date, extension years. No cap hits, sources or owner edits.
 const contractTerms = publicTerms(docs.contracts);
 await db.doc("hockey/contractTerms").set({ json: JSON.stringify(contractTerms), updatedAt: new Date().toISOString() });
+// timings (counts and seconds only: this repo's logs are public) to find what makes the search slow (2026-10-26)
+const timing = (label, o, t) => { const ms = o?.timing?.ms || {}, top = Object.entries(ms).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  console.log(`${label}: ${((Date.now() - t) / 1000).toFixed(0)} s, pool ${o?.timing?.pool ?? "?"} pieces (${o?.timing?.players ?? "?"} players), slowest teams ${top.map(([k, v]) => `${k} ${(v / 1000).toFixed(0)}s`).join(", ")}`);
+  if (o) delete o.timing; };
+let tPhase = Date.now();
 const out = await lab.headlessTradeMoves(docs, userEdits);
+timing("owner search", out, tPhase);
 const json = JSON.stringify(out);
 // Public version for signed-out visitors: the same search run as a visitor's page runs it (no contracts list, no cap table)
+tPhase = Date.now();
 const pub = await lab.headlessTradeMoves({ ...docs, contracts: null, teamCap: null, tradeBlock, contractTerms }, {});
+timing("public search", pub, tPhase);
 const pubJson = JSON.stringify(pub);
 if (Buffer.byteLength(pubJson) > 1_000_000) throw new Error("hockey/tradeMovesPublic is over Firestore's 1 MB limit");
 await db.doc("hockey/tradeMovesPublic").set({ json: pubJson, updatedAt: new Date().toISOString() });
 // The Inside Scoop's proposed trades for every reported player, in the same public inputs (re-checked on the page)
+tPhase = Date.now();
 const scoop = lab.headlessScoopTrades ? await lab.headlessScoopTrades() : null;
+console.log(`scoop trades: ${((Date.now() - tPhase) / 1000).toFixed(0)} s, ${scoop ? Object.keys(scoop.players).length : 0} players`);
 if (scoop) await db.doc("hockey/scoopTrades").set({ json: JSON.stringify(scoop), updatedAt: new Date().toISOString() });
 if (Buffer.byteLength(json) > 1_000_000) throw new Error("hockey/tradeMoves is over Firestore's 1 MB limit");
 await db.doc("hockey/tradeMoves").set({ json, updatedAt: new Date().toISOString() });
