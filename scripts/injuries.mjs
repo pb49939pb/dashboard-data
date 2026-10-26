@@ -96,7 +96,13 @@ async function build(s) {
       const firstHere = mine[0]?.date, lastHere = mine[mine.length - 1]?.date;
       const elsewhere = Object.entries(st).filter(([u]) => u !== t).flatMap(([, xs]) => xs.map((x) => x.date)).sort();
       const cameBefore = elsewhere.some((d) => firstHere && d < firstHere), leftAfter = elsewhere.some((d) => lastHere ? d > lastHere : true);
-      const start = mine.length && (cameBefore || priorGp(p) < (p.group === "G" ? 20 : 40)) ? mine[0].i : 0; // newcomers count from their first game
+      // a player traded here who hasn't dressed for this team yet (B167, Mercer to WPG Oct 2026): his absences before he
+      // arrived belong to his old team. Never dressed anywhere this season and last with another team: arrival unknown,
+      // so don't charge this team; dressed elsewhere: count from this team's first game after his last game there.
+      if (!mine.length && !elsewhere.length && p.team !== t) continue;
+      const afterElsewhere = !mine.length && elsewhere.length ? games.findIndex((g) => g.date > elsewhere[elsewhere.length - 1]) : -1;
+      if (!mine.length && elsewhere.length && afterElsewhere < 0) continue;
+      const start = mine.length && (cameBefore || priorGp(p) < (p.group === "G" ? 20 : 40)) ? mine[0].i : afterElsewhere >= 0 ? afterElsewhere : 0; // newcomers count from their first game
       const stillHere = live ? roster[t]?.has(id) : !leftAfter && (p.team === t || mine.length > 0);
       const end = leftAfter && mine.length ? mine[mine.length - 1].i : stillHere ? n - 1 : mine.length ? mine[mine.length - 1].i : -1;
       if (end < start) continue;
