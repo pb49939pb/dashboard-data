@@ -75,7 +75,10 @@ test("validation blocks placeholders, non-finite numbers and private fields", ()
 test("question bank wraps and First to Three is next on October 19", async () => {
  const {readFile}=await import('node:fs/promises');
  const qotd=JSON.parse(await readFile(new URL('../model/qotd.json',import.meta.url),'utf8'));
- for(const [day,id] of [['2026-10-19','first-three'],['2026-10-26',qotd.questions[0].id],['2026-11-06',qotd.questions[0].id]]){
-  assert.equal(selectQuestionStory(ctx({qotd,editionDateET:day})).item.facts.questionId,id);
+ // wrap days follow the bank's length (a question scheduled later lengthens it: Oct 21 power play, 2026-10-25)
+ const day=(k)=>new Date(Date.parse(qotd.start+'T00:00:00Z')+k*864e5).toISOString().slice(0,10), n=qotd.questions.length;
+ for(const [d,id] of [['2026-10-19','first-three'],[day(n),qotd.questions[0].id],[day(2*n),qotd.questions[0].id]]){
+  const [day0,id0]=[d,id];
+  assert.equal(selectQuestionStory(ctx({qotd,editionDateET:day0})).item.facts.questionId,id0);
  }
 });

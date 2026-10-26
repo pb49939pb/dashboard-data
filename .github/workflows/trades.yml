@@ -22,7 +22,7 @@ jobs:
     # after a nightly run that actually built something (the off-season-hour cron exits early but still "succeeds")
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 75  # the 32-team search outgrew 30 minutes on Oct 20, 2026 (public repo: no minute charges)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

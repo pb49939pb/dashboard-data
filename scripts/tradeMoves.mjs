@@ -85,10 +85,9 @@ for (const name of ["contracts", "block", "meta"]) {
   const s = await db.collection(`apps/hockey/users/${owner}/${name}`).get();
   userEdits[name] = Object.fromEntries(s.docs.map((d) => [d.id, d.data()]));
 }
-const out = await lab.headlessTradeMoves(docs, userEdits);
-const json = JSON.stringify(out);
-// Public versions for signed-out visitors (no contract or cap data, no owner edits): the news-only trade block, and the
-// same search run as a visitor's page runs it (no contracts list, no cap table)
+// The news-only trade block and public contract terms don't depend on the search: store them first, so they stay
+// current even if the search runs long (it was cut off at the time limit every night from Oct 20, 2026, and the Scoop
+// froze at Oct 19).
 const tradeBlock = { builtAt: new Date().toISOString(), block: (docs.contracts.block || []).filter((b) => b.auto).map((b) => ({ id: b.id ?? null, name: b.name, team: b.team, status: b.status,
   since: b.since ?? null, firstSeen: b.firstSeen ?? null, lastSeen: b.lastSeen ?? null, reports: b.reports ?? null, sources: (b.sources || []).map((x) => ({ site: x.site, url: x.url, date: x.date, title: x.title, quote: x.quote, kind: x.kind ?? null, by: x.by ?? null, via: x.via ?? null, teams: x.teams ?? [] })),
   tradeList: b.tradeList ?? null, linked: b.linked ?? [] })) }; // The Inside Scoop: credits, teams named, reported trade list
@@ -96,6 +95,9 @@ await db.doc("hockey/tradeBlock").set({ json: JSON.stringify(tradeBlock), update
 // public contract terms: years, status, entry-level, signing date, extension years. No cap hits, sources or owner edits.
 const contractTerms = publicTerms(docs.contracts);
 await db.doc("hockey/contractTerms").set({ json: JSON.stringify(contractTerms), updatedAt: new Date().toISOString() });
+const out = await lab.headlessTradeMoves(docs, userEdits);
+const json = JSON.stringify(out);
+// Public version for signed-out visitors: the same search run as a visitor's page runs it (no contracts list, no cap table)
 const pub = await lab.headlessTradeMoves({ ...docs, contracts: null, teamCap: null, tradeBlock, contractTerms }, {});
 const pubJson = JSON.stringify(pub);
 if (Buffer.byteLength(pubJson) > 1_000_000) throw new Error("hockey/tradeMovesPublic is over Firestore's 1 MB limit");
