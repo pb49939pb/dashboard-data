@@ -26,7 +26,9 @@ FEEDS = [("NHL Trade Rumors", "https://www.nhltraderumors.me/feeds/posts/default
         [("ProHockeyRumors", f"https://www.prohockeyrumors.com/category/{s}/feed") for s in SLUG.values()]
 
 REQUEST = re.compile(r"request(?:ed|s|ing)? (?:a |to be )?trade|trade request|asked (?:for a trade|to be traded|out)|wants out\b|wants to be traded|"
-                     r"demand(?:ed|s)? a trade|desire to move on|holdout", re.I)
+                     r"demand(?:ed|s)? a trade|desire to move on|holdout|"
+                     # B180 (2026-10-27): "Washington granted Miroshnichenko and his agent permission to seek a trade"
+                     r"permission to (?:seek|find|explore|pursue) a (?:trade|deal)|(?:allowed|cleared) to (?:seek|find|explore) a trade", re.I)
 TALKS = re.compile(r"trade block|on the block|being shopped|shopping (?:him|the)|listening (?:to|on) offers|fielding (?:calls|offers|interest)|field offers|"
                    r"open to (?:moving|trading|dealing)|exploring (?:a |the )?trade|gauging (?:the )?(?:trade )?(?:market|interest)|made available|"
                    r"is available(?! to the media)|available (?:in|via|for) (?:a )?trade|could be moved|likely to be moved|expected to be moved|trade candidate|"

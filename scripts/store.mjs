@@ -41,8 +41,10 @@ export async function budgetCutoff(database = db) {
 
 const rowKey = (r) => (r && typeof r === "object" && !Array.isArray(r) ? r.id ?? r.team ?? r.abbrev ?? null : null);
 
-// Lists that describe "right now" (upcoming games, the current wildcard race): a fresh, non-empty list replaces the old one
-const CURRENT = new Set(["nextGames", "wildcardRace", "divisionLeaders", "r1", "r2"]);
+// Lists that describe "right now" (upcoming games, the current wildcard race, the trade block): a fresh, non-empty list
+// replaces the old one. The trade block (contracts.block) is rebuilt in full each night by block.py from the stored list,
+// so a player it drops (traded, signed, request settled) must go; merged, he stayed on as a _stale row (B168, 2026-10-27).
+const CURRENT = new Set(["nextGames", "wildcardRace", "divisionLeaders", "r1", "r2", "block"]);
 
 /** Deep merge: `next` wins wherever it has a value; null/undefined never erase; keyed rows merge by id/team. */
 export function merge(prev, next, key = "") {
