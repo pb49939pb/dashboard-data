@@ -33,7 +33,10 @@ TALKS = re.compile(r"trade block|on the block|being shopped|shopping (?:him|the)
                    r"trade chip|trade talks|advanced talks|trade discussions|trade conversations|has been floated|on the (?:trade )?market", re.I)
 STAYING = re.compile(r"not (?:available|on the block|being shopped|looking to trade|interested in trading)|no (?:plans|intention) to (?:trade|move)|"
                      r"untouchable|off the table|won'?t be traded|(?:is|isn'?t) going nowhere|not going anywhere|rescind|withdr[ae]w (?:his|the) (?:trade )?request|"
-                     r"signed an? (?:[\w-]+ )?extension|agreed to an? (?:[\w-]+ )?extension", re.I)
+                     r"signed an? (?:[\w-]+ )?extension|agreed to an? (?:[\w-]+ )?extension|"
+                     # a new deal with his own team, or the club saying no, ends a request or holdout too (Nikishin, B168)
+                     r"\bsign(?:s|ed)? (?:[\w.'’-]+ ){1,3}to an? (?:[\w$.,-]+ ){0,4}(?:contract|deal)\b|holdout (?:is over|ends|ended)|"
+                     r"end(?:s|ed)? (?:his|the) holdout|chose not to (?:fulfill|grant|honou?r)|settle[sd]? with", re.I)
 TRADED = re.compile(r"\b(?:was|has been|had been|got) traded\b|\b(?:have|has|had) (?:officially )?(?:acquired|traded)\b|\bacquired (?!.{0,15}\bif\b)|"
                     r"complete[sd]? (?:a |the )?(?:[\w-]+ )?trade|(?<!be )(?<!to be )\btraded to\b", re.I)
 SPECULATIVE = re.compile(r"\b(?:mock|proposed|poll|hot take|could land|ideal|dream|fantasy|what if|should the|predict)", re.I)  # titles: ideas, not reports
@@ -190,7 +193,8 @@ def scan(items: list[dict], by_name: dict) -> list[dict]:
     return out
 
 
-def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: date) -> list[dict]:
+def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: date, current: dict | None = None) -> list[dict]:
+    """current: player id -> team from the contracts list, for players on no NHL roster (suspended, holdouts, B176)."""
     # entries without "auto" were prefilled by hand when the list started; news about the same player replaces them.
     # (Your own edits on the site live in your account and always win over this list.)
     manual = [b for b in prev_block if not b.get("auto")]
@@ -216,8 +220,8 @@ def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: dat
         if not pos:
             continue
         last_pos = pos[0]["date"]
-        if any(x["date"] > last_pos for x in allsrc if x["kind"] in ("staying", "traded")):
-            continue  # a newer report says he's staying, or he's been moved
+        if any(x["date"] >= last_pos for x in allsrc if x["kind"] in ("staying", "traded")):
+            continue  # a report as new as the last one says he's staying, or he's been moved ("holdout ends" names the holdout too)
         request = any(x["kind"] == "request" for x in pos)
         talks = [x for x in pos if x["kind"] == "talks"]
         if not request and not (len({x["url"] for x in talks}) >= 2 or any(x["insider"] for x in talks)):
@@ -225,7 +229,8 @@ def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: dat
         if date.fromisoformat(last_pos) < today - timedelta(days=120 if request else 60):
             continue
         p = team_of.get(pid) or (sig[0]["player"] if sig else {"id": pid, "name": was["name"], "team": was["team"], "rostered": True})
-        if was and was.get("team") and p.get("rostered") and p["team"] != was["team"]:
+        now_team = p["team"] if p.get("rostered") else (current or {}).get(pid)
+        if was and was.get("team") and now_team and now_team != was["team"]:
             continue  # traded since the first report
         first = min(x["date"] for x in pos)
         lead = next(x for x in pos if x["kind"] == ("request" if request else "talks"))
@@ -276,7 +281,8 @@ def main() -> None:
         if it["url"] not in seen:
             seen.add(it["url"]); uniq.append(it)
     signals = scan(uniq, by_name)
-    c["block"] = build(c.get("block", []), signals, by_name, date.today())
+    current = {x["id"]: x["team"] for x in c.get("players", []) if x.get("id") and x.get("team")}
+    c["block"] = build(c.get("block", []), signals, by_name, date.today(), current)
     c["blockAt"] = datetime.now(timezone.utc).isoformat()
     C.write(c)
     auto = [b for b in c["block"] if b.get("auto")]

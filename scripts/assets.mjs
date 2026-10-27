@@ -29,6 +29,12 @@ const ROUNDS = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, s
 const plain = (w) => w.replace(/<ref[^>]*\/>|<ref[^>]*>[\s\S]*?<\/ref>/g, "").replace(/\{\{efn[\s\S]*?\}\}/g, "").replace(/\{\{[^{}]*\}\}/g, "")
   .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1").replace(/'''?/g, "").replace(/\s+/g, " ").trim();
 
+// Wikipedia's trade lists sometimes drop a comma before a pick ("[[Alexander Command]] a second-round pick", B173),
+// which reads as one garbled item once the links are flattened; restore it. Only after a link and before a pick phrase.
+const listCommas = (w) => w.replace(/\]\](?=\s+(?:a|an|the|(?:[A-Z][\w.]*\s+)*[A-Z][\w.]*'s?(?:\s+own)?)\s+(?:conditional\s+)?(?:first|second|third|fourth|fifth|sixth|seventh)-round pick)/g, "]],");
+// Long notes end at a word with an ellipsis, not mid-number ("a second-round pick in 202").
+const clip = (s, n) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, "") + "…");
+
 async function wikiDraft(year) {
   const page = `${year}_NHL_entry_draft`, api = "https://en.wikipedia.org/w/api.php";
   const secs = await fetch(`${api}?action=parse&page=${page}&prop=sections&format=json&formatversion=2`, { headers: UA }).then((r) => r.json()).catch(() => null);
@@ -47,8 +53,8 @@ async function wikiDraft(year) {
       if (!original || !owner) continue;
       const converted = /was converted|were converted|condition was met|became unconditional/i.test(item);
       const conditional = unresolved || (m[3] === "may" && !converted) || (/condition/i.test(item) && !converted && /will be|would|if /i.test(item.split("The condition")[1] || ""));
-      const sentence = plain(item.replace(/^#\s*/, "")).split(/(?<=\.)\s/)[0];
-      traded.push({ year, round: ROUNDS[m[2]], original, owner, conditional, note: sentence.replace(/\b(\w+s)'s\b/g, "$1'").slice(0, 260) }); // "Panthers's" -> "Panthers'"
+      const sentence = plain(listCommas(item.replace(/^#\s*/, ""))).split(/(?<=\.)\s/)[0];
+      traded.push({ year, round: ROUNDS[m[2]], original, owner, conditional, note: clip(sentence.replace(/\b(\w+s)'s\b/g, "$1'"), 320) }); // "Panthers's" -> "Panthers'"
     }
   }
   return { page, traded };
