@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-22 (Players tab team filter)
+Last reviewed: 2026-10-26 (tab-switch speed; Oct 26 bug sweep)
 
 ## 1. What it is
 
@@ -561,3 +561,11 @@ A player's team resolves the same way on every view: CapWages (nightly, follows 
 ### Oct 25 QA bug sweep (2026-10-25)
 
 Recap Great game / Rough night tags require a positive / negative game score. The chosen team is remembered across reloads (localStorage tos-focus). Prospects "+ N more" is an expander. Public copy doesn't reference the owner's private lists, edits or analytics. Searches (Players, trade explorer, guided) redraw once typing pauses. GM moves read "for … · ±x wins of trade value"; the Why text speaks of expected wins (a different, unweighted measure). The Front office period persists across team switches. A player's team resolves to CapWages, then NHL rosters, for this season's game rows too, so traded players appear with their new team in strength, best players and shot-map pickers. Players on NHL contracts with no games yet (injured, suspended, waivers) are in the trade explorer pool. Explorer facts use official games played. Rest and travel lists only games still to play. A market AAV at the league maximum (20% of the cap) says so.
+
+### Tab switches (2026-10-26)
+
+The tab you leave keeps its finished page in memory (the page itself, so open panels, carousel positions and drawn charts stay as they were). Coming back shows it again when nothing it shows has changed: same data (every database answer, data file and redraw that isn't a plain tab switch counts as a change), same team, season, account and phone/desktop width, under three minutes old, and not still loading (skeletons, or the Teams GM-move search, which stops when you leave and reruns on return). Live-score updates during games invalidate only Overview and the Feed. A tab is drawn fresh otherwise, exactly as before. Tabs show a pressed state on touch-down. Overview's standings, leaders, award races, Inside Scoop and milestones use `content-visibility: auto` (laid out when near the screen; they remember their height). Teams builds its trade pool once per draw. `hockeyViewCache()` in the console lists the kept pages. Measured locally, laptop: back to Overview 16-24 ms including layout (was 57-85 ms before layout); 26 ms at 375 px; Teams cold 67-71 ms (was 73-84).
+
+### Oct 26 bug sweep (2026-10-26)
+
+Trade block (scripts/block.py): a player drops off when his team changes, using the contracts list's team when he's on no NHL roster (suspended, holdouts: B176, Hellebuyck); a contract with his own team ("signs X to a one-year deal", "holdout ends") or the club refusing ("chose not to fulfill") counts as staying, and a staying or traded report as new as the latest trade report ends the entry (B168, Nikishin). The site also hides a news-only entry whose player's current team differs, until the nightly drops it. Pick notes (scripts/assets.mjs): a comma Wikipedia dropped between a linked name and a pick phrase is restored, and notes over 320 characters end at a word with an ellipsis (B173). Players: yet-to-play rostered players are also named from CapWages, and the list redraws when last season's league file lands (B177). Not reproduced and asked for details: B178 (no EDM-VAN 6-3 game exists), B179 (the season table was retired 2026-10-19); B174 not a leak (signed-out reads are refused; the QA browser was signed in as the test account, which sees its own reports).
