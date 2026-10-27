@@ -569,3 +569,7 @@ The tab you leave keeps its finished page in memory (the page itself, so open pa
 ### Oct 26 bug sweep (2026-10-26)
 
 Trade block (scripts/block.py): a player drops off when his team changes, using the contracts list's team when he's on no NHL roster (suspended, holdouts: B176, Hellebuyck); a contract with his own team ("signs X to a one-year deal", "holdout ends") or the club refusing ("chose not to fulfill") counts as staying, and a staying or traded report as new as the latest trade report ends the entry (B168, Nikishin). The site also hides a news-only entry whose player's current team differs, until the nightly drops it. Pick notes (scripts/assets.mjs): a comma Wikipedia dropped between a linked name and a pick phrase is restored, and notes over 320 characters end at a word with an ellipsis (B173). Players: yet-to-play rostered players are also named from CapWages, and the list redraws when last season's league file lands (B177). Not reproduced and asked for details: B178 (no EDM-VAN 6-3 game exists), B179 (the season table was retired 2026-10-19); B174 not a leak (signed-out reads are refused; the QA browser was signed in as the test account, which sees its own reports).
+
+### Bracket controls (2026-10-26)
+
+Generate bracket, the snapshot arrows, the snapshot date picker, reset and the snapshot list arriving redraw only the bracket card on Overview (refreshBracket), so the bracket stays where it was; on the Feed the page redraws as before.
