@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-27 (GM-search yield leak; nightly build started by game night; tab-switch speed; Oct 26 bug sweep)
+Last reviewed: 2026-10-27 (/hockeybeta and promotion; GM-search yield leak; nightly build started by game night; tab-switch speed; Oct 26 bug sweep)
 
 ## 1. What it is
 
@@ -192,6 +192,8 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 | The owner's edits | Contract fixes, trade block, objectives, scouting values, forecasts | Saved on the site | Owner only |
 
 **Pipeline:**
+- Oct 27 bug sweep (B180-B202): games played shown is gpOfficial (gp is play-by-play coverage); goalie lines in the explorer use officialSvPct and sa_gsax like the Goalies table; recap goalie cards' danger bands are shots on net, the Goalie duel's high-danger chances include misses (labelled); Milestone watch hides projected dates already past; the explorer's reported-list scope limits only found deals that send that player; Scoop proposals skip pieces the partner won't move; over-cap warnings show in best trades and alongside availability verdicts; cap freed by a player without a contract is labelled estimated.
+- Front-end deploys (2026-10-27): every hockey-web change ships first to the beta copy at /hockeybeta/ (same site, database and nightly data; BETA banner, its own beta:-prefixed browser storage, no visit analytics, owner and bug-report testers only), and `deploy-hockey.sh --prod` promotes only the exact commit beta is running to /hockey/. Both release only their own folder (pat-dashboard/scripts/hosting-patch.mjs clones the live site and refuses if any other file would change). Process: hockey-web/README.md.
 - GitHub Actions (dashboard-data) runs nightly at 3 AM Eastern, then the trade search. GitHub starts schedules late or drops them (2026-10-27: almost six hours late, so last night's games weren't in the models until 9:15 AM), so game night (scripts/live.mjs) starts the nightly itself at 3:15 AM Eastern once every started game is final, unless a run is already going or has run since 3 AM; a late scheduled run then skips itself.
 - On game nights, odds and recaps update every 5 minutes.
 - Contracts get a weekly full refresh.
