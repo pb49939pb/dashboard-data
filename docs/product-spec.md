@@ -572,4 +572,4 @@ Trade block (scripts/block.py): a player drops off when his team changes, using 
 
 ### Bracket controls (2026-10-26)
 
-Generate a fresh bracket (the button, renamed from Generate a bracket), the snapshot arrows, the snapshot date picker, reset and the snapshot list arriving redraw only the bracket card on Overview (refreshBracket), so the bracket stays where it was; on the Feed the page redraws as before.
+Regenerate (the bracket button, renamed from Generate a bracket), the snapshot arrows, the snapshot date picker, reset and the snapshot list arriving redraw only the bracket card on Overview (refreshBracket), so the bracket stays where it was; on the Feed the page redraws as before.
