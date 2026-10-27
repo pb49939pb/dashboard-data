@@ -573,3 +573,7 @@ Trade block (scripts/block.py): a player drops off when his team changes, using 
 ### Bracket controls (2026-10-26)
 
 Regenerate (the bracket button, renamed from Generate a bracket), the snapshot arrows, the snapshot date picker, reset and the snapshot list arriving redraw only the bracket card on Overview (refreshBracket), so the bracket stays where it was; on the Feed the page redraws as before.
+
+### Projected standings: expand a conference (2026-10-26)
+
+Desktop only (1100 px and wider, where the conferences sit side by side). Clicking a conference's projected standings (its heading button, or any table cell that isn't a team, link or sort header) animates it to 90% of the width; with compact cells every column fits without horizontal scrolling (Team through Cup). The other conference fades into a vertical strip with its name; clicking the strip swaps. "Show both" on the open conference, or Escape, restores the 50/50 layout. The choice survives tab switches and redraws in the session (state.projExpanded) and clears if the window narrows below 1100 px. Reduced motion: no animation. Phones and narrower windows are unchanged.
