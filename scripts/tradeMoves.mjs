@@ -31,6 +31,10 @@ for (const k of ["addEventListener", "removeEventListener", "scrollTo", "request
 define("scrollY", 0);
 define("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} })); // lab.js reads media queries (mobile layouts)
 for (const k of ["IntersectionObserver", "ResizeObserver"]) define(k, class { observe() {} unobserve() {} disconnect() {} }); // layout observers do nothing here
+// The search pauses every ~25 ms with scheduler.yield, or else a new MessageChannel per pause. Node has no scheduler
+// and keeps every unclosed channel alive, and each one's handler held that team's whole search scope: the heap grew
+// team by team until it ran out at 4 GB (2026-10-27). setImmediate is a pause that leaves nothing behind.
+define("scheduler", { yield: () => new Promise((r) => setImmediate(r)) });
 
 async function loadLab() {
   const given = process.argv.slice(2).find((a) => a.endsWith(".js"));
