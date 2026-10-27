@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-26 (tab-switch speed; Oct 26 bug sweep)
+Last reviewed: 2026-10-27 (nightly build started by game night; tab-switch speed; Oct 26 bug sweep)
 
 ## 1. What it is
 
@@ -192,7 +192,7 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 | The owner's edits | Contract fixes, trade block, objectives, scouting values, forecasts | Saved on the site | Owner only |
 
 **Pipeline:**
-- GitHub Actions (dashboard-data) runs nightly at 3 AM Eastern, then the trade search.
+- GitHub Actions (dashboard-data) runs nightly at 3 AM Eastern, then the trade search. GitHub starts schedules late or drops them (2026-10-27: almost six hours late, so last night's games weren't in the models until 9:15 AM), so game night (scripts/live.mjs) starts the nightly itself at 3:15 AM Eastern once every started game is final, unless a run is already going or has run since 3 AM; a late scheduled run then skips itself.
 - On game nights, odds and recaps update every 5 minutes.
 - Contracts get a weekly full refresh.
 - The models are refit by hand or monthly (hockey-models, Python).

@@ -1,7 +1,8 @@
 # Nightly at 3 AM Eastern (after the last West Coast games end): fetch NHL data, rebuild the Red Wings widget and Hockey Lab data, and merge it into
 # Firestore (pat-dashboard-eb494). Writes only add or update; nothing already stored is dropped.
 # Cron is UTC, so both 07:00 and 08:00 UTC are scheduled (3 AM EDT / EST); the run that isn't
-# 3 AM in New York (by daylight saving, so a late start still runs) stops before fetching anything. Manual runs and pushes always fetch.
+# 3 AM in New York (by daylight saving, so a late start still runs) stops before fetching anything, and so does a late
+# scheduled run after game night already started one (scripts/live.mjs, 3:15 AM). Manual runs and pushes always fetch.
 name: Update dashboard data
 on:
   schedule:
@@ -27,6 +28,7 @@ on:
 
 permissions:
   contents: write   # only for the occasional keep-alive commit below
+  actions: read     # to see whether game night already started tonight's build
 
 concurrency:
   group: nightly
@@ -38,6 +40,9 @@ jobs:
     steps:
       - name: Only at 3 AM Eastern
         id: hour
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         # 07:00 UTC is 3 AM in summer (EDT, UTC-4) and 08:00 UTC is 3 AM in winter (EST, UTC-5): each cron runs only in
         # its half of the year. Keyed to the offset, not the clock hour, so a run GitHub starts late still happens.
         run: |
@@ -47,6 +52,16 @@ jobs:
                { [ "${{ github.event.schedule }}" = "0 8 * * *" ] && [ "$offset" != "-0500" ]; }; then
               echo "This cron is for the other half of the year (New York is UTC$offset); skipping."
               echo "skip=true" >> "$GITHUB_OUTPUT"
+            # GitHub starts schedules late (2026-10-27: almost 6 hours), so game night (scripts/live.mjs) starts this
+            # workflow itself at 3:15 AM once the games are final; when it has, the late scheduled run has nothing to add
+            elif [ "$(TZ=America/New_York date +%H)" -ge 3 ]; then
+              since=$(date -u -d "$(TZ=America/New_York date +%Y-%m-%d) 02:55 $offset" +%Y-%m-%dT%H:%M:%SZ)
+              ran=$(gh run list --workflow update.yml --event workflow_dispatch --limit 20 --json createdAt \
+                --jq "[.[] | select(.createdAt >= \"$since\")] | length" || echo 0)
+              if [ "${ran:-0}" -gt 0 ]; then
+                echo "Game night already started tonight's build (or a manual run did, since 3 AM); skipping."
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+              fi
             fi
           fi
       - uses: actions/checkout@v4
