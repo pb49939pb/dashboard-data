@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-10-20T18:09:51+00:00",
+ "builtAt": "2026-10-28T04:22:54+00:00",
  "start": "2026-10-15",
  "seasons": [
   "20232024",
@@ -475,6 +475,41 @@
    },
    "method": "Two-minute minors that created a 5-on-4 in 2023-24 through 2025-26 regular seasons (not in the last minute). Time on the power play and power-play goals counted in 15-second slices until a goal, two minutes, or a change in strength.",
    "sample": "19,497 power plays, 3,781 goals"
+  },
+  {
+   "id": "goaliepay",
+   "date": "2026-10-28",
+   "q": "Does it make sense to pay a lot of goalies and should you sign them long term?",
+   "headline": "Pay for a proven record, but keep it short. A top goalie keeps about 25% of his edge the next season and almost none of it by year three.",
+   "body": [
+    "Take goalies whose last three seasons rank in the top fifth: +5.1 goals saved above expected per 1,000 shots. The next season, the same goalies average +1.3; year two +0.8; year three +0.3; year five -1.1.",
+    "For a starter facing about 2,500 shots, that record is worth about 2.1 wins a season, which is star money. What the next season actually delivers is closer to 0.5 wins. A short deal pays for the part that lasts; years four to eight of a long deal pay for a record that no longer predicts anything.",
+    "This season's 13 goalie deals of $5M+ that have a full season behind them: 7 saved fewer goals per 1,000 shots after signing than in the two seasons before, averaging +3.7 before and +2.2 since. Biggest drop: Adin Hill (+4.2 to -10.8); best: Philipp Grubauer (-6.5 to +3.1).",
+    "Paying a goalie isn't wasted: a good starter still beats a bad one. The trap is paying for one hot stretch, and for years of it. Most of one goalie season is luck, which is why the record fades (see the question on goalie luck)."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Top-fifth goalies: goals saved per 1,000 shots, record vs each later season",
+    "x": [
+     "3-season record",
+     "Year 1",
+     "Year 2",
+     "Year 3",
+     "Year 4",
+     "Year 5"
+    ],
+    "y": [
+     5.15,
+     1.29,
+     0.84,
+     0.28,
+     0.13,
+     -1.09
+    ],
+    "unit": ""
+   },
+   "method": "MoneyPuck goalie seasons 2008-09 through 2025-26, all situations; goals saved above expected (expected goals minus goals) per 1,000 unblocked shots. Record = three straight seasons totaling 3,000+ shots; top fifth = +3.2 or better. Later seasons count when he faced 1,000+ shots, so goalies who lost the job drop out and the later years flatter the group. Wins at 6 goals per win. Deals: current contracts (public terms) of $5M+ a season, completed seasons only.",
+   "sample": "793 three-season records; 131 top-fifth records with a next season, 61 with a fifth; 13 current deals"
   }
  ]
 }

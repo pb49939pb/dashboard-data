@@ -71,11 +71,23 @@ export function selectTeamStory(ctx, cfg = TODAY_CONFIG) {
 }
 
 /** Question of the day: the same bank and day rule as the footer (doc.start, Eastern dates, in order, repeating). */
-export function questionIndex(start, n, dateET) { const d = Math.floor(dayNum(dateET) - dayNum(start)); return d < 0 ? 0 : d % n; }
+/** Index into the bank for an Eastern date. A question with a `date` shows on that day only and the rotation of the
+ *  undated ones pauses that day, so every other day keeps its question (2026-10-28; same rule as lab.js qotdOn).
+ *  `questions` may also be a count (an undated bank). */
+export function questionIndex(start, questions, dateET) {
+  const list = typeof questions === "number" ? Array.from({ length: questions }, () => ({})) : questions;
+  const d = Math.max(0, Math.floor(dayNum(dateET) - dayNum(start))), iso = addDays(start, d);
+  const pinned = list.findIndex((q) => q.date === iso);
+  if (pinned >= 0) return pinned;
+  const free = list.map((q, i) => (q.date ? -1 : i)).filter((i) => i >= 0);
+  if (!free.length) return 0;
+  const paused = new Set(list.filter((q) => q.date && q.date >= start && q.date < iso).map((q) => q.date)).size;
+  return free[(d - paused) % free.length];
+}
 export function selectQuestionStory(ctx) {
   const Q = ctx.qotd;
   if (!Q?.questions?.length || !Q.start) return { item: null, log: [{ reject: "no published question bank" }] };
-  const i = questionIndex(Q.start, Q.questions.length, ctx.editionDateET);
+  const i = questionIndex(Q.start, Q.questions, ctx.editionDateET);
   return { item: { kind: "question", id: `question:${Q.questions[i].id}`, label: "Question of the day", template: "question_v1", rule: RULES.question,
     destination: { type: "qotd", index: i }, facts: { questionId: Q.questions[i].id, question: Q.questions[i].q } }, log: [] };
 }
@@ -84,7 +96,7 @@ export function buildTodayEdition(ctx, cfg = TODAY_CONFIG) {
   const g = selectGameStory(ctx, cfg), t = selectTeamStory(ctx, cfg), q = selectQuestionStory(ctx);
   const items = [g.item, t.item, q.item].filter(Boolean);
   return { edition: { schemaVersion: 1, editionDateET: ctx.editionDateET, generatedAt: ctx.generatedAt, inputVersions: ctx.inputVersions || {}, status: items.length ? "ready" : "empty",
-    items, qotd: ctx.qotd?.questions?.length ? { start: ctx.qotd.start, questions: ctx.qotd.questions.map((x) => ({ id: x.id, q: x.q })) } : null },
+    items, qotd: ctx.qotd?.questions?.length ? { start: ctx.qotd.start, questions: ctx.qotd.questions.map((x) => ({ id: x.id, q: x.q, ...(x.date ? { date: x.date } : {}) })) } : null },
     log: { game: g.log, team: t.log, question: q.log } };
 }
 

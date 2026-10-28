@@ -60,6 +60,12 @@ test("question uses the footer's day rule, and is missing gracefully", () => {
   const ed = buildTodayEdition(ctx({ recaps: [recap({ deserved: 0.3 })] })).edition;
   assert.equal(ed.items.length, 1); assert.equal(ed.items[0].kind, "game");
 });
+test("a dated question shows on its day only and the rotation pauses", () => {
+  const q = { start: "2026-10-15", questions: [...Array.from({ length: 3 }, (_, i) => ({ id: `q${i}`, q: `Question ${i}?` })), { id: "d", q: "Dated?", date: "2026-10-17" }] };
+  const on = (day) => selectQuestionStory(ctx({ qotd: q, editionDateET: day })).item.facts.questionId;
+  assert.deepEqual(["2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20"].map(on), ["q0", "q1", "d", "q2", "q0", "q1"]);
+  assert.equal(buildTodayEdition(ctx({ qotd: q })).edition.qotd.questions[3].date, "2026-10-17"); // the copy keeps the date
+});
 test("identical inputs give an identical edition (idempotent)", () => {
   const c = ctx({ recaps: [recap({ deserved: 0.3 }), recap({ id: 7, deserved: 0.35 })], teams: [team()] });
   assert.deepEqual(buildTodayEdition(c).edition, buildTodayEdition(c).edition);
@@ -75,9 +81,10 @@ test("validation blocks placeholders, non-finite numbers and private fields", ()
 test("question bank wraps and First to Three is next on October 19", async () => {
  const {readFile}=await import('node:fs/promises');
  const qotd=JSON.parse(await readFile(new URL('../model/qotd.json',import.meta.url),'utf8'));
- // wrap days follow the bank's length (a question scheduled later lengthens it: Oct 21 power play, 2026-10-25)
- const day=(k)=>new Date(Date.parse(qotd.start+'T00:00:00Z')+k*864e5).toISOString().slice(0,10), n=qotd.questions.length;
- for(const [d,id] of [['2026-10-19','first-three'],[day(n),qotd.questions[0].id],[day(2*n),qotd.questions[0].id]]){
+ // wrap days follow the undated bank's length (a question scheduled later lengthens it: Oct 21 power play, 2026-10-25);
+ // the dated Oct 28 goalie question takes its day and pushes the rotation back one day after it (2026-10-28)
+ const day=(k)=>new Date(Date.parse(qotd.start+'T00:00:00Z')+k*864e5).toISOString().slice(0,10), undated=qotd.questions.filter(q=>!q.date), n=undated.length;
+ for(const [d,id] of [['2026-10-19','first-three'],[day(n),undated[0].id],['2026-10-28','goaliepay'],[day(2*n+1),undated[0].id]]){
   const [day0,id0]=[d,id];
   assert.equal(selectQuestionStory(ctx({qotd,editionDateET:day0})).item.facts.questionId,id0);
  }
