@@ -2,7 +2,7 @@
 
 A living spec for patrickreidbaldwin.com/hockey. It covers who the site is for, everything it does, and where every number comes from. It's maintained by hand next to the code and updated with every feature change. When the page opens it, the appendices are generated from the running code: recent changes, the model list and (for the owner) the data-jobs catalog. How the models work is in the companion **Methods dossier**, and each model's scorecard is on the Model tab.
 
-Last reviewed: 2026-10-28 (dated question of the day: goalie pay and term; player-card contract last; plain coach units; the whole app on phones; Feed on phones; /hockeybeta and promotion; GM-search yield leak; nightly build started by game night; tab-switch speed; Oct 26 bug sweep)
+Last reviewed: 2026-10-31 (tabs answer on a slow connection; dated question of the day: goalie pay and term; player-card contract last; plain coach units; the whole app on phones; Feed on phones; /hockeybeta and promotion; GM-search yield leak; nightly build started by game night; tab-switch speed; Oct 26 bug sweep)
 
 ## 1. What it is
 
@@ -188,6 +188,7 @@ Sub-tabs (since 2026-10-16), the last one used remembered:
 - **Name:** The Other Score (formerly Hockey Lab) everywhere since 2026-10-18, from the first paint; same `/hockey/` address. The later redesign phases (editorial section headers, tabular figures, Today as flagship, the After the Horn recap) are owner previews (Admin → Brand preview). The dashboard launcher button was removed from the site (2026-10-18).
 - **Spend cap:** Firestore and Hosting spend together are held to $5 a month. Past $5/30 in a Pacific day (or $5 in a month), the whole site shows a one-page "Back tomorrow" notice, the database is cut off to everyone but the owner, and the data jobs skip Firestore until midnight Pacific. A fresh visit costs about 20 reads, ~7 writes and ~0.22 MB: about 0.6¢ per 100 page loads past the free quotas.
 - **Speed:** Teams, Goalies and Overview load slim nightly versions of the two largest documents first (playersLite, injuriesLite); the full ones load only for the Skaters tab, player cards and last season's man-games lost.
+- **Slow connections (2026-10-31):** the tab bar is drawn before any data arrives, and a tab tapped before its data is in opens at once on a loading page that fills in when the data lands (after 20 s it says the connection looks slow and offers a reload). The data is not yet kept on the device between visits, so a page with no connection still has nothing to show.
 
 ## 5. Data sources
 
