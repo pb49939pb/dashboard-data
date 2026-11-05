@@ -38,12 +38,53 @@ STAYING = re.compile(r"not (?:available|on the block|being shopped|looking to tr
                      r"signed an? (?:[\w-]+ )?extension|agreed to an? (?:[\w-]+ )?extension|"
                      # a new deal with his own team, or the club saying no, ends a request or holdout too (Nikishin, B168)
                      r"\bsign(?:s|ed)? (?:[\w.'’-]+ ){1,3}to an? (?:[\w$.,-]+ ){0,4}(?:contract|deal)\b|holdout (?:is over|ends|ended)|"
-                     r"end(?:s|ed)? (?:his|the) holdout|chose not to (?:fulfill|grant|honou?r)|settle[sd]? with", re.I)
+                     r"end(?:s|ed)? (?:his|the) holdout|chose not to (?:fulfill|grant|honou?r)|settle[sd]? with|"
+                     # "signed a one-year, $3MM deal to remain a Hurricane despite his trade request" (Nikishin, B222)
+                     r"\bsign(?:s|ed)? an? (?:[\w$.,-]+ ){0,4}(?:contract|deal) to (?:remain|stay)", re.I)
 TRADED = re.compile(r"\b(?:was|has been|had been|got) traded\b|\b(?:have|has|had) (?:officially )?(?:acquired|traded)\b|\bacquired (?!.{0,15}\bif\b)|"
                     r"complete[sd]? (?:a |the )?(?:[\w-]+ )?trade|(?<!be )(?<!to be )\btraded to\b", re.I)
 SPECULATIVE = re.compile(r"\b(?:mock|proposed|poll|hot take|could land|ideal|dream|fantasy|what if|should the|predict)", re.I)  # titles: ideas, not reports
 INSIDERS = re.compile(r"Friedman|LeBrun|Seravalli|Dreger|McKenzie|Pagnotta|Kypreos|Johnston|Shannon|Murphy|Garrioch|Marek")
 CUE_REACH = 90  # a cue belongs to the nearest player named within this many characters
+# A cue that doesn't report a request or talks right now (2026-11-04, B222/B232/B244/B248): denied or left open
+# ("hasn't requested a trade", "declined to say whether he has requested", "hasn't been involved in any trade talks",
+# "if he were to ... field offers"), or about the past ("in 2023 ... he requested a trade", "a half-decade ago",
+# "the Quinn Hughes trade talks before Hughes landed in Minnesota").
+DENIED = re.compile(r"\b(?:not|never|no|nor|without|whether|if|unless|denie[sd]|deny)\b|n['’]t\b|stop(?:ped|s)? short of", re.I)
+PAST = re.compile(r"\b(?:years?|decade|half-decade|seasons?) ago\b|\bbefore (?:he|[A-Z][\w'’-]+) (?:landed|was traded|was dealt|joined|arrived)\b|"
+                  r"\bwhile (?:he|[A-Z][\w'’-]+) was (?:a|an|with)\b", re.I)
+YEAR = re.compile(r"(?:^|\b(?:back|way back) )in (20\d\d)\b|\bin (20\d\d)\b", re.I)
+
+
+SUBORD = re.compile(r"\b(?:than|now that|unlike|after|since|while)\b", re.I)
+
+
+def owner(sent: str, cue: re.Match, ms: list[tuple[int, dict]]) -> tuple[int, dict] | None:
+    """The player a cue is about: the nearest one named within reach, skipping a name that comes after the cue in a
+    side clause ("Strome is a more likely trade candidate than Zach Whitecloud"; "Binnington is the top goalie left on
+    the trade market now that Connor Hellebuyck is in New Jersey", B206)."""
+    ok = [h for h in ms if not (h[0] > cue.end() and SUBORD.search(sent[cue.end():h[0]]))]
+    best = min(ok, key=lambda h: abs(h[0] - cue.start()), default=None)
+    return best if best and abs(best[0] - cue.start()) <= CUE_REACH else None
+
+
+def current_cue(sent: str, pos: int, end: int, name_pos: int, p: dict, today: date | None = None) -> bool:
+    """Whether the cue at sent[pos:end], tied to the player named at name_pos, reports something live about him."""
+    if DENIED.search(sent[max(0, pos - 45):pos]) or PAST.search(sent):
+        return False
+    y = (today or date.today()).year
+    for m in YEAR.finditer(sent):
+        yr = int(m.group(1) or m.group(2))
+        if yr < y and (m.start() == 0 or abs(m.start() - pos) < 60):
+            return False
+    # "Tkachuk had asked out of Ottawa": a request to leave a team he no longer plays for
+    after = sent[end:end + 30]
+    m = re.match(r"\s*(?:out )?(?:of|from) (?:the )?([A-Z][\w.' ]+)", after)
+    if m and p.get("team"):
+        ts = teams_in(m.group(1))
+        if ts and p["team"] not in ts:
+            return False
+    return True
 
 # The Inside Scoop (2026-10-18): who reported it and where, which teams each report names, and the player's reported
 # trade list (teams on it, teams ruled out, its size), each fact with its quote, date and link so it can be checked.
@@ -72,7 +113,9 @@ HYPO = re.compile(r"\bif\b|\bunless\b|\bshould\b|\bwould (?:have|need)|\bcould\b
 CONTRAST = re.compile(r"\b(?:however|but|while|although|though|whereas)\b", re.I)
 INTEREST = re.compile(r"interest(?:ed)?\b|in contact|going hard|pursu(?:e|ing)|circling|kick(?:ed|ing) (?:the )?tires|inquir(?:ed|ing|ies)|called (?:about|on)|"
                       r"pounce|serious about|\btarget(?:ing|s)?\b|in the mix|front-?runner|frontrunner|in on (?:him|Larkin|the)|talks with|discuss(?:ed|ing)? (?:a |the )?(?:trade|deal)|"
-                      r"\bin talks\b|sweepstakes|suitor", re.I)
+                      r"\bin talks\b|sweepstakes|suitor|"
+                      # the player's side: "Maple Leafs & Canadiens: Teams That Kucherov Would Consider" (B241)
+                      r"would (?:consider|accept|welcome|waive (?:for|to))|open to (?:going to|joining|a move to)", re.I)
 OFF_CUE = re.compile(r"\bnot on\b|isn'?t on|aren'?t on|\bnor\b|does(?: not|n'?t) include|(?:hasn'?t|has not|haven'?t|have not) (?:yet )?(?:opened|expanded|added)|off (?:the|his) list|"
                      r"not (?:one of|included|among)|ruled out|excluded|no Canadian|not .{0,30}\bon (?:his|the) list|still off", re.I)
 ON_CUE = re.compile(r"list (?:was|is|includes|included|features|consists of)|on (?:his|the) (?:approved |trade |wish )?list|approved (?:list|teams)? ?(?:includes|of)|"
@@ -135,9 +178,14 @@ def mentions(text: str, by_name: dict, known_last: dict) -> list[tuple[int, dict
     """(position, player) for every full name in the text, and last names of players already named in this item."""
     hits = []
     for m in C.NAME.finditer(text):
-        p = by_name.get(C.norm(re.sub(r"[’']s$", "", m.group(0))))
-        if p:
-            hits.append((m.start(), p)); known_last[p["name"].split()[-1]] = p
+        # "Re Connor Hellebuyck", "Wild GM Bill Guerin": drop leading capitalised words until a known name is left (B232)
+        words = re.sub(r"[’']s$", "", m.group(0)).split()
+        for i in range(max(1, len(words) - 1)):
+            p = by_name.get(C.norm(" ".join(words[i:])))
+            if p:
+                at = m.start() + len(" ".join(words[:i])) + (1 if i else 0)
+                hits.append((at, p)); known_last[p["name"].split()[-1]] = p
+                break
     for last, p in known_last.items():
         for m in re.finditer(r"\b" + re.escape(last) + r"\b", text):
             if not any(q is p and h <= m.start() < h + len(p["name"]) + 1 for h, q in hits):
@@ -160,7 +208,7 @@ def scan(items: list[dict], by_name: dict) -> list[dict]:
         known: dict = {}
         sents = [it["title"]] + re.split(r"(?<=[.!?])\s+(?=[A-Z\"“])|\s+[—–]\s+|\s*https?://\S+\s*|\s#\w+", it["text"])
         spec = bool(SPECULATIVE.search(it["title"]))
-        seen = set()
+        seen: dict = {}
         # sentences; aggregator posts string quoted tweets together, so links, hashtags and " — " end a sentence too
         focus = [p for p in by_name.values() if p["name"] in it["title"]]  # the player an item is about, for "his list" sentences
         for si, sent in enumerate(sents):
@@ -184,15 +232,38 @@ def scan(items: list[dict], by_name: dict) -> list[dict]:
                     continue
                 for cue in rx.finditer(sent):
                     pos = cue.start()
-                    best = min(ms, key=lambda h: abs(h[0] - pos))
-                    if abs(best[0] - pos) > CUE_REACH or (best[1]["id"], kind) in seen:
+                    best = owner(sent, cue, ms)
+                    if not best or (kind in ("request", "talks") and not current_cue(sent, pos, cue.end(), best[0], best[1])):
                         continue
-                    seen.add((best[1]["id"], kind))
                     who, via = credit(sent, around)
+                    if (best[1]["id"], kind) in seen:
+                        # one signal per item; an insider named further down still counts ("Trade Talks Heating Up Around
+                        # Blues' Jordan Binnington" ... "according to The Athletic's Chris Johnston", B206)
+                        x = seen[(best[1]["id"], kind)]
+                        if not x["insider"] and INSIDERS.search(sent):
+                            x.update(insider=True, by=x["by"] or who, via=x["via"] or via)
+                        continue
                     out.append({"player": best[1], "kind": kind, "site": it["site"], "url": it["url"], "date": it["date"], "title": it["title"],
                                 "quote": snippet(sent, pos), "insider": bool(INSIDERS.search(sent)), "by": who, "via": via,
                                 "teams": teams_in(sent, best[1].get("team"))})
+                    seen[(best[1]["id"], kind)] = out[-1]
     return out
+
+
+def still_reads(x: dict, p: dict, by_name: dict) -> bool:
+    """A stored request/talks report whose quote, read with tonight's rules, still ties that cue to this player."""
+    rx = {"request": REQUEST, "talks": TALKS}.get(x.get("kind"))
+    q = (x.get("quote") or "").strip("…")
+    if not rx or not q:
+        return True
+    ms = mentions(q, by_name, {p["name"].split()[-1]: p})
+    if not ms:
+        return True  # the snippet clipped his name off: nothing to re-read
+    for cue in rx.finditer(q):
+        best = owner(q, cue, ms)
+        if best and best[1]["id"] == p["id"] and current_cue(q, cue.start(), cue.end(), best[0], p):
+            return True
+    return False
 
 
 def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: date, current: dict | None = None) -> list[dict]:
@@ -214,7 +285,9 @@ def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: dat
     out = []
     for pid in set(by_id) | set(old):
         sig, was = by_id.get(pid, []), old.get(pid)
-        srcs = {(x["url"], x["kind"]): x for x in (was or {}).get("sources", [])}
+        p0 = team_of.get(pid) or (was and {"id": pid, "name": was["name"], "team": was["team"]})
+        # reports stored on earlier nights are read again with tonight's rules, so a misread one leaves (B232)
+        srcs = {(x["url"], x["kind"]): x for x in (was or {}).get("sources", []) if not p0 or still_reads(x, p0, by_name)}
         for x in sig:
             srcs[(x["url"], x["kind"])] = {k: x.get(k) for k in ("kind", "site", "url", "date", "title", "quote", "insider", "by", "via", "teams")}
         allsrc = sorted(srcs.values(), key=lambda x: x["date"], reverse=True)
@@ -222,8 +295,12 @@ def build(prev_block: list[dict], signals: list[dict], by_name: dict, today: dat
         if not pos:
             continue
         last_pos = pos[0]["date"]
-        if any(x["date"] >= last_pos for x in allsrc if x["kind"] in ("staying", "traded")):
+        ended = max((x["date"] for x in allsrc if x["kind"] in ("staying", "traded")), default="")
+        if ended >= last_pos:
             continue  # a report as new as the last one says he's staying, or he's been moved ("holdout ends" names the holdout too)
+        # the status comes from what's been reported since the last "staying" report: a request he rescinded, or that
+        # ended with a new deal, no longer makes him "requested trade" (Nikishin, Wright, B222)
+        pos = [x for x in pos if x["date"] > ended]
         request = any(x["kind"] == "request" for x in pos)
         talks = [x for x in pos if x["kind"] == "talks"]
         if not request and not (len({x["url"] for x in talks}) >= 2 or any(x["insider"] for x in talks)):
