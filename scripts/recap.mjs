@@ -380,7 +380,7 @@ export async function buildRecap(id, ctx) {
 
   const shotList = shots.filter((s) => s.kind !== "b" || true).map((s) => [s.x, s.y, s.kind, s.side, s.xg, s.shooter, s.period, s.t, s.strength, s.en ? 1 : 0]);
   const recap = {
-    id, date, season: String(pbp.season), state: pbp.gameState, final, updatedAt: new Date().toISOString(), venue: pbp.venue?.default || null,
+    id, date, season: String(pbp.season), state: pbp.gameState, final, updatedAt: new Date().toISOString(), venue: pbp.venue?.default || null, start: pbp.startTimeUTC || null,
     end: pbp.gameOutcome?.lastPeriodType || null,
     home: { team: H.abbrev, name: H.commonName?.default || H.abbrev, score: H.score, sog: H.sog }, away: { team: A.abbrev, name: A.commonName?.default || A.abbrev, score: A.score, sog: A.sog },
     periods, totals, pp, teamStats, deserved: unb.length ? deserved(unb) : null, goals, turning: turning ? goals.indexOf(turning) : null, swing,

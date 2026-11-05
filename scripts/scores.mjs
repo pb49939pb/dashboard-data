@@ -85,8 +85,10 @@ const days = [await want(yesterday, false), await want(today, true), await want(
 // Shared by every visitor; no browser calls to the NHL, and no model rebuild.
 const standings=await refreshStandings(prev?.standings);
 
-// predictions for games that haven't started: our model (nightly) and Polymarket (now); frozen once the puck drops
-const upcoming = days.flatMap((d) => d.games).filter((g) => !done(g) && !live(g) && g.state !== "PPD");
+// predictions for games that haven't started: our model (nightly) and Polymarket (now); frozen once the puck drops.
+// Not started means before the scheduled start too: between the last horn and FINAL the NHL reports "OVER", which is
+// neither live nor done, so a settled market's 0%/100% (or a late-game price) used to overwrite the pre-game price (B230).
+const upcoming = days.flatMap((d) => d.games).filter((g) => !done(g) && !live(g) && !["PPD", "OVER"].includes(g.state) && new Date(g.start).getTime() > now);
 let predsFilled = 0;
 if (store && upcoming.length && (fetched || upcoming.some((g) => g.pred?.model == null || g.pred?.market == null))) {
   const proj = await store.read("hockey/projections").catch(() => null);
