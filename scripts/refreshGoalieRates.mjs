@@ -16,5 +16,5 @@ const {readFile}=await import('node:fs/promises');
 const bank=JSON.parse(await readFile('model/qotd.json','utf8'));
 await store.put('hockey/qotd',bank);
 const today=await store.read('hockey/today');
-if(today)await store.put('hockey/today',{qotd:{start:bank.start,questions:bank.questions.map(({id,q})=>({id,q}))}});
+if(today)await store.put('hockey/today',{qotd:{start:bank.start,questions:bank.questions.map(({id,q,date,from})=>({id,q,...(date?{date}:{}),...(from?{from}:{})}))}});
 console.log(`Published rotating question bank: ${bank.questions.length} questions`);

@@ -81,11 +81,23 @@ test("validation blocks placeholders, non-finite numbers and private fields", ()
 test("question bank wraps and First to Three is next on October 19", async () => {
  const {readFile}=await import('node:fs/promises');
  const qotd=JSON.parse(await readFile(new URL('../model/qotd.json',import.meta.url),'utf8'));
- // wrap days follow the undated bank's length (a question scheduled later lengthens it: Oct 21 power play, 2026-10-25);
- // the dated Oct 28 goalie question takes its day and pushes the rotation back one day after it (2026-10-28)
- const day=(k)=>new Date(Date.parse(qotd.start+'T00:00:00Z')+k*864e5).toISOString().slice(0,10), undated=qotd.questions.filter(q=>!q.date), n=undated.length;
- for(const [d,id] of [['2026-10-19','first-three'],[day(n),undated[0].id],['2026-10-28','goaliepay'],[day(2*n+1),undated[0].id]]){
-  const [day0,id0]=[d,id];
-  assert.equal(selectQuestionStory(ctx({qotd,editionDateET:day0})).item.facts.questionId,id0);
+ // the first passes run through the undated questions published before Nov 5 (the Oct 21 power play question lengthened
+ // the bank, 2026-10-25); the dated Oct 28 goalie question takes its day and pushes the rotation back one day after it
+ const day=(k)=>new Date(Date.parse(qotd.start+'T00:00:00Z')+k*864e5).toISOString().slice(0,10), base=qotd.questions.filter(q=>!q.date&&!q.from), n=base.length;
+ // the third pass (Nov 9) starts with the questions added Nov 5, newest first, when they've joined by then
+ const joined=qotd.questions.filter(q=>!q.date&&q.from&&q.from<=day(2*n+1)), third=joined.length?joined[0].id:base[0].id;
+ for(const [d,id] of [['2026-10-19','first-three'],[day(n),base[0].id],['2026-10-28','goaliepay'],[day(2*n+1),third]]){
+  assert.equal(selectQuestionStory(ctx({qotd,editionDateET:d})).item.facts.questionId,id);
  }
+});
+test("questions with a from date join at the next full pass, newest first, and earlier days don't change", () => {
+  const old = Array.from({ length: 3 }, (_, i) => ({ id: `q${i}`, q: `Question ${i}?` }));
+  const q = { start: "2026-10-15", questions: [...old, { id: "n0", q: "New 0?", from: "2026-10-19" }, { id: "n1", q: "New 1?", from: "2026-10-19" }] };
+  const on = (bank, day) => selectQuestionStory(ctx({ qotd: bank, editionDateET: day })).item.facts.questionId;
+  const days = Array.from({ length: 12 }, (_, k) => new Date(Date.parse("2026-10-15T00:00:00Z") + k * 864e5).toISOString().slice(0, 10));
+  // passes start Oct 15, 18, 21: the new pair is held out of the pass that is running on Oct 19, then leads the next one
+  assert.deepEqual(days.map((d) => on(q, d)), ["q0", "q1", "q2", "q0", "q1", "q2", "n0", "n1", "q0", "q1", "q2", "n0"]);
+  const before = { ...q, questions: old };
+  for (const d of days.slice(0, 6)) assert.equal(on(q, d), on(before, d));
+  assert.equal(buildTodayEdition(ctx({ qotd: q })).edition.qotd.questions[4].from, "2026-10-19"); // the copy keeps it
 });

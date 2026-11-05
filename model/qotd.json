@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-10-28T04:22:54+00:00",
+ "builtAt": "2026-11-05T04:06:42+00:00",
  "start": "2026-10-15",
  "seasons": [
   "20232024",
@@ -509,7 +509,164 @@
     "unit": ""
    },
    "method": "MoneyPuck goalie seasons 2008-09 through 2025-26, all situations; goals saved above expected (expected goals minus goals) per 1,000 unblocked shots. Record = three straight seasons totaling 3,000+ shots; top fifth = +3.2 or better. Later seasons count when he faced 1,000+ shots, so goalies who lost the job drop out and the later years flatter the group. Wins at 6 goals per win. Deals: current contracts (public terms) of $5M+ a season, completed seasons only.",
+   "span": "2008-09 to 2025-26 regular seasons",
    "sample": "793 three-season records; 131 top-fifth records with a next season, 61 with a fifth; 13 current deals"
+  },
+  {
+   "id": "taxstates",
+   "from": "2026-11-05",
+   "q": "Does living in a low-tax state let a team sign players for cheaper cap hits?",
+   "headline": "A little: teams in no-income-tax states sign comparable players for about 9% less. But it doesn't track the tax rate: high-tax states and Canada pay no more than the rest, so taxes are at most part of the story.",
+   "body": [
+    "We priced 1,885 contracts that today's players signed since 2012 against what contracts like them usually cost (same WAR before signing, age, position, term, free-agent status and season). Teams outside Florida, Texas, Tennessee, Nevada and Washington paid 9% more for the same contract (90% range +5% to +13%). By group: middle-tax US teams +11%, high-tax US teams +6%, Canadian teams +11%.",
+    "If players priced taxes in fully, the gap would be far bigger: to keep the same top-dollar take-home as in Florida, a player would need about 27% more in California and 36% more in Ontario (somewhat less once road-game taxes are counted, since players pay some tax wherever they play). Instead, each 10 points of top tax rate goes with only +3% (90% range -1% to +6%). High-tax US teams even pay less of a premium than middle-tax ones.",
+    "Is it winning instead? Several no-tax teams are recent contenders players want to join (Florida, Tampa Bay, Vegas, Dallas), and strong teams do pay less, about 3% per 10 points of last season's points percentage. But allowing for that the no-tax gap is still +8% (90% range +5% to +11%), and leaving out any one no-tax team keeps it between +8% and +10%. For unrestricted free agents choosing a new team (531 signings), where a tax break should matter most, it is +11%.",
+    "So: a modest discount, about the size of the normal spread between teams' spending habits (\u00b16%), that comes with having no state income tax but doesn't grow with the tax gap. That's an association, not proof that taxes cause it; the location, climate and team culture of these six teams travel with the tax break. Players' real tax bills depend on where they live, road games and how deals are structured with signing bonuses, none of which is in this data."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Cap hit for the same contract vs teams in no-income-tax states",
+    "x": [
+     "Middle US",
+     "High-tax US",
+     "Canada"
+    ],
+    "y": [
+     11,
+     6,
+     11
+    ],
+    "unit": "%"
+   },
+   "method": "CapWages contract history (licensed) for current NHL players: standard contracts signed July 2012 onward, entry-level and two-way deals excluded. Market value: least-squares fit of log cap hit on WAR per 82 games over the three completed seasons before signing (our WAR-lite, weights 1/.7/.45, 25 games of replacement-level prior; piecewise, separately for pending UFAs), age, position, term and first-season dummies (the cap's growth). Tax groups by the signing team: no state income tax (FL, TX, TN, NV, WA), high-tax US (state top rate 9% or more: CA, NY, NJ, MN, MA, DC), Canada, and the rest. Rates (new source): Tax Foundation 2026 state top rates plus the 37% federal rate; BDO Canada Tax Facts 2026 combined federal and provincial top rates; city taxes and road-game taxes left out; 2026 rates applied to every year. 90% ranges from 999 bootstrap resamples of signing teams (contracts from one team aren't independent). The fit explains 79% of the spread in cap hits. Only players on NHL contracts today are covered, so older deals of players who have since left are missing.",
+   "sample": "1,885 contracts: 356 by 6 no-tax teams, 576 by 10 high-tax US teams, 407 by 7 Canadian teams, 546 by 10 others",
+   "span": "contracts signed 2012 to 2026"
+  },
+  {
+   "id": "mcdavid-or-two",
+   "from": "2026-11-05",
+   "q": "What is more valuable: one Connor McDavid, or Leon Draisaitl and Evan Bouchard together?",
+   "headline": "Draisaitl and Bouchard, by about 3.4 wins a season. But they cost $12.0M more against the cap, and that money spent on another player makes it close to even.",
+   "body": [
+    "Over the last three seasons, per 82 games: McDavid 6.2 wins above replacement, Draisaitl 5.4, Bouchard 4.1. Together the pair is worth 9.5, 3.4 more than McDavid alone. Our second method (RAPM, which credits each player for what happens on the ice while he plays, after allowing for teammates and opponents) agrees: McDavid 5.3, the pair 7.7.",
+    "Looking ahead, our career forecast for this season and next has McDavid at 12.1 WAR and Draisaitl and Bouchard at 16.7 combined. Allowing for injuries and ordinary ups and downs, McDavid comes out ahead in about 10% of outcomes (treating the players as independent).",
+    "Cost changes the answer. This season McDavid's cap hit is $12.5M; Draisaitl's and Bouchard's add up to $24.5M, $12.0M more. Players paid about $12.0M produce a median 2.5 WAR per 82 (middle half 1.7 to 3.4; 19 players). McDavid plus one of them is worth about 8.7, close to the pair's 9.5: for the same cap money it's roughly a tie, with McDavid's side slightly behind.",
+    "What WAR can't see: one player can only be on the ice about 22 minutes a night, so two stars cover more of the game, and the pair lets a team spread its talent across two lines and the blue line. In McDavid's favor, the highest-end players may matter more in the playoffs, which this measure doesn't test. Both views are estimates from regular-season results."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Wins above replacement per 82 games, last three seasons",
+    "x": [
+     "McDavid",
+     "Draisaitl",
+     "Bouchard",
+     "Draisaitl + Bouchard",
+     "McDavid + a player at that cap gap"
+    ],
+    "y": [
+     6.16,
+     5.44,
+     4.07,
+     9.51,
+     8.67
+    ],
+    "unit": ""
+   },
+   "method": "Our WAR-lite player values (three seasons weighted 1/.7/.45, 25 games of replacement-level prior; RAPM version beside it). Forecast: the experimental career-curve model (mean and 10th-90th percentile range per season, summed over 2026-27 and 2027-28; spreads combined as independent normals). Cap hits: public contract terms for 2026-27. Going rate: median WAR per 82 of non-entry-level players with 100+ games over three seasons and a cap hit within $1.5M of the gap.",
+   "sample": "3 players, 476 games over three seasons; 19 players at the cap gap",
+   "span": "2023-24 to 2026-27"
+  },
+  {
+   "id": "coachbump",
+   "from": "2026-11-05",
+   "q": "Is the new-coach bump real?",
+   "headline": "Yes, but it is smaller than it looks: points percentage jumps from 45.1% to 54.9% after a mid-season change, and about 59% of that jump would have happened anyway. The rest is worth about 7 standings points over 82 games.",
+   "body": [
+    "In 53 mid-season changes since 2008-09, teams earned 45.1% of available points under the old coach and 54.9% under the new one. Teams that kept their coach through an equally bad start also bounced back, to 50.9% on average: bad stretches end on their own. The new-coach teams beat that by 4.1 percentage points (90% range 1.7 to 6.3), about 6.7 standings points per 82 games.",
+    "When it shows up: first 10 games 3.0 percentage points above expected (90% range -1.2 to 7.4), games 11-25 4.8, game 26 on 3.7. It does not fade quickly. 64% of the changes beat their expected pace for the rest of the season, so plenty don't.",
+    "The next full season, teams that changed coaches finished 1.4 percentage points above what their season before predicts (90% range -0.3 to 3.1), so any lasting effect is small and can't be told apart from zero.",
+    "This is an association, not a clean test of coaching. Teams that fire a coach often change other things at the same time: trades, call-ups, a different starting goalie, a healthier lineup. With 53 changes the range is wide; a bump of zero is outside it."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "After a mid-season coaching change: points % above teams that kept their coach (percentage points)",
+    "x": [
+     "First 10 games",
+     "Games 11-25",
+     "Game 26 on"
+    ],
+    "y": [
+     3.0,
+     4.8,
+     3.7
+    ],
+    "unit": ""
+   },
+   "method": "Regular seasons 2008-09 through 2025-26 except 2012-13, 2019-20 and 2020-21 (NHL schedules and coach records). A change is a new coach's first game with at least 10 games before and after it. Expected = a straight-line fit of later points % on earlier points % among team-seasons with no change, split at the same game (regression to the mean). 90% ranges: bootstrap over changes. Next season: points % vs a fit of next season on this season among teams without a change.",
+   "sample": "53 mid-season changes; 388 team-seasons without one; 36 with a next season",
+   "span": "2008-09 to 2025-26 regular seasons"
+  },
+  {
+   "id": "firstoverall",
+   "from": "2026-11-05",
+   "q": "Is a first overall pick better than two picks between 5th and 10th overall?",
+   "headline": "Yes, on average: two picks from 5th to 10th bring about 13.4 wins above replacement in their first seven or eight seasons to the No. 1 pick's 20.4. But the No. 1 pick is a franchise player 53% of the time, and two later picks give you one only 7% of the time.",
+   "body": [
+    "Across the 15 drafts from 2005-2019 whose players have finished their first seven or eight NHL seasons, the No. 1 pick averaged 20.4 WAR in that window (median 21.0). Picks 5 through 10 averaged 6.7 (median 5.1), so two of them add up to 13.4. The No. 1 pick's edge over the pair is 7.0 WAR (90% range 2.7 to 11.3): fifteen No. 1 picks is a small sample, and McDavid alone moves the average.",
+    "Pick by pick: a real No. 1 pick beat the combined value of a random pair of 5-10 picks 72% of the time. The 5-10 group is lopsided, a few stars and many middling players, so the typical pair (median) is worth 12.2, less than twice the average.",
+    "Stars are where the top pick earns its keep. 53% of No. 1 picks reached 20+ WAR in the window, a franchise player; 3% of 5-10 picks did, so two of them give you one about 7% of the time. Best No. 1 pick: Connor McDavid (36.7); worst: Nail Yakupov (2.3).",
+    "One caution: our smoothed value curve, which pools each slot with its neighbors to cut noise, puts the No. 1 slot at only 11.8 and two picks from 5 to 10 at 13.6. Smoothing can't show a jump at No. 1, and fifteen picks can't prove one, so the true gap is somewhere between the two. A single star is also hard to find any other way, which is part of why teams rarely trade the No. 1 pick for two later ones. The window covers players' cheap early years, which are when a pick pays off most."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Wins above replacement in the first 7-8 NHL seasons after the draft",
+    "x": [
+     "No. 1 pick",
+     "One pick from 5 to 10",
+     "Two picks from 5 to 10"
+    ],
+    "y": [
+     20.4,
+     6.7,
+     13.4
+    ],
+    "unit": ""
+   },
+   "method": "Our draft-value model: WAR-lite in the first 7 seasons after the draft for forwards and 8 for defensemen (goalies 9), each season floored at 0, for drafts whose window is complete (2005-2019). Franchise player = 20+ WAR in the window. Pair comparison: every No. 1 pick against every pair of 5-10 picks. 90% range: bootstrap over picks.",
+   "sample": "15 first overall picks, 88 picks from 5th to 10th",
+   "span": "drafts 2005-2019"
+  },
+  {
+   "id": "draftgoalies",
+   "from": "2026-11-05",
+   "q": "Should you draft goalies high in the draft?",
+   "headline": "Probably not: goalie value drops off much less after the first round than skater value does. A first-round goalie has given about 2x what a goalie from rounds 2-3 gives; a first-round skater about 6x a skater from those rounds. So a skater first and a goalie later has beaten the reverse, narrowly: the 90% range includes a tie.",
+   "body": [
+    "Since 2005, teams took 18 goalies in the first round. In their first 9 seasons they averaged 0.76 wins above replacement a season; goalies from rounds 2 and 3 averaged 0.36 (93 goalies). For skaters the same drop is from 0.66 to 0.11 (450 and 825 skaters). Waiting a round costs a team much less at goalie. (Goalie and skater WAR aren't on quite the same scale, since the floor at zero flatters high-variance goalies, so compare each position's drop rather than the levels.)",
+    "Put together, a first-round skater plus a goalie from rounds 2-3 has been worth 0.16 more WAR a season than a first-round goalie plus a skater from rounds 2-3 (90% range -0.25 to 0.53). Even reaching the NHL is less certain: 44% of first-round goalies played 200+ NHL games, against 69% of first-round skaters. First-rounders were 6% of the drafted goalies with a finished window and produced 21% of their value.",
+    "Of the 23 goalies starting at least half of their team's games now, 3 were first-round picks, 7 came from rounds 2-3, 10 from round 4 or later, and 3 went undrafted.",
+    "Why: goalies develop late, often not settling in the NHL until their mid-20s, and one goalie season is mostly luck, so it's hard to tell the best 18-year-olds apart. High picks do hit (Carey Price, Andrei Vasilevskiy, Jake Oettinger), but there are only 18 first-round goalies to learn from, so the ranges are wide. The pattern, not proof: teams that want a goalie have usually done better finding one later."
+   ],
+   "chart": {
+    "type": "bar",
+    "title": "Wins above replacement per season in the first years after the draft",
+    "x": [
+     "First-round goalie",
+     "Goalie, rounds 2-3",
+     "First-round skater",
+     "Skater, rounds 2-3"
+    ],
+    "y": [
+     0.76,
+     0.36,
+     0.66,
+     0.11
+    ],
+    "unit": ""
+   },
+   "method": "Our draft-value model: WAR-lite in the first 9 seasons after the draft for goalies, 7 for forwards and 8 for defensemen, each season floored at 0, divided by the window's length so positions compare per season; drafts 2005-2019 (complete windows only). Played = 200+ career NHL games. Goalie WAR is saves above average, shrunk toward average, and the 0 floor flatters high-variance goalies, so goalie and skater levels don't compare exactly; the drop-off from the first round within each position does. Starters: started half or more of their team's games over the last three seasons. 90% range: bootstrap over picks.",
+   "sample": "281 drafted goalies (18 in the first round, 93 in rounds 2-3), 1,275 skaters in rounds 1-3; 23 current starters",
+   "span": "drafts 2005-2019"
   }
  ]
 }
