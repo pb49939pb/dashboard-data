@@ -51,13 +51,13 @@ async function gamesOf(s, t) {
     .map((g) => ({ id: g.id, date: g.date, dressed: new Set(Object.entries(g.players).filter(([, v]) => (v[2] === 0) === (g.home === t)).map(([id]) => Number(id))) }));
 }
 
-const rosterPos = {}; // team -> [[id, position]] (saved for the roster-aware season simulation)
+const rosterPos = {}; // team -> [[id, position, name]] (saved for the roster-aware season simulation; the name lets the site list a call-up with no other record)
 async function rosters() { // who's on each NHL roster right now (injured players included)
   const out = {};
   for (const t of teams) {
     await pause(400);
     const r = await fetch(`https://api-web.nhle.com/v1/roster/${t}/current`, { headers: UA }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
-    if (r) { out[t] = new Set([...(r.forwards || []), ...(r.defensemen || []), ...(r.goalies || [])].map((p) => p.id)); rosterPos[t] = [...(r.forwards || []), ...(r.defensemen || []), ...(r.goalies || [])].map((p) => [p.id, p.positionCode]); }
+    if (r) { out[t] = new Set([...(r.forwards || []), ...(r.defensemen || []), ...(r.goalies || [])].map((p) => p.id)); rosterPos[t] = [...(r.forwards || []), ...(r.defensemen || []), ...(r.goalies || [])].map((p) => [p.id, p.positionCode, [p.firstName?.default, p.lastName?.default].filter(Boolean).join(" ") || null]); }
   }
   // the current-roster feed leaves out injured reserve: an established player whose last team was t, who is on no
   // current roster, counts as t's (out) when his NHL player page still lists him with t
@@ -66,7 +66,7 @@ async function rosters() { // who's on each NHL roster right now (injured player
     if (onAny.has(p.id) || !out[p.team] || p.lastGp + p.curGp < (p.group === "G" ? 20 : 40)) continue;
     await pause(400);
     const l = await fetch(`https://api-web.nhle.com/v1/player/${p.id}/landing`, { headers: UA }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
-    if (l?.isActive && l.currentTeamAbbrev === p.team) { out[p.team].add(p.id); rosterPos[p.team].push([p.id, l.position || p.pos]); offRoster.push(`${p.name} (${p.team})`); offRosterIds.add(p.id); }
+    if (l?.isActive && l.currentTeamAbbrev === p.team) { out[p.team].add(p.id); rosterPos[p.team].push([p.id, l.position || p.pos, p.name]); offRoster.push(`${p.name} (${p.team})`); offRosterIds.add(p.id); }
   }
   return out;
 }
