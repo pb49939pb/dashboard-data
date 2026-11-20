@@ -192,7 +192,16 @@ export function leagueDoc(players, years, meta) {
     const contract = cur ? p.contracts[cur.contract] : null;
     const last = contract ? Math.max(...contract.seasons.map(seasonStart)) : null;
     // his latest deal (an extension may run past the window): its last season and what he is when it ends
-    const newest = p.contracts.filter((c) => c.seasons.some((x) => seasonStart(x) >= years[0])).sort((u, v) => u.index - v.index)[0] ?? contract;
+    let newest = p.contracts.filter((c) => c.seasons.some((x) => seasonStart(x) >= years[0])).sort((u, v) => u.index - v.index)[0] ?? contract;
+    // B291 / B295 (2026-11-20): the newest-listed deal isn't always the latest one. DeBrincat's 7-year extension had
+    // cap hits through 2033-34 while his current deal (ending 2026-27) was listed first, so endLast said 2026 and the
+    // site disagreed with itself (the trade engine read the hits, the contract line read endLast). The deal behind the
+    // last season with a cap hit wins when it runs later.
+    const lastHitAt = years.filter((y, i) => hits[i] != null).pop();
+    if (lastHitAt != null && newest && Math.max(...newest.seasons.map(seasonStart)) < lastHitAt) {
+      const row = resolved(p, lastHitAt).rows.find((x) => !x.buyout), c = row ? p.contracts[row.contract] : null;
+      if (c) newest = c;
+    }
     const endLast = newest ? Math.max(...newest.seasons.map(seasonStart)) : last;
     if (!p.nhlId) continue; // the site joins on NHL ids
     // no contract this season: keep his last deal's end and status, so the site can say "unsigned (RFA)" instead of "unknown"

@@ -72,8 +72,28 @@ async function rosters() { // who's on each NHL roster right now (injured player
 }
 const offRoster = [], offRosterIds = new Set(); // signed players missing from the roster feed (injured reserve or the minors)
 
+/* Trades this season (model/trades.json, the daily trades job): who moved, the day, and from which team (two-team deals;
+   in a three-team deal the sending side isn't recorded). B265 (2026-11-20): a player traded while out (Hellebuyck, hurt
+   when Winnipeg dealt him to New Jersey on Oct 23, 2026) never dressed for his old team, so his absences from opening
+   night were charged to his new one, before he belonged to it. Now a trade's date bounds both stints. */
+const tradesDoc = await readJson("model/trades.json");
+function movesOf(s) {
+  const m = new Map();
+  for (const tr of tradesDoc?.trades || []) {
+    if (String(tr.season) !== String(s) || !tr.date) continue;
+    const sides = tr.sides || [];
+    for (const side of sides) for (const a of side.assets || []) {
+      if (a.type !== "player" || !a.id) continue;
+      const from = sides.length === 2 ? sides.find((x) => x !== side)?.team ?? null : null;
+      (m.get(Number(a.id)) || m.set(Number(a.id), []).get(Number(a.id))).push({ date: tr.date, to: side.team, from });
+    }
+  }
+  for (const xs of m.values()) xs.sort((a, b) => a.date.localeCompare(b.date));
+  return m;
+}
+
 async function build(s) {
-  const live = s === current, roster = live ? await rosters() : {};
+  const live = s === current, roster = live ? await rosters() : {}, moves = movesOf(s);
   const G = Object.fromEntries(await Promise.all(teams.map(async (t) => [t, await gamesOf(s, t)])));
   // every team a player dressed for this season, in order (for trades)
   const stints = new Map();
@@ -87,6 +107,7 @@ async function build(s) {
     for (const id of roster[t] || []) cands.add(id);
     // a regular from before who never dressed for anyone this season and was last with this team (out all year)
     for (const p of pv.players) if (!stints.has(p.id) && p.team === t && priorGp(p) >= (p.group === "G" ? 20 : 40) && (live ? roster[t]?.has(p.id) : true)) cands.add(p.id);
+    for (const [id, xs] of moves) if (xs.some((x) => x.from === t)) cands.add(id); // traded away: his games here before the trade
     for (const id of cands) {
       const p = pvById.get(id);
       if (!p) continue;
@@ -99,12 +120,23 @@ async function build(s) {
       // a player traded here who hasn't dressed for this team yet (B167, Mercer to WPG Oct 2026): his absences before he
       // arrived belong to his old team. Never dressed anywhere this season and last with another team: arrival unknown,
       // so don't charge this team; dressed elsewhere: count from this team's first game after his last game there.
+      // a recorded trade this season sets the stint: from the first game after he arrived (or opening night) to the last
+      // game before he left (or the latest game while he's still here)
+      const mv = moves.get(id) || [], arrived = mv.filter((x) => x.to === t).pop(), left = mv.find((x) => x.from === t && (!arrived || x.date > arrived.date));
+      let start, end;
+      if (arrived || left) {
+        start = arrived ? games.findIndex((g) => g.date > arrived.date || (g.date === arrived.date && g.dressed.has(id))) : 0;
+        if (start < 0) continue;
+        const stillHere = !left && (live ? roster[t]?.has(id) || mine.some((x) => x.date >= arrived.date) : true);
+        end = left ? games.findLastIndex((g) => g.date < left.date || (g.date === left.date && g.dressed.has(id))) : stillHere ? n - 1 : mine.length ? mine[mine.length - 1].i : -1;
+      } else {
       if (!mine.length && !elsewhere.length && p.team !== t) continue;
       const afterElsewhere = !mine.length && elsewhere.length ? games.findIndex((g) => g.date > elsewhere[elsewhere.length - 1]) : -1;
       if (!mine.length && elsewhere.length && afterElsewhere < 0) continue;
-      const start = mine.length && (cameBefore || priorGp(p) < (p.group === "G" ? 20 : 40)) ? mine[0].i : afterElsewhere >= 0 ? afterElsewhere : 0; // newcomers count from their first game
+      start = mine.length && (cameBefore || priorGp(p) < (p.group === "G" ? 20 : 40)) ? mine[0].i : afterElsewhere >= 0 ? afterElsewhere : 0; // newcomers count from their first game
       const stillHere = live ? roster[t]?.has(id) : !leftAfter && (p.team === t || mine.length > 0);
-      const end = leftAfter && mine.length ? mine[mine.length - 1].i : stillHere ? n - 1 : mine.length ? mine[mine.length - 1].i : -1;
+      end = leftAfter && mine.length ? mine[mine.length - 1].i : stillHere ? n - 1 : mine.length ? mine[mine.length - 1].i : -1;
+      }
       if (end < start) continue;
       // stretches of games missed
       const stretches = [];

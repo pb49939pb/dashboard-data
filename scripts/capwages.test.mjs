@@ -95,6 +95,16 @@ test("a rostered player without a contract this season: warned, and his last dea
   assert.ok(v.warnings.some((w) => /no contract for 2026-27/.test(w) && /edvinsson \(DET\)/.test(w)));
 });
 
+test("an extension listed after the current deal still sets endLast (B291, DeBrincat)", async () => {
+  const { leagueDoc } = await import("./capwages-lib.mjs");
+  const p = normalizePlayer(player("debrincat", "detroit_red_wings", [
+    { contractType: "Standard Contract", expiryStatus: "UFA", seasons: [season("2025-26"), season("2026-27")] },
+    { contractType: "Standard Contract (Extension)", expiryStatus: "UFA", seasons: ["2027-28", "2028-29", "2029-30"].map((x) => season(x, { capHit: 2_000_000 })) }]));
+  const r = leagueDoc([p], [2026, 2027, 2028, 2029], { importedAt: "x" }).players[0];
+  assert.equal(r.end, 2026);
+  assert.equal(r.endLast, 2029);
+});
+
 test("validation fails closed: missing spot checks, bad team counts, error rate, swings in player count", () => {
   const many = Object.keys(TEAMS).flatMap((a) => Array.from({ length: 20 }, (_, i) => normalizePlayer(player(`${a}-${i}`, TEAMS[a], [{ seasons: [season("2026-27", { capHit: 4_000_000 })] }]))));
   const v = validate({ players: many, errors: 0, attempted: many.length, y: 2026, prev: null });
